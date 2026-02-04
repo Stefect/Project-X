@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Mate Test - Тестова сторінка з кодом</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 40px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.5;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 Code Mate - Демонстраційна сторінка</h1>
+    
+    <div class="info-box">
+        <strong>🎯 Інструкція:</strong> Біля кожного блоку коду нижче має з'явитися кнопка <strong>"🤖 Пояснити"</strong>. 
+        Натисніть на неї, щоб отримати AI аналіз коду!
+    </div>
+
+    <h2>1. JavaScript - Простий приклад</h2>
+    <p>Функція для підрахунку суми елементів масиву:</p>
+    <pre><code>function calculateSum(numbers) {
+    let sum = 0;
+    for (let i = 0; i < numbers.length; i++) {
+        sum += numbers[i];
+    }
+    return sum;
+}
+
+const result = calculateSum([1, 2, 3, 4, 5]);
+console.log(result); // Виведе: 15</code></pre>
+
+    <h2>2. Python - Сортування списку</h2>
+    <p>Алгоритм bubble sort для сортування списку:</p>
+    <pre><code>def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+    return arr
+
+numbers = [64, 34, 25, 12, 22, 11, 90]
+sorted_numbers = bubble_sort(numbers)
+print(sorted_numbers)</code></pre>
+
+    <h2>3. React - Компонент із хуком</h2>
+    <p>Простий React компонент з використанням useState:</p>
+    <pre><code>import React, { useState } from 'react';
+
+function Counter() {
+    const [count, setCount] = useState(0);
+
+    return (
+        &lt;div&gt;
+            &lt;h1&gt;Лічильник: {count}&lt;/h1&gt;
+            &lt;button onClick={() => setCount(count + 1)}&gt;
+                Збільшити
+            &lt;/button&gt;
+            &lt;button onClick={() => setCount(count - 1)}&gt;
+                Зменшити
+            &lt;/button&gt;
+        &lt;/div&gt;
+    );
+}
+
+export default Counter;</code></pre>
+
+    <h2>4. SQL - Запит до бази даних</h2>
+    <p>Складний SQL запит з JOIN і GROUP BY:</p>
+    <pre><code>SELECT 
+    u.name AS user_name,
+    COUNT(o.id) AS order_count,
+    SUM(o.total_amount) AS total_spent
+FROM 
+    users u
+INNER JOIN 
+    orders o ON u.id = o.user_id
+WHERE 
+    o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+GROUP BY 
+    u.id, u.name
+HAVING 
+    total_spent > 1000
+ORDER BY 
+    total_spent DESC
+LIMIT 10;</code></pre>
+
+    <h2>5. HTML/CSS - Flex контейнер</h2>
+    <p>Приклад Flexbox розмітки:</p>
+    <pre><code>&lt;div class="container"&gt;
+    &lt;div class="item"&gt;Item 1&lt;/div&gt;
+    &lt;div class="item"&gt;Item 2&lt;/div&gt;
+    &lt;div class="item"&gt;Item 3&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.item {
+    flex: 1;
+    padding: 20px;
+    background: #667eea;
+    color: white;
+    border-radius: 8px;
+}
+&lt;/style&gt;</code></pre>
+
+    <div class="warning-box">
+        <strong>⚠️ Увага:</strong> Якщо кнопки не з'являються, перевірте:
+        <ul>
+            <li>Чи запущено браузер через <code>npm start</code></li>
+            <li>Чи завантажився файл <code>code-injector.js</code></li>
+            <li>Відкрийте консоль (F12) і подивіться на помилки</li>
+        </ul>
+    </div>
+
+    <h2>6. Node.js - Express сервер</h2>
+    <p>Базовий HTTP сервер на Express.js:</p>
+    <pre><code>const express = require('express');
+const app = express();
+const port = 3000;
+
+// Middleware для обробки JSON
+app.use(express.json());
+
+// GET маршрут
+app.get('/api/users', (req, res) => {
+    res.json({ 
+        users: [
+            { id: 1, name: 'Іван' },
+            { id: 2, name: 'Марія' }
+        ] 
+    });
+});
+
+// POST маршрут
+app.post('/api/users', (req, res) => {
+    const newUser = req.body;
+    // Тут має бути логіка збереження в БД
+    res.status(201).json({ 
+        message: 'Користувач створений',
+        user: newUser 
+    });
+});
+
+app.listen(port, () => {
+    console.log(`Сервер запущено на http://localhost:${port}`);
+});</code></pre>
+
+    <h2>🎉 Успіх!</h2>
+    <p>
+        Якщо ви бачите кнопки "🤖 Пояснити" біля кожного блоку коду вище - 
+        <strong>Code Mate працює правильно!</strong> 
+        Тепер можете відкривати будь-які сайти з кодом (StackOverflow, GitHub, MDN) 
+        і користуватися цією функцією.
+    </p>
+
+    <div class="info-box">
+        <strong>💡 Порада:</strong> Code Mate працює на динамічних сайтах! 
+        Спробуйте відкрити StackOverflow питання з кодом - кнопки з'являться автоматично.
+    </div>
+</body>
+</html>

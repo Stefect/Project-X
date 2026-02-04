@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Chromium Browser</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      display: flex;
+      height: calc(100vh - 100px); /* 60px toolbar + 40px tabs */
+    }
+
+    .main-content {
+      flex: 1;
+    }
+
+    #notes-sidebar {
+      width: 320px;
+      background: #f8f9fa;
+      border-left: 1px solid #dadce0;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: visible;
+      transition: width 0.3s ease, padding 0.3s ease;
+      position: relative;
+    }
+
+    /* За замовчуванням панель згорнута */
+    #notes-sidebar.collapsed,
+    #notes-sidebar:not(.expanded) {
+      width: 0;
+      padding: 0;
+      border-left: none;
+      overflow: hidden;
+    }
+
+    #notes-sidebar h3 {
+      margin: 0 0 15px 0;
+      color: #202124;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    #toggle-sidebar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    #toggle-sidebar:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    #notes-sidebar h3 {
+      margin: 0 0 15px 0;
+      color: #202124;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e8eaed;
+    }
+    
+    #notes-sidebar h3 .shared-badge {
+      font-size: 11px;
+      background: #34a853;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: normal;
+    }
+
+    #notes-list {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin-bottom: 15px;
+      border: 1px solid #e0e0e0;
+      background: white;
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .note-item {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #3c4043;
+      position: relative;
+      padding-right: 30px;
+    }
+
+    .note-item:last-child {
+      border-bottom: none;
+    }
+
+    .note-item .delete-btn {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #dc3545;
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .note-item:hover .delete-btn {
+      opacity: 1;
+    }
+
+    #summarize-btn, #clear-btn {
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+    }
+
+    #summarize-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    #summarize-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    #clear-btn {
+      background: #f1f3f4;
+      color: #5f6368;
+    }
+
+    #clear-btn:hover {
+      background: #e8eaed;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #80868b;
+      font-size: 13px;
+    }
+
+    .toolbar {
+      height: 60px;
+      background: #f1f3f4;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 10px;
+      border-bottom: 1px solid #dadce0;
+    }
+
+    .nav-button {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .nav-button:hover {
+      background: #e8eaed;
+    }
+
+    .nav-button:active {
+      background: #dadce0;
+    }
+
+    .address-bar {
+      flex: 1;
+      height: 38px;
+      padding: 0 15px;
+      border: 1px solid #dadce0;
+      border-radius: 24px;
+      font-size: 14px;
+      outline: none;
+      background: white;
+    }
+
+    .address-bar:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 1px 6px rgba(26, 115, 232, 0.3);
+    }
+
+    /* Розумний пошук */
+    #smart-search-box {
+      display: none;
+      position: absolute;
+      top: 70px;
+      right: 340px;
+      width: 350px;
+      background: white;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      border-radius: 12px;
+      z-index: 10000;
+      border: 2px solid #667eea;
+    }
+
+    #smart-search-box h4 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 18px;
+    }
+
+    #search-query {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    #search-query:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    #btn-smart-find {
+      width: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    #btn-smart-find:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    #btn-smart-find:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #search-status {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #666;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    .smart-search-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 4px;
+      margin-left: 5px;
+      transition: all 0.2s;
+    }
+
+    .smart-search-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Панель вкладок */
+    .tabs-bar {
+      height: 40px;
+      background: #dee1e6;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 5px;
+      border-bottom: 1px solid #c1c4c9;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .tabs-bar::-webkit-scrollbar {
+      height: 3px;
+    }
+
+    .tabs-bar::-webkit-scrollbar-thumb {
+      background: #999;
+      border-radius: 2px;
+    }
+
+    .tab {
+      min-width: 150px;
+      max-width: 240px;
+      height: 34px;
+      background: #bdc0c5;
+      border-radius: 8px 8px 0 0;
+      margin-right: 2px;
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      border: 1px solid #999;
+      border-bottom: none;
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .tab:hover {
+      background: #c8cad0;
+    }
+
+    .tab.active {
+      background: #f8f9fa;
+      height: 36px;
+      border-color: #c1c4c9;
+      z-index: 1;
+    }
+
+    .tab-favicon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .tab-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 13px;
+      color: #333;
+    }
+
+    .tab.active .tab-title {
+      font-weight: 500;
+    }
+
+    .tab-close {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .tab:hover .tab-close {
+      opacity: 1;
+    }
+
+    .tab-close:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .tab.active .tab-close {
+      opacity: 1;
+    }
+
+    .new-tab-btn {
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .new-tab-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="nav-button" id="back" title="Назад">◄</button>
+    <button class="nav-button" id="forward" title="Вперед">►</button>
+    <button class="nav-button" id="reload" title="Оновити">⟳</button>
+    <input type="text" class="address-bar" id="url" placeholder="Введіть URL або пошуковий запит">
+    <button class="smart-search-btn" id="toggle-sidebar-toolbar" title="Показати/сховати конспект (Ctrl+B)">📝</button>
+  </div>
+
+  <!-- Панель вкладок -->
+  <div class="tabs-bar" id="tabs-bar">
+    <div class="tab active" data-tab-id="1">
+      <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'">
+      <span class="tab-title">Нова вкладка</span>
+      <span class="tab-close">✕</span>
+    </div>
+    <button class="new-tab-btn" id="new-tab-btn" title="Нова вкладка (Ctrl+T)">+</button>
+  </div>
+
+  <div class="container">
+    <div class="main-content"></div>
+    
+    <div id="notes-sidebar" class="collapsed" style="width: 0; padding: 0; overflow: hidden; border-left: none;">
+      <h3>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>📝 Мій Конспект</span>
+          <span class="shared-badge" title="Нотатки спільні для всіх вкладок">🌐 Спільні</span>
+        </div>
+        <button id="toggle-sidebar" title="Показати панель">☰</button>
+      </h3>
+      
+      <div id="notes-list">
+        <div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>
+      </div>
+
+      <button id="summarize-btn">✨ Узагальнити через ШІ</button>
+      <button id="clear-btn">🗑️ Очистити все</button>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+    
+    const backBtn = document.getElementById('back');
+    const forwardBtn = document.getElementById('forward');
+    const reloadBtn = document.getElementById('reload');
+    const urlInput = document.getElementById('url');
+    const notesList = document.getElementById('notes-list');
+    const summarizeBtn = document.getElementById('summarize-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    
+    // Toggle бокової панелі
+    const notesSidebar = document.getElementById('notes-sidebar');
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+    const toggleSidebarToolbar = document.getElementById('toggle-sidebar-toolbar');
+    
+    // Вкладки
+    const tabsBar = document.getElementById('tabs-bar');
+    const newTabBtn = document.getElementById('new-tab-btn');
+    
+    let collectedNotes = [];
+    
+    // ВИДАЛЯЄМО старе значення з localStorage, щоб панель завжди була згорнута при запуску
+    localStorage.removeItem('sidebarCollapsed');
+    
+    let isSidebarCollapsed = true; // Завжди згорнута за замовчуванням
+    let currentTabId = 1; // Поточна активна вкладка
+
+    // ========== Система вкладок ==========
+    
+    // Створити нову вкладку
+    async function createTab(url = 'https://www.google.com') {
+      const result = await ipcRenderer.invoke('create-tab', url);
+      
+      // Створюємо візуальний елемент вкладки
+      const tabElement = document.createElement('div');
+      tabElement.className = 'tab';
+      tabElement.dataset.tabId = result.id;
+      
+      tabElement.innerHTML = `
+        <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'">
+        <span class="tab-title">${result.title}</span>
+        <span class="tab-close">✕</span>
+      `;
+      
+      // Додаємо перед кнопкою "+"
+      tabsBar.insertBefore(tabElement, newTabBtn);
+      
+      // Перемикаємось на нову вкладку
+      switchTab(result.id);
+      
+      return result.id;
+    }
+    
+    // Перемкнутися на вкладку
+    function switchTab(tabId) {
+      // Знімаємо клас active з усіх вкладок
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Додаємо active до вибраної
+      const targetTab = document.querySelector(`[data-tab-id="${tabId}"]`);
+      if (targetTab) {
+        targetTab.classList.add('active');
+        currentTabId = tabId;
+        ipcRenderer.send('switch-tab', tabId);
+      }
+    }
+    
+    // Закрити вкладку
+    function closeTab(tabId) {
+      const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+      if (tabElement) {
+        tabElement.remove();
+      }
+      ipcRenderer.send('close-tab', tabId);
+    }
+    
+    // Оновити інформацію вкладки (заголовок, favicon)
+    ipcRenderer.on('update-tab-info', (event, tabId, title, url) => {
+      const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+      if (tabElement) {
+        const titleElement = tabElement.querySelector('.tab-title');
+        const faviconElement = tabElement.querySelector('.tab-favicon');
+        
+        if (titleElement) titleElement.textContent = title || 'Нова вкладка';
+        
+        if (faviconElement && url) {
+          const faviconUrl = new URL(url).origin + '/favicon.ico';
+          faviconElement.src = faviconUrl;
+        }
+      }
+    });
+    
+    // Оновити URL bar
+    ipcRenderer.on('update-url-bar', (event, url) => {
+      urlInput.value = url;
+    });
+    
+    // Якщо всі вкладки закрито, створити нову
+    ipcRenderer.on('create-default-tab', () => {
+      createTab();
+    });
+    
+    // Обробники подій для вкладок
+    tabsBar.addEventListener('click', (e) => {
+      const tab = e.target.closest('.tab');
+      if (!tab) return;
+      
+      const tabId = parseInt(tab.dataset.tabId);
+      
+      // Якщо клікнули на кнопку закриття
+      if (e.target.classList.contains('tab-close')) {
+        e.stopPropagation();
+        closeTab(tabId);
+      } else {
+        // Перемкнутись на вкладку
+        switchTab(tabId);
+      }
+    });
+    
+    // Кнопка створення нової вкладки
+    newTabBtn.addEventListener('click', () => {
+      createTab();
+    });
+    
+    // Гаряча клавіша Ctrl+T для нової вкладки
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 't') {
+        e.preventDefault();
+        createTab();
+      }
+    });
+
+    // Застосовуємо збережений стан (за замовчуванням згорнута)
+    if (isSidebarCollapsed) {
+      notesSidebar.classList.add('collapsed');
+      toggleSidebarBtn.textContent = '☰';
+      toggleSidebarBtn.title = 'Показати панель';
+    } else {
+      notesSidebar.classList.add('expanded');
+      toggleSidebarBtn.textContent = '✕';
+      toggleSidebarBtn.title = 'Згорнути панель';
+    }
+
+    // Функція toggle для використання всюди
+    function toggleSidebar() {
+      isSidebarCollapsed = !isSidebarCollapsed;
+      
+      // Очищаємо inline стилі, щоб CSS класи працювали
+      notesSidebar.style.width = '';
+      notesSidebar.style.padding = '';
+      notesSidebar.style.overflow = '';
+      notesSidebar.style.borderLeft = '';
+      
+      if (isSidebarCollapsed) {
+        notesSidebar.classList.remove('expanded');
+        notesSidebar.classList.add('collapsed');
+      } else {
+        notesSidebar.classList.remove('collapsed');
+        notesSidebar.classList.add('expanded');
+      }
+      
+      toggleSidebarBtn.textContent = isSidebarCollapsed ? '☰' : '✕';
+      toggleSidebarBtn.title = isSidebarCollapsed ? 'Показати панель' : 'Згорнути панель';
+      localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
+      ipcRenderer.send('sidebar-toggled', isSidebarCollapsed);
+    }
+
+    // Кнопка в toolbar
+    toggleSidebarToolbar.addEventListener('click', toggleSidebar);
+
+    // Обробник toggle панелі (кнопка X в заголовку)
+    toggleSidebarBtn.addEventListener('click', toggleSidebar);
+
+    // Гаряча клавіша Ctrl+B для toggle панелі
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'b') {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    });
+
+    // Навігація
+    backBtn.addEventListener('click', () => {
+      ipcRenderer.send('go-back');
+    });
+
+    forwardBtn.addEventListener('click', () => {
+      ipcRenderer.send('go-forward');
+    });
+
+    reloadBtn.addEventListener('click', () => {
+      ipcRenderer.send('reload');
+    });
+
+    urlInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        ipcRenderer.send('navigate', urlInput.value);
+      }
+    });
+
+    // Отримуємо текст з контекстного меню (СПІЛЬНІ для всіх вкладок)
+    ipcRenderer.on('add-to-notes', (event, text) => {
+      addNote(text);
+    });
+
+    // Додаємо нотатку (спільну для всіх вкладок)
+    function addNote(text) {
+      // Видаляємо empty state при першій нотатці
+      const emptyState = notesList.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      const noteId = Date.now(); // Унікальний ID замість індексу
+      collectedNotes.push({ id: noteId, text: text });
+      
+      const noteItem = document.createElement('div');
+      noteItem.className = 'note-item';
+      noteItem.dataset.noteId = noteId;
+      noteItem.innerHTML = `
+        <span>• ${text}</span>
+        <button class="delete-btn" onclick="deleteNote(${noteId})">✕</button>
+      `;
+      
+      notesList.appendChild(noteItem);
+      
+      // Зберігаємо в localStorage
+      localStorage.setItem('sharedNotes', JSON.stringify(collectedNotes));
+    }
+
+    // Видалення нотатки
+    window.deleteNote = function(noteId) {
+      const index = collectedNotes.findIndex(note => note.id === noteId);
+      if (index !== -1) {
+        collectedNotes.splice(index, 1);
+        
+        // Видаляємо елемент з DOM
+        const noteElement = document.querySelector(`[data-note-id="${noteId}"]`);
+        if (noteElement) {
+          noteElement.remove();
+        }
+        
+        // Показуємо empty state якщо немає нотаток
+        if (collectedNotes.length === 0) {
+          notesList.innerHTML = '<div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>';
+        }
+        
+        // Оновлюємо localStorage
+        localStorage.setItem('sharedNotes', JSON.stringify(collectedNotes));
+      }
+    };
+
+    // Узагальнення через ШІ (використовуємо СПІЛЬНІ нотатки)
+    summarizeBtn.addEventListener('click', async () => {
+      if (collectedNotes.length === 0) {
+        alert('Конспект порожній! Виділіть текст на сторінці та натисніть праву кнопку миші.');
+        return;
+      }
+
+      // Витягуємо тільки текст з об'єктів нотаток
+      const notesText = collectedNotes.map(note => note.text || note).join('\n---\n');
+      const prompt = `Я зібрав наступні нотатки з інтернету. Будь ласка, проаналізуй їх, структуруй, видали дублікати та створи короткий навчальний конспект українською мовою:\n\n${notesText}`;
+
+      summarizeBtn.textContent = '⏳ Думаю...';
+      summarizeBtn.disabled = true;
+
+      try {
+        const result = await ipcRenderer.invoke('ask-gemini', prompt);
+        
+        // Замінюємо список на узагальнення
+        notesList.innerHTML = `<div style="padding: 10px; line-height: 1.6; white-space: pre-wrap;">${result}</div>`;
+        collectedNotes = [];
+      } catch (error) {
+        alert('Помилка при узагальненні: ' + error.message);
+      } finally {
+        summarizeBtn.textContent = '✨ Узагальнити через ШІ';
+        summarizeBtn.disabled = false;
+      }
+    });
+
+    // Очистити все (СПІЛЬНІ нотатки для всіх вкладок)
+    clearBtn.addEventListener('click', () => {
+      if (collectedNotes.length === 0 && !notesList.querySelector('.empty-state')) {
+        return;
+      }
+      
+      if (confirm('Очистити всі нотатки?')) {
+        collectedNotes = [];
+        notesList.innerHTML = '<div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>';
+        localStorage.removeItem('sharedNotes');
+      }
+    });
+
+    // Завантажуємо збережені нотатки при старті (СПІЛЬНІ для всіх вкладок)
+    const savedNotes = localStorage.getItem('sharedNotes');
+    if (savedNotes) {
+      try {
+        const parsed = JSON.parse(savedNotes);
+        parsed.forEach(note => {
+          const text = note.text || note; // Підтримка старого формату
+          const noteId = note.id || Date.now() + Math.random();
+          
+          if (collectedNotes.length === 0) {
+            const emptyState = notesList.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+          }
+          
+          collectedNotes.push({ id: noteId, text: text });
+          
+          const noteItem = document.createElement('div');
+          noteItem.className = 'note-item';
+          noteItem.dataset.noteId = noteId;
+          noteItem.innerHTML = `
+            <span>• ${text}</span>
+            <button class="delete-btn" onclick="deleteNote(${noteId})">✕</button>
+          `;
+          notesList.appendChild(noteItem);
+        });
+      } catch (e) {
+        console.error('Помилка завантаження нотаток:', e);
+      }
+    }
+  </script>
+</body>
+</html>
