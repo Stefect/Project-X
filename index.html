@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Chromium Browser</title>
+  <title>AI Browser</title>
   <style>
     * {
       margin: 0;
@@ -19,7 +19,7 @@
 
     .container {
       display: flex;
-      height: calc(100vh - 100px); /* 60px toolbar + 40px tabs */
+      height: calc(100vh - 100px); /* 40px tabs + 60px toolbar */
     }
 
     .main-content {
@@ -28,8 +28,8 @@
 
     #notes-sidebar {
       width: 320px;
-      background: #f8f9fa;
-      border-left: 1px solid #dadce0;
+      background: linear-gradient(to bottom, #f0f9ff 0%, #ffffff 100%);
+      border-left: 1px solid #bfdbfe;
       padding: 15px;
       display: flex;
       flex-direction: column;
@@ -37,6 +37,7 @@
       overflow-x: visible;
       transition: width 0.3s ease, padding 0.3s ease;
       position: relative;
+      box-shadow: -2px 0 8px rgba(59, 130, 246, 0.05);
     }
 
     /* За замовчуванням панель згорнута */
@@ -59,25 +60,26 @@
     }
 
     #toggle-sidebar {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
       color: white;
       border: none;
       width: 32px;
       height: 32px;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
       transition: all 0.2s ease;
       flex-shrink: 0;
     }
 
     #toggle-sidebar:hover {
       transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
+      background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
     }
 
     #notes-sidebar h3 {
@@ -112,13 +114,25 @@
     }
 
     .note-item {
-      border-bottom: 1px solid #f0f0f0;
-      padding: 8px;
+      border-bottom: 1px solid #e3e8f0;
+      padding: 10px;
       font-size: 13px;
       line-height: 1.5;
-      color: #3c4043;
+      color: #1e293b;
       position: relative;
       padding-right: 30px;
+      background: white;
+      border-left: 3px solid #3b82f6;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(59, 130, 246, 0.08);
+      transition: all 0.2s;
+    }
+    
+    .note-item:hover {
+      box-shadow: 0 3px 10px rgba(59, 130, 246, 0.15);
+      transform: translateX(2px);
+      border-left-color: #2563eb;
     }
 
     .note-item:last-child {
@@ -132,10 +146,10 @@
       background: transparent;
       border: none;
       cursor: pointer;
-      color: #dc3545;
+      color: #dc2626;
       font-size: 16px;
       opacity: 0;
-      transition: opacity 0.2s;
+      transition: all 0.2s;
     }
 
     .note-item:hover .delete-btn {
@@ -154,22 +168,26 @@
     }
 
     #summarize-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
       color: white;
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
     }
 
     #summarize-btn:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+      background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
     }
 
     #clear-btn {
-      background: #f1f3f4;
-      color: #5f6368;
+      background: #f0f6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
     }
 
     #clear-btn:hover {
-      background: #e8eaed;
+      background: #dbeafe;
+      border-color: #3b82f6;
     }
 
     .empty-state {
@@ -181,50 +199,57 @@
 
     .toolbar {
       height: 60px;
-      background: #f1f3f4;
+      background: #ffffff;
       display: flex;
       align-items: center;
       padding: 0 10px;
       gap: 10px;
-      border-bottom: 1px solid #dadce0;
+      border-bottom: 1px solid #e3e8f0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .nav-button {
-      width: 32px;
-      height: 32px;
-      border: none;
-      background: transparent;
-      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      border: 1px solid #d1e0ff;
+      background: #f0f6ff;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 18px;
+      font-size: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s;
+      color: #1e40af;
+      transition: all 0.2s;
     }
 
     .nav-button:hover {
-      background: #e8eaed;
+      background: #dbeafe;
+      border-color: #3b82f6;
+      color: #1e3a8a;
+      transform: scale(1.05);
     }
 
     .nav-button:active {
-      background: #dadce0;
+      background: #bfdbfe;
     }
 
     .address-bar {
       flex: 1;
-      height: 38px;
+      height: 40px;
       padding: 0 15px;
-      border: 1px solid #dadce0;
-      border-radius: 24px;
+      border: 2px solid #e3e8f0;
+      border-radius: 20px;
       font-size: 14px;
       outline: none;
-      background: white;
+      background: #f8fafc;
+      transition: all 0.2s;
     }
 
     .address-bar:focus {
-      border-color: #1a73e8;
-      box-shadow: 0 1px 6px rgba(26, 115, 232, 0.3);
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      background: #ffffff;
     }
 
     /* Розумний пошук */
@@ -293,32 +318,45 @@
     }
 
     .smart-search-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
       color: white;
       border: none;
       padding: 10px 15px;
       cursor: pointer;
       font-size: 16px;
-      border-radius: 4px;
+      border-radius: 8px;
       margin-left: 5px;
       transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
     }
 
     .smart-search-btn:hover {
       transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
+      background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
     }
 
-    /* Панель вкладок */
+    /* Панель вкладок (з кнопками вікна, як Chrome) */
     .tabs-bar {
       height: 40px;
-      background: #dee1e6;
+      background: linear-gradient(to bottom, #e0e7ff 0%, #dbeafe 100%);
       display: flex;
       align-items: flex-end;
       padding: 0 5px;
-      border-bottom: 1px solid #c1c4c9;
+      border-bottom: 1px solid #bfdbfe;
       overflow-x: auto;
       overflow-y: hidden;
+      -webkit-app-region: drag;
+      position: relative;
+    }
+
+    .tabs-container {
+      display: flex;
+      align-items: flex-end;
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-app-region: no-drag;
     }
 
     .tabs-bar::-webkit-scrollbar {
@@ -330,11 +368,42 @@
       border-radius: 2px;
     }
 
+    /* Кнопки керування вікном (інтегровані в панель вкладок) */
+    .window-controls {
+      display: flex;
+      height: 40px;
+      align-items: center;
+      -webkit-app-region: no-drag;
+      margin-left: auto;
+    }
+
+    .window-btn {
+      width: 46px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: #1e40af;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .window-btn:hover {
+      background: rgba(59, 130, 246, 0.15);
+    }
+
+    .window-btn.close:hover {
+      background: #dc2626;
+      color: white;
+    }
+
     .tab {
       min-width: 150px;
       max-width: 240px;
       height: 34px;
-      background: #bdc0c5;
+      background: #bfdbfe;
       border-radius: 8px 8px 0 0;
       margin-right: 2px;
       padding: 0 10px;
@@ -343,21 +412,22 @@
       gap: 8px;
       cursor: pointer;
       user-select: none;
-      border: 1px solid #999;
+      border: 1px solid #93c5fd;
       border-bottom: none;
       transition: all 0.15s;
       position: relative;
     }
 
     .tab:hover {
-      background: #c8cad0;
+      background: #dbeafe;
     }
 
     .tab.active {
-      background: #f8f9fa;
+      background: #ffffff;
       height: 36px;
-      border-color: #c1c4c9;
+      border-color: #bfdbfe;
       z-index: 1;
+      box-shadow: 0 -2px 8px rgba(59, 130, 246, 0.1);
     }
 
     .tab-favicon {
@@ -425,6 +495,31 @@
   </style>
 </head>
 <body>
+  <!-- Панель вкладок з кнопками вікна -->
+  <div class="tabs-bar" id="tabs-bar">
+    <div class="tabs-container">
+      <div class="tab active" data-tab-id="1">
+        <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'">
+        <span class="tab-title">Нова вкладка</span>
+        <span class="tab-close">✕</span>
+      </div>
+      <button class="new-tab-btn" id="new-tab-btn" title="Нова вкладка (Ctrl+T)">+</button>
+    </div>
+    
+    <!-- Кнопки керування вікном -->
+    <div class="window-controls">
+      <button class="window-btn" id="minimize-btn" title="Згорнути">
+        <svg width="10" height="1" viewBox="0 0 10 1"><path fill="currentColor" d="M0 0h10v1H0z"/></svg>
+      </button>
+      <button class="window-btn" id="maximize-btn" title="Розгорнути">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path fill="currentColor" d="M0 0v10h10V0H0zm1 1h8v8H1V1z"/></svg>
+      </button>
+      <button class="window-btn close" id="close-btn" title="Закрити">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path fill="currentColor" d="M0 0l1-1 4 4 4-4 1 1-4 4 4 4-1 1-4-4-4 4-1-1 4-4z"/></svg>
+      </button>
+    </div>
+  </div>
+
   <div class="toolbar">
     <button class="nav-button" id="back" title="Назад">◄</button>
     <button class="nav-button" id="forward" title="Вперед">►</button>
@@ -433,25 +528,12 @@
     <button class="smart-search-btn" id="toggle-sidebar-toolbar" title="Показати/сховати конспект (Ctrl+B)">📝</button>
   </div>
 
-  <!-- Панель вкладок -->
-  <div class="tabs-bar" id="tabs-bar">
-    <div class="tab active" data-tab-id="1">
-      <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'">
-      <span class="tab-title">Нова вкладка</span>
-      <span class="tab-close">✕</span>
-    </div>
-    <button class="new-tab-btn" id="new-tab-btn" title="Нова вкладка (Ctrl+T)">+</button>
-  </div>
-
   <div class="container">
     <div class="main-content"></div>
     
     <div id="notes-sidebar" class="collapsed" style="width: 0; padding: 0; overflow: hidden; border-left: none;">
       <h3>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span>📝 Мій Конспект</span>
-          <span class="shared-badge" title="Нотатки спільні для всіх вкладок">🌐 Спільні</span>
-        </div>
+        <span>📝 Мій Конспект</span>
         <button id="toggle-sidebar" title="Показати панель">☰</button>
       </h3>
       
@@ -466,6 +548,23 @@
 
   <script>
     const { ipcRenderer } = require('electron');
+    
+    // ========== Кнопки керування вікном ==========
+    const minimizeBtn = document.getElementById('minimize-btn');
+    const maximizeBtn = document.getElementById('maximize-btn');
+    const closeBtn = document.getElementById('close-btn');
+    
+    minimizeBtn.addEventListener('click', () => {
+      ipcRenderer.send('window-minimize');
+    });
+    
+    maximizeBtn.addEventListener('click', () => {
+      ipcRenderer.send('window-maximize');
+    });
+    
+    closeBtn.addEventListener('click', () => {
+      ipcRenderer.send('window-close');
+    });
     
     const backBtn = document.getElementById('back');
     const forwardBtn = document.getElementById('forward');
@@ -482,6 +581,7 @@
     
     // Вкладки
     const tabsBar = document.getElementById('tabs-bar');
+    const tabsContainer = tabsBar.querySelector('.tabs-container');
     const newTabBtn = document.getElementById('new-tab-btn');
     
     let collectedNotes = [];
@@ -509,8 +609,8 @@
         <span class="tab-close">✕</span>
       `;
       
-      // Додаємо перед кнопкою "+"
-      tabsBar.insertBefore(tabElement, newTabBtn);
+      // Додаємо перед кнопкою "+" в контейнер вкладок
+      tabsContainer.insertBefore(tabElement, newTabBtn);
       
       // Перемикаємось на нову вкладку
       switchTab(result.id);
