@@ -301,46 +301,6 @@
       transform: translateY(0);
     }
 
-    .vpn-btn {
-      height: 36px;
-      padding: 0 14px;
-      border: 2px solid #94a3b8;
-      background: #f1f5f9;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      color: #64748b;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .vpn-btn.connected {
-      border-color: #10b981;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-    }
-
-    .vpn-btn.connecting {
-      border-color: #f59e0b;
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-      color: white;
-      animation: pulse 1.5s infinite;
-    }
-
-    .vpn-btn:hover:not(.connecting) {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .vpn-btn:active {
-      transform: translateY(0);
-    }
-
     .address-bar {
       flex: 1;
       height: 40px;
@@ -632,7 +592,6 @@
     <button class="nav-button" id="forward" title="Вперед">►</button>
     <button class="nav-button" id="reload" title="Оновити">⟳</button>
     <input type="text" class="address-bar" id="url" placeholder="Введіть URL або пошуковий запит">
-    <button class="vpn-btn" id="vpn-btn" title="Cloudflare WARP VPN">🛡️ VPN</button>
     <button class="organize-btn" id="organize-tabs-btn" title="AI організує вкладки автоматично">🧹 Навести лад</button>
     <button class="smart-search-btn" id="toggle-sidebar-toolbar" title="Показати/сховати конспект (Ctrl+B)">📝</button>
   </div>
@@ -965,113 +924,6 @@
         }
       });
     }
-
-    // ========== VPN інтеграція (Cloudflare WARP) ==========
-    const vpnBtn = document.getElementById('vpn-btn');
-    let vpnConnected = false;
-    
-    // Перевіряємо статус VPN при запуску
-    async function checkVPNStatus() {
-      const status = await ipcRenderer.invoke('vpn-status');
-      updateVPNButton(status);
-    }
-    
-    // Оновлюємо вигляд кнопки
-    function updateVPNButton(status) {
-      vpnBtn.classList.remove('connected', 'connecting');
-      
-      if (status.connected) {
-        vpnBtn.classList.add('connected');
-        vpnBtn.innerHTML = '🔒 VPN Увімкнено';
-        vpnBtn.title = 'VPN активний. Клікніть щоб вимкнути';
-        vpnConnected = true;
-      } else if (status.connecting) {
-        vpnBtn.classList.add('connecting');
-        vpnBtn.innerHTML = '⏳ Підключення...';
-        vpnBtn.title = 'VPN підключається...';
-      } else {
-        vpnBtn.innerHTML = '🛡️ VPN Вимкнено';
-        vpnBtn.title = status.error || 'Клікніть щоб увімкнути VPN';
-        vpnConnected = false;
-      }
-    }
-    
-    // Перемикач VPN
-    vpnBtn.addEventListener('click', async () => {
-      if (vpnBtn.classList.contains('connecting')) {
-        return; // Не дозволяємо клікати під час підключення
-      }
-      
-      updateVPNButton({ connecting: true });
-      
-      try {
-        const result = await ipcRenderer.invoke('vpn-toggle');
-        
-        if (result.success) {
-          updateVPNButton({ connected: result.connected });
-          
-          // Показуємо повідомлення
-          const message = result.connected ? 
-            '✅ VPN увімкнено! Ваше з\'єднання захищено' : 
-            '⚠️ VPN вимкнено';
-          
-          showNotification(message);
-        } else {
-          updateVPNButton({ connected: false, error: result.message });
-          alert(result.message || '❌ Помилка підключення VPN');
-        }
-      } catch (error) {
-        console.error('VPN error:', error);
-        updateVPNButton({ connected: false });
-        alert('❌ Помилка: ' + error.message);
-      }
-    });
-    
-    // Функція для показу сповіщень
-    function showNotification(message) {
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 120px;
-        right: 20px;
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-        padding: 16px 20px;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 600;
-        z-index: 1000000;
-        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
-        animation: slideIn 0.3s ease-out;
-      `;
-      notification.textContent = message;
-      
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes slideIn {
-          from { transform: translateX(400px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-          from { transform: translateX(0); opacity: 1; }
-          to { transform: translateX(400px); opacity: 0; }
-        }
-      `;
-      document.head.appendChild(style);
-      
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-in';
-        setTimeout(() => notification.remove(), 300);
-      }, 3000);
-    }
-    
-    // Перевіряємо статус при запуску
-    checkVPNStatus();
-    
-    // Періодично оновлюємо статус (кожні 10 секунд)
-    setInterval(checkVPNStatus, 10000);
 
     // ========== Система тем ==========
     const settingsBtn = document.getElementById('settings-btn');
