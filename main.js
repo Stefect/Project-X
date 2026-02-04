@@ -29,10 +29,12 @@ function createWindow() {
     console.error('✗ Помилка ініціалізації Groq:', error.message);
   }
 
-  // Створюємо головне вікно
+  // Створюємо головне вікно (без рамок, як Chrome)
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    frame: false, // Вимикаємо стандартні рамки Windows
+    titleBarStyle: 'hidden',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -81,12 +83,12 @@ function createWindow() {
   // Встановлюємо білий фон для BrowserView
   browserView.setBackgroundColor('#ffffff');
   
-  // Позиціонуємо BrowserView (залишаємо місце для адресного рядка, вкладок)
+  // Позіціонуємо BrowserView (залишаємо місце для адресного рядка, вкладок)
   // Sidebar згорнутий за замовчуванням, тому займаємо всю ширину
   const bounds = mainWindow.getContentBounds();
   browserView.setBounds({ 
     x: 0, 
-    y: 100, // 60px toolbar + 40px tabs
+    y: 100, // 40px tabs + 60px toolbar
     width: bounds.width, // Вся ширина - sidebar згорнутий за замовчуванням
     height: bounds.height - 100 
   });
@@ -109,15 +111,17 @@ function createWindow() {
 
   // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray
   browserView.webContents.on('did-finish-load', () => {
-    injectSelectionListener();
-    injectCodeMate();
-    injectLinkXRay();
+    injectLightTheme(browserView);
+    injectSelectionListener(browserView);
+    injectCodeMate(browserView);
+    injectLinkXRay(browserView);
   });
 
   browserView.webContents.on('did-navigate', () => {
-    injectSelectionListener();
-    injectCodeMate();
-    injectLinkXRay();
+    injectLightTheme(browserView);
+    injectSelectionListener(browserView);
+    injectCodeMate(browserView);
+    injectLinkXRay(browserView);
   });
 
   // Додаємо контекстне меню для збереження виділеного тексту
@@ -139,9 +143,10 @@ function createWindow() {
   });
 
   browserView.webContents.on('did-navigate-in-page', () => {
-    injectSelectionListener();
-    injectCodeMate();
-    injectLinkXRay();
+    injectLightTheme(browserView);
+    injectSelectionListener(browserView);
+    injectCodeMate(browserView);
+    injectLinkXRay(browserView);
   });
 
   // Перехоплюємо console.log з веб-сторінки (оновлений синтаксис без deprecated)
@@ -194,7 +199,7 @@ function createWindow() {
     if (activeTab && activeTab.browserView) {
       activeTab.browserView.setBounds({ 
         x: 0, 
-        y: 100, // 60px toolbar + 40px tabs
+        y: 100, // 40px tabs + 60px toolbar
         width: bounds.width - sidebarWidth, // Використовуємо поточну ширину sidebar
         height: bounds.height - 100 
       });
@@ -218,6 +223,23 @@ app.on('window-all-closed', () => {
   }
 });
 
+// ========== Керування вікном (для frameless) ==========
+ipcMain.on('window-minimize', () => {
+  mainWindow.minimize();
+});
+
+ipcMain.on('window-maximize', () => {
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow.maximize();
+  }
+});
+
+ipcMain.on('window-close', () => {
+  mainWindow.close();
+});
+
 // Обробка навігації
 
 // Це замінено на нові обробники вище в блоці "Система управління вкладками"
@@ -236,7 +258,7 @@ ipcMain.on('sidebar-toggled', (event, isCollapsed) => {
   if (activeTab && activeTab.browserView) {
     activeTab.browserView.setBounds({ 
       x: 0, 
-      y: 100, // 60px toolbar + 40px tabs
+      y: 100, // 40px tabs + 60px toolbar
       width: bounds.width - sidebarWidth,
       height: bounds.height - 100 
     });
@@ -262,7 +284,7 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
   newBrowserView.setBackgroundColor('#ffffff');
   newBrowserView.setBounds({ 
     x: 0, 
-    y: 100,
+    y: 100, // 40px tabs + 60px toolbar
     width: bounds.width - sidebarWidth,
     height: bounds.height - 100 
   });
@@ -283,9 +305,10 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
   
   // Інжектуємо скрипти після завантаження
   newBrowserView.webContents.on('did-finish-load', () => {
-    injectSelectionListener();
-    injectCodeMate();
-    injectLinkXRay();
+    injectLightTheme(newBrowserView);
+    injectSelectionListener(newBrowserView);
+    injectCodeMate(newBrowserView);
+    injectLinkXRay(newBrowserView);
     
     // Оновлюємо заголовок вкладки
     const title = newBrowserView.webContents.getTitle();
@@ -294,18 +317,20 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
   });
   
   newBrowserView.webContents.on('did-navigate', () => {
-    injectSelectionListener();
-    injectCodeMate();
-    injectLinkXRay();
+    injectLightTheme(newBrowserView);
+    injectSelectionListener(newBrowserView);
+    injectCodeMate(newBrowserView);
+    injectLinkXRay(newBrowserView);
     const title = newBrowserView.webContents.getTitle();
     const currentUrl = newBrowserView.webContents.getURL();
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
   });
   
   newBrowserView.webContents.on('did-navigate-in-page', () => {
-    injectSelectionListener();
-    injectCodeMate();
-    injectLinkXRay();
+    injectLightTheme(newBrowserView);
+    injectSelectionListener(newBrowserView);
+    injectCodeMate(newBrowserView);
+    injectLinkXRay(newBrowserView);
   });
   
   // Контекстне меню
@@ -377,6 +402,15 @@ ipcMain.on('switch-tab', (event, tabId) => {
   
   activeTabId = tabId;
   mainWindow.setBrowserView(tab.browserView);
+  
+  // Оновлюємо розміри для активної вкладки
+  const bounds = mainWindow.getContentBounds();
+  tab.browserView.setBounds({
+    x: 0,
+    y: 100, // 40px tabs + 60px toolbar
+    width: bounds.width - sidebarWidth,
+    height: bounds.height - 100
+  });
   
   // Оновлюємо URL bar
   const url = tab.browserView.webContents.getURL();
@@ -639,31 +673,66 @@ ${cleanText}`;
 
 // Функція для показу popup в браузері
 function showPopupInBrowser(text) {
-  browserView.webContents.executeJavaScript(`
+  // Знаходимо активну вкладку
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  const targetView = activeTab ? activeTab.browserView : browserView;
+  
+  targetView.webContents.executeJavaScript(`
     if (typeof window.showAIPopup === 'function') {
       window.showAIPopup(${JSON.stringify(text)});
     }
   `).catch(err => console.error('Помилка показу popup:', err));
 }
 
+// Функція для інжектування світлої теми
+function injectLightTheme(targetView = null) {
+  const view = targetView || browserView;
+  
+  const lightThemeCSS = `
+    html {
+      filter: invert(1) hue-rotate(180deg) !important;
+      background-color: #ffffff !important;
+    }
+    
+    img, picture, video, canvas, svg, iframe {
+      filter: invert(1) hue-rotate(180deg) !important;
+    }
+    
+    * {
+      background-color: inherit !important;
+      scrollbar-color: #888 #f1f1f1 !important;
+    }
+  `;
+  
+  view.webContents.insertCSS(lightThemeCSS)
+    .then(() => {
+      console.log('✓ Світла тема активована');
+    })
+    .catch(err => {
+      console.error('Помилка інжекту світлої теми:', err);
+    });
+}
+
 // Функція для інжектування слухача виділення тексту
-function injectSelectionListener() {
+function injectSelectionListener(targetView = null) {
   const fs = require('fs');
   const injectScript = fs.readFileSync(path.join(__dirname, 'inject.js'), 'utf8');
+  const view = targetView || browserView;
   
-  browserView.webContents.executeJavaScript(injectScript)
+  view.webContents.executeJavaScript(injectScript)
     .catch(err => {
       console.error('Помилка інжекту скрипта:', err);
     });
 }
 
 // Функція для інжектування Code Mate (автоматичні AI кнопки для коду)
-function injectCodeMate() {
+function injectCodeMate(targetView = null) {
   const fs = require('fs');
+  const view = targetView || browserView;
   try {
     const codeInjectorScript = fs.readFileSync(path.join(__dirname, 'code-injector.js'), 'utf8');
     
-    browserView.webContents.executeJavaScript(codeInjectorScript)
+    view.webContents.executeJavaScript(codeInjectorScript)
       .then(() => {
         console.log('✓ Code Mate активовано на сторінці');
       })
@@ -676,12 +745,13 @@ function injectCodeMate() {
 }
 
 // Функція для інжектування Link X-Ray (AI сканування посилань)
-function injectLinkXRay() {
+function injectLinkXRay(targetView = null) {
   const fs = require('fs');
+  const view = targetView || browserView;
   try {
     const linkXRayScript = fs.readFileSync(path.join(__dirname, 'link-xray.js'), 'utf8');
     
-    browserView.webContents.executeJavaScript(linkXRayScript)
+    view.webContents.executeJavaScript(linkXRayScript)
       .then(() => {
         console.log('✓ Link X-Ray активовано на сторінці');
       })
