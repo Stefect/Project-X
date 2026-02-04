@@ -2,7 +2,7 @@
   "name": "ai-browser",
   "version": "1.0.0",
   "description": "AI-powered browser with smart features",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win",

@@ -37,7 +37,7 @@ npm install
 ```
 
 3. Налаштуйте API ключ:
-   - Створіть файл `config.js` у корені проекту
+   - Створіть або відредагуйте файл `src/config.js`
    - Додайте свій Groq API ключ (отримати на https://console.groq.com/keys - БЕЗКОШТОВНО!):
    
 ```javascript
@@ -99,14 +99,34 @@ npm start
 ## Розробка
 
 Структура проекту:
-- `main.js` - головний процес Electron
-- `index.html` - UI браузера
-- `inject.js` - скрипт для відслідковування виділеного тексту
-- `code-injector.js` - Code Mate функціонал
-- `link-xray.js` - Link X-Ray сканування посилань
-- `t9-engine.js` - ядро T9 (словник, алгоритми)
-- `t9-ui.js` - інтерфейс T9 (відображення підказок)
-- `config.js` - конфігурація API (не в Git)
+```
+проект/
+├── src/                    # Вихідний код
+│   ├── main.js            # Головний процес Electron
+│   ├── preload.js         # Preload скрипт
+│   ├── config.js          # Конфігурація API
+│   └── modules/           # Модулі функціональності
+│       ├── inject.js      # Скрипт відслідковування виділення
+│       ├── translator.js  # Модуль перекладу
+│       ├── code-injector.js  # Code Mate функціонал
+│       ├── link-xray.js   # Link X-Ray сканування
+│       ├── t9-engine.js   # Ядро T9 (словник, алгоритми)
+│       └── t9-ui.js       # Інтерфейс T9
+├── public/                # Публічні файли
+│   ├── index.html         # UI браузера
+│   └── settings.html      # Сторінка налаштувань
+├── tests/                 # Тестові файли
+│   ├── test-page.html     # Тестова сторінка
+│   └── t9-test.html       # Тест T9
+├── docs/                  # Документація
+│   ├── TESTING.md         # Інструкції з тестування
+│   ├── T9-TESTING.md      # Тестування T9
+│   ├── T9-README.md       # Документація T9
+│   └── QUICKSTART.md      # Швидкий старт
+├── package.json           # Залежності проекту
+├── CHANGELOG.md          # Історія змін
+└── README.md             # Цей файл
+```
 
 ## Ліцензія
 
