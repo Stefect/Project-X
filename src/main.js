@@ -73,7 +73,7 @@ function createWindow() {
   Menu.setApplicationMenu(menu);
 
   // Завантажуємо UI браузера
-  mainWindow.loadFile('index.html');
+  mainWindow.loadFile(path.join(__dirname, '..', 'public', 'index.html'));
 
   // Створюємо BrowserView для веб-контенту
   browserView = new BrowserView({
@@ -293,7 +293,7 @@ ipcMain.on('open-settings', () => {
     }
   });
 
-  settingsWindow.loadFile('settings.html');
+  settingsWindow.loadFile(path.join(__dirname, '..', 'public', 'settings.html'));
   
   settingsWindow.on('closed', () => {
     settingsWindow = null;
@@ -987,7 +987,7 @@ function showPopupInBrowser(text) {
 // Функція для інжектування перекладача
 function injectTranslator(targetView = null) {
   const fs = require('fs');
-  const translatorScript = fs.readFileSync(path.join(__dirname, 'translator.js'), 'utf8');
+  const translatorScript = fs.readFileSync(path.join(__dirname, 'modules', 'translator.js'), 'utf8');
   const view = targetView || browserView;
   
   view.webContents.executeJavaScript(translatorScript)
@@ -1031,7 +1031,7 @@ function injectLightTheme(targetView = null) {
 // Функція для інжектування слухача виділення тексту
 function injectSelectionListener(targetView = null) {
   const fs = require('fs');
-  const injectScript = fs.readFileSync(path.join(__dirname, 'inject.js'), 'utf8');
+  const injectScript = fs.readFileSync(path.join(__dirname, 'modules', 'inject.js'), 'utf8');
   const view = targetView || browserView;
   
   view.webContents.executeJavaScript(injectScript)
@@ -1045,7 +1045,7 @@ function injectCodeMate(targetView = null) {
   const fs = require('fs');
   const view = targetView || browserView;
   try {
-    const codeInjectorScript = fs.readFileSync(path.join(__dirname, 'code-injector.js'), 'utf8');
+    const codeInjectorScript = fs.readFileSync(path.join(__dirname, 'modules', 'code-injector.js'), 'utf8');
     
     view.webContents.executeJavaScript(codeInjectorScript)
       .then(() => {
@@ -1064,7 +1064,7 @@ function injectLinkXRay(targetView = null) {
   const fs = require('fs');
   const view = targetView || browserView;
   try {
-    const linkXRayScript = fs.readFileSync(path.join(__dirname, 'link-xray.js'), 'utf8');
+    const linkXRayScript = fs.readFileSync(path.join(__dirname, 'modules', 'link-xray.js'), 'utf8');
     
     view.webContents.executeJavaScript(linkXRayScript)
       .then(() => {
@@ -1083,8 +1083,8 @@ function injectT9(targetBrowserView = browserView) {
   const fs = require('fs');
   try {
     // Загружаємо движок T9
-    const t9EngineScript = fs.readFileSync(path.join(__dirname, 't9-engine.js'), 'utf8');
-    const t9UIScript = fs.readFileSync(path.join(__dirname, 't9-ui.js'), 'utf8');
+    const t9EngineScript = fs.readFileSync(path.join(__dirname, 'modules', 't9-engine.js'), 'utf8');
+    const t9UIScript = fs.readFileSync(path.join(__dirname, 'modules', 't9-ui.js'), 'utf8');
     
     // Інжектуємо обидва скрипти послідовно
     targetBrowserView.webContents.executeJavaScript(t9EngineScript)
