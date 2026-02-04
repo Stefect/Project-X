@@ -346,6 +346,212 @@ ipcMain.on('change-translation-language', (event, language) => {
   });
 });
 
+// Розумний Організатор Вкладок (Tab Zen Master)
+ipcMain.handle('organize-tabs', async (event) => {
+  try {
+    console.log('🧘‍♂️ Організовую вкладки через AI...');
+
+    if (!groqClient) {
+      return { 
+        success: false, 
+        message: '⚠️ AI не ініціалізовано. Перевірте API ключ у config.js' 
+      };
+    }
+
+    if (tabs.length < 2) {
+      return { 
+        success: false, 
+        message: '📌 Занадто мало вкладок для організації (потрібно хоча б 2)' 
+      };
+    }
+
+    // Збираємо інформацію про всі вкладки
+    const tabsData = await Promise.all(tabs.map(async (tab) => {
+      try {
+        const title = tab.browserView.webContents.getTitle() || 'Без назви';
+        const url = tab.browserView.webContents.getURL() || '';
+        return {
+          id: tab.id,
+          title: title,
+          url: url
+        };
+      } catch (error) {
+        return {
+          id: tab.id,
+          title: 'Помилка завантаження',
+          url: ''
+        };
+      }
+    }));
+
+    const tabsListString = tabsData.map(t => `ID: ${t.id}, Title: "${t.title}", URL: "${t.url}"`).join('\n');
+
+    // Формуємо промпт для AI
+    const prompt = `Ти — менеджер вкладок браузера. Я дам тобі список відкритих вкладок.
+Твоє завдання: згрупувати їх за змістом та тематикою.
+
+ВАЖЛИВО: Поверни відповідь ТІЛЬКИ у форматі JSON, без markdown, пояснень та зайвого тексту.
+
+Формат відповіді:
+{
+  "groups": [
+    { "name": "Назва групи українською (Навчання, Робота, YouTube, Соцмережі, Кодинг, Новини, Розваги тощо)", "tabIds": [1, 5, 7] },
+    { "name": "Інша група", "tabIds": [2, 3] }
+  ]
+}
+
+Правила:
+- Кожна вкладка має бути в якійсь групі
+- Назви груп пиши українською
+- Групуй за змістом: навчання разом, розваги разом, новини разом тощо
+- Якщо вкладка не підходить нікуди - створи групу "Інше"
+
+Список вкладок:
+${tabsListString}`;
+
+    console.log('🤔 Аналізую вкладки через Groq AI...');
+
+    // Питаємо Groq AI
+    const completion = await groqClient.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.5,
+      max_tokens: 1000
+    });
+
+    let responseText = completion.choices[0]?.message?.content?.trim();
+
+    if (!responseText) {
+      return { 
+        success: false, 
+        message: '❌ Помилка отримання відповіді від AI' 
+      };
+    }
+
+    // Чистимо відповідь від можливих markdown тегів
+    responseText = responseText.replace(/```json|```/g, '').trim();
+
+    let groupsData;
+    try {
+      groupsData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Помилка парсингу JSON:', responseText);
+      return { 
+        success: false, 
+        message: '❌ AI повернув некоректний формат відповіді' 
+      };
+    }
+
+    console.log('✓ Організація готова:', groupsData);
+    return { 
+      success: true, 
+      groups: groupsData.groups,
+      tabsData: tabsData
+    };
+
+  } catch (error) {
+    console.error('Помилка організації вкладок:', error);
+    return { 
+      success: false, 
+      message: `❌ ${error.message}` 
+    };
+  }
+});
+
+// ========== VPN інтеграція (Cloudflare WARP) ==========
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+
+// Перевірка статусу VPN
+ipcMain.handle('vpn-status', async () => {
+  try {
+    // Спробуємо викликати warp-cli (Cloudflare WARP CLI для Windows)
+    const { stdout } = await execPromise('warp-cli status', { timeout: 5000 });
+    
+    const output = stdout.toLowerCase();
+    
+    if (output.includes('connected') || output.includes('status: connected')) {
+      return { connected: true };
+    } else {
+      return { connected: false };
+    }
+  } catch (error) {
+    // Якщо warp-cli не встановлено
+    if (error.message.includes('not found') || error.message.includes('is not recognized')) {
+      return { 
+        connected: false, 
+        error: '⚠️ Cloudflare WARP не встановлено. Завантажте: https://1.1.1.1/' 
+      };
+    }
+    return { connected: false, error: error.message };
+  }
+});
+
+// Перемикання VPN (увімкнути/вимкнути)
+ipcMain.handle('vpn-toggle', async () => {
+  try {
+    // Спочатку перевіряємо поточний статус
+    let currentStatus;
+    try {
+      const { stdout } = await execPromise('warp-cli status', { timeout: 5000 });
+      const output = stdout.toLowerCase();
+      currentStatus = {
+        connected: output.includes('connected') || output.includes('status: connected')
+      };
+    } catch (error) {
+      if (error.message.includes('not found') || error.message.includes('is not recognized')) {
+        return {
+          success: false,
+          message: '⚠️ Cloudflare WARP не встановлено.\n\nЗавантажте клієнт з https://1.1.1.1/ та встановіть його.'
+        };
+      }
+      currentStatus = { connected: false };
+    }
+    
+    const command = currentStatus.connected ? 'warp-cli disconnect' : 'warp-cli connect';
+    console.log(`🛡️ Виконую команду VPN: ${command}`);
+    
+    const { stdout, stderr } = await execPromise(command, { timeout: 10000 });
+    
+    // Чекаємо трохи для завершення підключення
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Перевіряємо новий статус
+    let newStatus;
+    try {
+      const { stdout: statusOutput } = await execPromise('warp-cli status', { timeout: 5000 });
+      const output = statusOutput.toLowerCase();
+      newStatus = {
+        connected: output.includes('connected') || output.includes('status: connected')
+      };
+    } catch (error) {
+      newStatus = { connected: false };
+    }
+    
+    return {
+      success: true,
+      connected: newStatus.connected,
+      message: stdout
+    };
+    
+  } catch (error) {
+    console.error('Помилка VPN:', error);
+    
+    if (error.message.includes('not found') || error.message.includes('is not recognized')) {
+      return {
+        success: false,
+        message: '⚠️ Cloudflare WARP не встановлено.\n\nЗавантажте клієнт:\n1. Перейдіть на https://1.1.1.1/\n2. Завантажте WARP для Windows\n3. Встановіть та запустіть'
+      };
+    }
+    
+    return {
+      success: false,
+      message: `❌ Помилка: ${error.message}`
+    };
+  }
+});
+
 // Обробка навігації
 
 // Це замінено на нові обробники вище в блоці "Система управління вкладками"
