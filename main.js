@@ -109,12 +109,13 @@ function createWindow() {
     title: 'Нова вкладка'
   });
 
-  // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray
+  // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator
   browserView.webContents.on('did-finish-load', () => {
     injectLightTheme(browserView);
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
+    injectTranslator(browserView);
   });
 
   browserView.webContents.on('did-navigate', () => {
@@ -122,6 +123,7 @@ function createWindow() {
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
+    injectTranslator(browserView);
   });
 
   // Додаємо контекстне меню для збереження виділеного тексту
@@ -190,6 +192,26 @@ function createWindow() {
         console.error('Помилка X-Ray:', error);
       }
     }
+    
+    // Обробка запитів на переклад
+    if (message.startsWith('TRANSLATE_REQUEST:')) {
+      try {
+        const data = JSON.parse(message.replace('TRANSLATE_REQUEST:', ''));
+        const result = await translateText(data.text, data.targetLanguage);
+        
+        if (result.success) {
+          browserView.webContents.executeJavaScript(`
+            window.postMessage({ 
+              type: 'TRANSLATION_RESULT', 
+              translation: ${JSON.stringify(result.translation)},
+              originalText: ${JSON.stringify(data.text)}
+            }, '*');
+          `).catch(err => console.error('Помилка показу перекладу:', err));
+        }
+      } catch (error) {
+        console.error('Помилка перекладу:', error);
+      }
+    }
   });
 
   // Оновлюємо розміри при зміні розміру вікна
@@ -238,6 +260,90 @@ ipcMain.on('window-maximize', () => {
 
 ipcMain.on('window-close', () => {
   mainWindow.close();
+});
+
+// Обробка перекладу тексту
+async function translateText(text, targetLanguage) {
+  try {
+    console.log('🌐 Переклад на', targetLanguage + ':', text.substring(0, 50) + '...');
+
+    if (!groqClient) {
+      return { 
+        success: false, 
+        message: '⚠️ AI не ініціалізовано. Перевірте API ключ у config.js' 
+      };
+    }
+
+    // Визначаємо назву мови
+    const languageNames = {
+      'uk': 'українську',
+      'en': 'англійську',
+      'ru': 'російську',
+      'de': 'німецьку',
+      'fr': 'французьку',
+      'es': 'іспанську',
+      'it': 'італійську',
+      'pl': 'польську',
+      'ja': 'японську',
+      'zh': 'китайську'
+    };
+
+    const targetLangName = languageNames[targetLanguage] || targetLanguage;
+
+    // Формуємо промпт для перекладу
+    const prompt = `Переклади наступний текст на ${targetLangName} мову. Поверни ТІЛЬКИ переклад без додаткових коментарів.
+
+Текст для перекладу:
+${text}`;
+
+    console.log('🤔 Перекладаю через Groq AI...');
+
+    // Питаємо Groq AI
+    const completion = await groqClient.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.3,
+      max_tokens: 1000
+    });
+
+    const translation = completion.choices[0]?.message?.content?.trim();
+
+    if (!translation) {
+      return { 
+        success: false, 
+        message: '❌ Помилка перекладу' 
+      };
+    }
+
+    console.log('✓ Переклад готовий');
+    return { 
+      success: true, 
+      translation: translation 
+    };
+
+  } catch (error) {
+    console.error('Помилка перекладу:', error);
+    return { 
+      success: false, 
+      message: `❌ ${error.message}` 
+    };
+  }
+}
+
+ipcMain.handle('translate-text', async (event, text, targetLanguage) => {
+  return await translateText(text, targetLanguage);
+});
+
+// Обробка зміни мови перекладу
+ipcMain.on('change-translation-language', (event, language) => {
+  console.log('🌐 Мова перекладу змінена на:', language);
+  
+  // Відправляємо повідомлення всім вкладкам
+  tabs.forEach(tab => {
+    tab.browserView.webContents.executeJavaScript(`
+      window.postMessage({ type: 'SET_TRANSLATION_LANGUAGE', language: '${language}' }, '*');
+    `).catch(err => console.error('Помилка зміни мови:', err));
+  });
 });
 
 // Обробка навігації
@@ -309,6 +415,7 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
+    injectTranslator(newBrowserView);
     
     // Оновлюємо заголовок вкладки
     const title = newBrowserView.webContents.getTitle();
@@ -321,6 +428,7 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
+    injectTranslator(newBrowserView);
     const title = newBrowserView.webContents.getTitle();
     const currentUrl = newBrowserView.webContents.getURL();
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
@@ -331,6 +439,7 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
+    injectTranslator(newBrowserView);
   });
   
   // Контекстне меню
@@ -383,6 +492,26 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
         `).catch(err => console.error('Помилка показу X-Ray:', err));
       } catch (error) {
         console.error('Помилка X-Ray:', error);
+      }
+    }
+    
+    // Обробка запитів на переклад
+    if (message.startsWith('TRANSLATE_REQUEST:')) {
+      try {
+        const data = JSON.parse(message.replace('TRANSLATE_REQUEST:', ''));
+        const result = await translateText(data.text, data.targetLanguage);
+        
+        if (result.success) {
+          newBrowserView.webContents.executeJavaScript(`
+            window.postMessage({ 
+              type: 'TRANSLATION_RESULT', 
+              translation: ${JSON.stringify(result.translation)},
+              originalText: ${JSON.stringify(data.text)}
+            }, '*');
+          `).catch(err => console.error('Помилка показу перекладу:', err));
+        }
+      } catch (error) {
+        console.error('Помилка перекладу:', error);
       }
     }
   });
@@ -682,6 +811,21 @@ function showPopupInBrowser(text) {
       window.showAIPopup(${JSON.stringify(text)});
     }
   `).catch(err => console.error('Помилка показу popup:', err));
+}
+
+// Функція для інжектування перекладача
+function injectTranslator(targetView = null) {
+  const fs = require('fs');
+  const translatorScript = fs.readFileSync(path.join(__dirname, 'translator.js'), 'utf8');
+  const view = targetView || browserView;
+  
+  view.webContents.executeJavaScript(translatorScript)
+    .then(() => {
+      console.log('✓ Translator інжектовано');
+    })
+    .catch(err => {
+      console.error('Помилка інжекту translator:', err);
+    });
 }
 
 // Функція для інжектування світлої теми

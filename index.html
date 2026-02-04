@@ -103,6 +103,46 @@
       font-weight: normal;
     }
 
+    .translator-section {
+      margin-bottom: 15px;
+      padding: 12px;
+      background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+      border-radius: 10px;
+      border: 1px solid #3b82f6;
+    }
+
+    .translator-section h4 {
+      margin: 0 0 10px 0;
+      color: #1e40af;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .language-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 2px solid #3b82f6;
+      border-radius: 8px;
+      font-size: 13px;
+      background: white;
+      color: #1e40af;
+      cursor: pointer;
+      outline: none;
+      font-weight: 500;
+    }
+
+    .language-select:hover {
+      background: #f0f9ff;
+      border-color: #2563eb;
+    }
+
+    .language-select:focus {
+      border-color: #1e40af;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
     #notes-list {
       flex-grow: 1;
       overflow-y: auto;
@@ -858,6 +898,14 @@
         notesList.innerHTML = '<div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>';
         localStorage.removeItem('sharedNotes');
       }
+    });
+
+    // Обробка зміни мови перекладу
+    const translationLanguageSelect = document.getElementById('translation-language');
+    translationLanguageSelect.addEventListener('change', (e) => {
+      const selectedLanguage = e.target.value;
+      console.log('🌐 Вибрано мову перекладу:', selectedLanguage);
+      ipcRenderer.send('change-translation-language', selectedLanguage);
     });
 
     // Завантажуємо збережені нотатки при старті (СПІЛЬНІ для всіх вкладок)
