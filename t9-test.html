@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>T9 Тестовая страница</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      color: #999;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+      font-size: 14px;
+    }
+
+    input[type="text"],
+    input[type="search"],
+    textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+    }
+
+    input[type="text"]:focus,
+    input[type="search"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .demo-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 30px;
+    }
+
+    .demo-section h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 20px;
+    }
+
+    .demo-section p {
+      color: #666;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .tips {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+
+    .tips strong {
+      color: #856404;
+    }
+
+    .tips ul {
+      margin-top: 10px;
+      margin-left: 20px;
+      color: #856404;
+    }
+
+    .tips li {
+      margin-bottom: 5px;
+    }
+
+    .feature-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .word-examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .word-example {
+      background: #e3e9f7;
+      color: #667eea;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .highlight {
+      animation: pulse 2s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="feature-badge">✨ T9 Предиктивный ввод активирован</span>
+    
+    <h1>Тестирование T9</h1>
+    <p class="subtitle">Попробуйте вводить текст в поля ниже - система T9 будет предлагать варианты</p>
+
+    <div class="form-group">
+      <label for="search">🔍 Поиск</label>
+      <input type="search" id="search" placeholder="Начните вводить текст...">
+    </div>
+
+    <div class="form-group">
+      <label for="name">👤 Имя</label>
+      <input type="text" id="name" placeholder="Введите ваше имя">
+    </div>
+
+    <div class="form-group">
+      <label for="message">💬 Сообщение</label>
+      <textarea id="message" placeholder="Напишите сообщение..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="comment">📝 Комментарий</label>
+      <textarea id="comment" placeholder="Оставьте комментарий..."></textarea>
+    </div>
+
+    <div class="demo-section">
+      <h2>🎯 Как использовать T9:</h2>
+      <p>
+        T9 автоматически анализирует то, что вы вводите, и предлагает варианты завершения слов.
+        Система поддерживает как русский, так и английский язык.
+      </p>
+
+      <div class="tips">
+        <strong>💡 Советы по использованию:</strong>
+        <ul>
+          <li><strong>Стрелки ↑↓</strong> - навигация по подсказкам</li>
+          <li><strong>Enter или Tab</strong> - выбрать подсказку</li>
+          <li><strong>Esc</strong> - закрыть подсказки</li>
+          <li><strong>Мышь</strong> - кликните на подсказку для выбора</li>
+        </ul>
+      </div>
+
+      <h2 style="margin-top: 25px;">📚 Примеры слов для теста:</h2>
+      
+      <p><strong>На русском:</strong></p>
+      <div class="word-examples">
+        <span class="word-example">привет</span>
+        <span class="word-example">спасибо</span>
+        <span class="word-example">здравствуйте</span>
+        <span class="word-example">пожалуйста</span>
+        <span class="word-example">компьютер</span>
+        <span class="word-example">интернет</span>
+        <span class="word-example">программа</span>
+        <span class="word-example">сообщение</span>
+      </div>
+
+      <p style="margin-top: 15px;"><strong>На английском:</strong></p>
+      <div class="word-examples">
+        <span class="word-example">hello</span>
+        <span class="word-example">thanks</span>
+        <span class="word-example">computer</span>
+        <span class="word-example">internet</span>
+        <span class="word-example">program</span>
+        <span class="word-example">message</span>
+        <span class="word-example">information</span>
+        <span class="word-example">question</span>
+      </div>
+
+      <p style="margin-top: 15px;"><strong>Популярные фразы:</strong></p>
+      <div class="word-examples">
+        <span class="word-example">как дела</span>
+        <span class="word-example">добрый день</span>
+        <span class="word-example">спасибо большое</span>
+        <span class="word-example">how are you</span>
+        <span class="word-example">thank you</span>
+        <span class="word-example">good morning</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Добавляем небольшую интерактивность
+    const inputs = document.querySelectorAll('input, textarea');
+    
+    inputs.forEach(input => {
+      input.addEventListener('focus', function() {
+        this.parentElement.classList.add('highlight');
+      });
+      
+      input.addEventListener('blur', function() {
+        this.parentElement.classList.remove('highlight');
+      });
+    });
+
+    // Логирование для отладки
+    console.log('T9 Test Page загружена');
+  </script>
+</body>
+</html>

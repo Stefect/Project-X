@@ -1,6 +1,10 @@
 const { app, BrowserWindow, BrowserView, ipcMain, Menu, MenuItem } = require('electron');
 const path = require('path');
 const Groq = require('groq-sdk');
+const EventEmitter = require('events');
+
+// Увеличиваем лимит слушателей событий для избежания предупреждений
+EventEmitter.defaultMaxListeners = 20;
 
 // Очищаємо кеш config при кожному запуску
 delete require.cache[require.resolve('./config')];
@@ -109,13 +113,14 @@ function createWindow() {
     title: 'Нова вкладка'
   });
 
-  // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator
+  // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator + T9
   browserView.webContents.on('did-finish-load', () => {
     injectLightTheme(browserView);
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
     injectTranslator(browserView);
+    injectT9(browserView);
   });
 
   browserView.webContents.on('did-navigate', () => {
@@ -124,6 +129,7 @@ function createWindow() {
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
     injectTranslator(browserView);
+    injectT9(browserView);
   });
 
   // Додаємо контекстне меню для збереження виділеного тексту
@@ -149,6 +155,8 @@ function createWindow() {
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
+    injectTranslator(browserView);
+    injectT9(browserView);
   });
 
   // Перехоплюємо console.log з веб-сторінки (оновлений синтаксис без deprecated)
@@ -622,6 +630,7 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
     injectTranslator(newBrowserView);
+    injectT9(newBrowserView);
     
     // Оновлюємо заголовок вкладки
     const title = newBrowserView.webContents.getTitle();
@@ -635,6 +644,7 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
     injectTranslator(newBrowserView);
+    injectT9(newBrowserView);
     const title = newBrowserView.webContents.getTitle();
     const currentUrl = newBrowserView.webContents.getURL();
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
@@ -646,6 +656,7 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
     injectTranslator(newBrowserView);
+    injectT9(newBrowserView);
   });
   
   // Контекстне меню
@@ -1110,6 +1121,30 @@ function injectLinkXRay(targetView = null) {
       });
   } catch (error) {
     console.error('Не вдалося прочитати link-xray.js:', error);
+  }
+}
+
+// Функція для інжектування T9 (предиктивний ввод тексту)
+function injectT9(targetBrowserView = browserView) {
+  const fs = require('fs');
+  try {
+    // Загружаємо движок T9
+    const t9EngineScript = fs.readFileSync(path.join(__dirname, 't9-engine.js'), 'utf8');
+    const t9UIScript = fs.readFileSync(path.join(__dirname, 't9-ui.js'), 'utf8');
+    
+    // Інжектуємо обидва скрипти послідовно
+    targetBrowserView.webContents.executeJavaScript(t9EngineScript)
+      .then(() => {
+        return targetBrowserView.webContents.executeJavaScript(t9UIScript);
+      })
+      .then(() => {
+        console.log('✓ T9 предиктивний ввод активовано на сторінці');
+      })
+      .catch(err => {
+        console.error('Помилка інжекту T9:', err);
+      });
+  } catch (error) {
+    console.error('Не вдалося прочитати T9 скрипти:', error);
   }
 }
 
