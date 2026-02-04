@@ -45,7 +45,7 @@ function createWindow() {
     }
   });
 
-  // Створюємо меню з DevTools
+  // Створюємо меню з DevTools (відкривати через F12)
   const template = [
     {
       label: 'View',
@@ -115,7 +115,6 @@ function createWindow() {
 
   // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator + T9
   browserView.webContents.on('did-finish-load', () => {
-    injectLightTheme(browserView);
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
@@ -124,7 +123,6 @@ function createWindow() {
   });
 
   browserView.webContents.on('did-navigate', () => {
-    injectLightTheme(browserView);
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
@@ -151,7 +149,6 @@ function createWindow() {
   });
 
   browserView.webContents.on('did-navigate-in-page', () => {
-    injectLightTheme(browserView);
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
@@ -267,7 +264,58 @@ ipcMain.on('window-maximize', () => {
 });
 
 ipcMain.on('window-close', () => {
-  mainWindow.close();
+  console.log('❌ Отримано команду закриття вікна');
+  if (mainWindow) {
+    mainWindow.close();
+  }
+  app.quit();
+});
+
+// Відкриття вікна налаштувань
+let settingsWindow = null;
+
+ipcMain.on('open-settings', () => {
+  if (settingsWindow) {
+    settingsWindow.focus();
+    return;
+  }
+
+  settingsWindow = new BrowserWindow({
+    width: 900,
+    height: 700,
+    parent: mainWindow,
+    modal: false,
+    frame: false,
+    backgroundColor: '#1a1b26',
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  settingsWindow.loadFile('settings.html');
+  
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
+  });
+  
+  console.log('⚙️ Вікно налаштувань відкрито');
+});
+
+// Закриття вікна налаштувань
+ipcMain.on('close-settings-window', () => {
+  if (settingsWindow) {
+    settingsWindow.close();
+    settingsWindow = null;
+  }
+});
+
+// Застосування теми
+ipcMain.on('apply-theme', (event, theme) => {
+  console.log('🎨 Застосовується тема:', theme.name);
+  
+  // Відправляємо тему на головне вікно
+  mainWindow.webContents.send('theme-changed', theme);
 });
 
 // Обробка перекладу тексту
@@ -531,7 +579,6 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
   
   // Інжектуємо скрипти після завантаження
   newBrowserView.webContents.on('did-finish-load', () => {
-    injectLightTheme(newBrowserView);
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
@@ -545,7 +592,6 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
   });
   
   newBrowserView.webContents.on('did-navigate', () => {
-    injectLightTheme(newBrowserView);
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
@@ -557,7 +603,6 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
   });
   
   newBrowserView.webContents.on('did-navigate-in-page', () => {
-    injectLightTheme(newBrowserView);
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
@@ -717,15 +762,17 @@ ipcMain.on('navigate', (event, url) => {
 // Навігація активної вкладки
 ipcMain.on('go-back', () => {
   const activeTab = tabs.find(t => t.id === activeTabId);
-  if (activeTab && activeTab.browserView.webContents.navigationHistory.canGoBack()) {
-    activeTab.browserView.webContents.navigationHistory.goBack();
+  if (activeTab && activeTab.browserView.webContents.canGoBack()) {
+    activeTab.browserView.webContents.goBack();
+    console.log('⬅️ Назад');
   }
 });
 
 ipcMain.on('go-forward', () => {
   const activeTab = tabs.find(t => t.id === activeTabId);
-  if (activeTab && activeTab.browserView.webContents.navigationHistory.canGoForward()) {
-    activeTab.browserView.webContents.navigationHistory.goForward();
+  if (activeTab && activeTab.browserView.webContents.canGoForward()) {
+    activeTab.browserView.webContents.goForward();
+    console.log('➡️ Вперед');
   }
 });
 
@@ -733,6 +780,7 @@ ipcMain.on('reload', () => {
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (activeTab) {
     activeTab.browserView.webContents.reload();
+    console.log('🔄 Оновлено');
   }
 });
 
