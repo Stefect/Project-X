@@ -541,12 +541,74 @@ ipcMain.on('sidebar-toggled', (event, isCollapsed) => {
   console.log(`📐 Панель ${isCollapsed ? 'згорнуто' : 'розгорнуто'}, ширина браузера: ${bounds.width - sidebarWidth}px`);
 });
 
+// Обробка відкриття/закриття меню
+ipcMain.on('menu-toggled', (event, isOpen) => {
+  const bounds = mainWindow.getContentBounds();
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  
+  if (activeTab && activeTab.browserView) {
+    if (isOpen) {
+      // Зсуваємо BrowserView праворуч коли меню відкрите
+      activeTab.browserView.setBounds({ 
+        x: 330, // Ширина меню + відступ
+        y: 100,
+        width: bounds.width - sidebarWidth - 330,
+        height: bounds.height - 100 
+      });
+    } else {
+      // Повертаємо нормальні розміри
+      activeTab.browserView.setBounds({ 
+        x: 0, 
+        y: 100,
+        width: bounds.width - sidebarWidth,
+        height: bounds.height - 100 
+      });
+    }
+  }
+  console.log(`📋 Меню ${isOpen ? 'відкрито' : 'закрито'}`);
+});
+
+// Обробник для панелі налаштувань (Chrome-style settings)
+ipcMain.on('settings-panel-toggled', (event, isOpen) => {
+  const bounds = mainWindow.getContentBounds();
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  
+  if (activeTab && activeTab.browserView) {
+    if (isOpen) {
+      // Зсуваємо BrowserView ліворуч коли панель налаштувань відкрита (панель справа)
+      activeTab.browserView.setBounds({ 
+        x: 0,
+        y: 100,
+        width: bounds.width - sidebarWidth - 400, // 400px - ширина панелі налаштувань
+        height: bounds.height - 100 
+      });
+    } else {
+      // Повертаємо нормальні розміри
+      activeTab.browserView.setBounds({ 
+        x: 0, 
+        y: 100,
+        width: bounds.width - sidebarWidth,
+        height: bounds.height - 100 
+      });
+    }
+  }
+  console.log(`⚙️ Панель налаштувань ${isOpen ? 'відкрита' : 'закрита'}`);
+});
+
 // ========== Система управління вкладками ==========
 
+// URL для нової вкладки
+const getNewTabUrl = () => {
+  return `file://${path.join(__dirname, '../public/newtab.html')}`;
+};
+
 // Створити нову вкладку
-ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
+ipcMain.handle('create-tab', async (event, url = null) => {
   const bounds = mainWindow.getContentBounds();
   // Використовуємо глобальну змінну sidebarWidth (не оголошуємо локальну!)
+  
+  // Якщо URL не вказано - відкриваємо нову вкладку
+  const targetUrl = url || getNewTabUrl();
   
   const newBrowserView = new BrowserView({
     webPreferences: {
@@ -684,9 +746,9 @@ ipcMain.handle('create-tab', async (event, url = 'https://www.google.com') => {
     }
   });
   
-  newBrowserView.webContents.loadURL(url);
+  newBrowserView.webContents.loadURL(targetUrl);
   
-  return { id: newTab.id, url: url, title: newTab.title };
+  return { id: newTab.id, url: targetUrl, title: newTab.title };
 });
 
 // Перемикнути на вкладку

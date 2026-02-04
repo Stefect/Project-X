@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Нова вкладка</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: var(--bg-color, #1a1b26);
+      background-image: var(--bg-image, none);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: background 0.3s ease;
+      color: var(--text-color, #c0caf5);
+    }
+
+    body.light-mode {
+      --bg-color: #f5f5f5;
+      --text-color: #1f2937;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --input-bg: rgba(255, 255, 255, 0.95);
+      --shadow-color: rgba(0, 0, 0, 0.1);
+    }
+
+    body.dark-mode {
+      --bg-color: #1a1b26;
+      --text-color: #c0caf5;
+      --card-bg: rgba(30, 35, 53, 0.9);
+      --input-bg: rgba(36, 40, 59, 0.95);
+      --shadow-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .logo {
+      font-size: 72px;
+      font-weight: 300;
+      margin-bottom: 40px;
+      background: linear-gradient(135deg, var(--accent-color, #3b82f6), #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+    }
+
+    .search-box {
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 50px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 16px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 30px;
+      background: var(--input-bg, rgba(36, 40, 59, 0.95));
+      color: var(--text-color);
+      box-shadow: 0 4px 20px var(--shadow-color, rgba(0, 0, 0, 0.3));
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .search-input::placeholder {
+      color: #6b7280;
+    }
+
+    .search-input:focus {
+      box-shadow: 0 6px 30px var(--shadow-color, rgba(0, 0, 0, 0.4));
+      transform: translateY(-2px);
+    }
+
+    .shortcuts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 20px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .shortcut {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      background: var(--card-bg, rgba(30, 35, 53, 0.9));
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: var(--text-color);
+    }
+
+    .shortcut:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px var(--shadow-color, rgba(0, 0, 0, 0.3));
+    }
+
+    .shortcut-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent-color, #3b82f6), #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .shortcut-name {
+      font-size: 13px;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+    .time-widget {
+      position: absolute;
+      top: 30px;
+      left: 30px;
+      text-align: left;
+    }
+
+    .time {
+      font-size: 64px;
+      font-weight: 200;
+      letter-spacing: -2px;
+    }
+
+    .date {
+      font-size: 18px;
+      opacity: 0.7;
+      margin-top: 5px;
+    }
+
+    .greeting {
+      font-size: 32px;
+      font-weight: 300;
+      margin-bottom: 20px;
+      opacity: 0.9;
+    }
+
+    /* Wallpaper overlay for better readability */
+    body.has-wallpaper::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body.has-wallpaper .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    body.has-wallpaper.light-mode::before {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="dark-mode">
+  <div class="time-widget">
+    <div class="time" id="time">00:00</div>
+    <div class="date" id="date"></div>
+  </div>
+
+  <div class="container">
+    <div class="greeting" id="greeting">Привіт!</div>
+    <div class="logo">BrowserX</div>
+    
+    <div class="search-box">
+      <input type="text" class="search-input" id="search" placeholder="Пошук в Google або введіть URL">
+    </div>
+
+    <div class="shortcuts" id="shortcuts">
+      <a href="https://www.google.com" class="shortcut">
+        <div class="shortcut-icon">G</div>
+        <span class="shortcut-name">Google</span>
+      </a>
+      <a href="https://www.youtube.com" class="shortcut">
+        <div class="shortcut-icon">▶</div>
+        <span class="shortcut-name">YouTube</span>
+      </a>
+      <a href="https://github.com" class="shortcut">
+        <div class="shortcut-icon">⌂</div>
+        <span class="shortcut-name">GitHub</span>
+      </a>
+      <a href="https://chat.openai.com" class="shortcut">
+        <div class="shortcut-icon">✦</div>
+        <span class="shortcut-name">ChatGPT</span>
+      </a>
+      <a href="https://mail.google.com" class="shortcut">
+        <div class="shortcut-icon">✉</div>
+        <span class="shortcut-name">Gmail</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Оновлення часу
+    function updateTime() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('time').textContent = `${hours}:${minutes}`;
+      
+      const options = { weekday: 'long', day: 'numeric', month: 'long' };
+      document.getElementById('date').textContent = now.toLocaleDateString('uk-UA', options);
+    }
+    
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // Привітання залежно від часу доби
+    function updateGreeting() {
+      const hour = new Date().getHours();
+      let greeting;
+      
+      if (hour >= 5 && hour < 12) {
+        greeting = 'Доброго ранку!';
+      } else if (hour >= 12 && hour < 18) {
+        greeting = 'Доброго дня!';
+      } else if (hour >= 18 && hour < 22) {
+        greeting = 'Доброго вечора!';
+      } else {
+        greeting = 'Доброї ночі!';
+      }
+      
+      document.getElementById('greeting').textContent = greeting;
+    }
+    
+    updateGreeting();
+
+    // Пошук
+    document.getElementById('search').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const query = e.target.value.trim();
+        if (query) {
+          if (query.includes('.') && !query.includes(' ')) {
+            // URL
+            window.location.href = query.startsWith('http') ? query : 'https://' + query;
+          } else {
+            // Google search
+            window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+          }
+        }
+      }
+    });
+
+    // Завантаження налаштувань теми
+    function loadTheme() {
+      const mode = localStorage.getItem('themeMode') || 'dark';
+      const accentColor = localStorage.getItem('accentColor') || '#3b82f6';
+      const wallpaper = localStorage.getItem('wallpaper');
+      
+      document.body.classList.remove('light-mode', 'dark-mode');
+      
+      if (mode === 'light') {
+        document.body.classList.add('light-mode');
+      } else if (mode === 'system') {
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+          document.body.classList.add('light-mode');
+        } else {
+          document.body.classList.add('dark-mode');
+        }
+      } else {
+        document.body.classList.add('dark-mode');
+      }
+      
+      document.documentElement.style.setProperty('--accent-color', accentColor);
+      
+      if (wallpaper) {
+        document.body.style.backgroundImage = `url(${wallpaper})`;
+        document.body.classList.add('has-wallpaper');
+      }
+    }
+    
+    loadTheme();
+
+    // Слухаємо зміни теми
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'themeMode' || e.key === 'accentColor' || e.key === 'wallpaper') {
+        loadTheme();
+      }
+    });
+
+    // Фокус на пошуковому полі
+    document.getElementById('search').focus();
+  </script>
+</body>
+</html>
