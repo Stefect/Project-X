@@ -7,6 +7,34 @@ contextBridge.exposeInMainWorld('aiHelper', {
   onExplanation: (callback) => ipcRenderer.on('show-explanation', (event, explanation) => callback(explanation))
 });
 
+// API для роботи з пам'яттю браузера
+contextBridge.exposeInMainWorld('browserStorage', {
+  // Історія
+  getHistory: (limit) => ipcRenderer.invoke('get-history', limit),
+  searchHistory: (query) => ipcRenderer.invoke('search-history', query),
+  clearHistory: () => ipcRenderer.send('clear-history'),
+  
+  // Закладки
+  getBookmarks: () => ipcRenderer.invoke('get-bookmarks'),
+  addBookmark: (url, title, favicon) => ipcRenderer.invoke('add-bookmark', { url, title, favicon }),
+  removeBookmark: (url) => ipcRenderer.send('remove-bookmark', url),
+  isBookmarked: (url) => ipcRenderer.invoke('is-bookmarked', url),
+  
+  // Сесія
+  saveSession: () => ipcRenderer.send('save-session'),
+  getSession: () => ipcRenderer.invoke('get-session'),
+  
+  // Налаштування
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  saveSettings: (settings) => ipcRenderer.send('save-settings', settings),
+  
+  // Нотатки
+  saveNote: (text, url) => ipcRenderer.send('save-note', { text, url }),
+  getNotes: () => ipcRenderer.invoke('get-notes'),
+  deleteNote: (id) => ipcRenderer.send('delete-note', id),
+  clearNotes: () => ipcRenderer.send('clear-notes')
+});
+
 // Відслідковуємо виділення тексту після завантаження сторінки
 window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mouseup', () => {
