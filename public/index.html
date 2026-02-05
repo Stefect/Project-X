@@ -17,31 +17,7 @@
       display: flex;
       flex-direction: column;
       background: #1a1b26;
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      transition: background 0.3s ease;
-      position: relative;
-    }
-
-    body.has-wallpaper::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.3);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    body.has-wallpaper .container,
-    body.has-wallpaper .toolbar,
-    body.has-wallpaper .tabs-bar {
-      position: relative;
-      z-index: 1;
+      transition: background-color 0.3s ease;
     }
 
     .container {
@@ -1533,48 +1509,39 @@
       
       // Перемкнутися на вкладку
       function switchTab(tabId) {
+        // Отримуємо поточні кольори теми
+        const currentBg = localStorage.getItem('themeBg') || '#1a1b26';
+        const currentAccent = localStorage.getItem('themeAccent') || '#3b82f6';
+        
         // Знімаємо клас active з усіх вкладок
         document.querySelectorAll('.tab').forEach(tab => {
           tab.classList.remove('active');
           // Застосовуємо колір неактивної вкладки
-          let savedTheme = localStorage.getItem('browserTheme') || 'frutti';
-          const tabColor = getThemeColors(savedTheme).tab;
-          tab.style.background = tabColor;
+          tab.style.background = lightenColorSimple(currentBg, 15);
+          tab.style.borderColor = lightenColorSimple(currentBg, 25);
         });
         
         // Додаємо active до вибраної
         const targetTab = document.querySelector(`[data-tab-id="${tabId}"]`);
         if (targetTab) {
           targetTab.classList.add('active');
-          // Застосовуємо колір активної вкладки
-          let savedTheme2 = localStorage.getItem('browserTheme') || 'frutti';
-          const tabActiveColor = getThemeColors(savedTheme2).tabActive;
-          targetTab.style.background = tabActiveColor;
+          // Застосовуємо колір акценту для активної вкладки
+          targetTab.style.background = currentAccent;
+          targetTab.style.borderColor = currentAccent;
           
           currentTabId = tabId;
           ipcRenderer.send('switch-tab', tabId);
         }
       }
-
-      function getThemeColors(themeId) {
-        const themes = {
-          frutti: {
-            primary: '#f7768e',
-            tab: '#2f3549',
-            tabActive: '#f7768e'
-          },
-          purple: {
-            primary: '#bb9af7',
-            tab: '#2f3549',
-            tabActive: '#bb9af7'
-          },
-          vaporwave: {
-            primary: '#2ac3de',
-            tab: '#2f3549',
-            tabActive: '#2ac3de'
-          }
-        };
-        return themes[themeId] || themes.frutti;
+      
+      // Проста функція освітлення кольору для switchTab
+      function lightenColorSimple(color, percent) {
+        const num = parseInt(color.replace('#', ''), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+        const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
+        const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+        return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
       }
       
       // Закрити вкладку
@@ -2562,26 +2529,67 @@
 
     // 3. Застосування теми (CSS змінні - магія!)
     function applyBrowserTheme(bg, accent) {
+      console.log('🎨 Застосовую тему:', { bg, accent });
+      
+      // CSS змінні
       document.documentElement.style.setProperty('--theme-bg', bg);
       document.documentElement.style.setProperty('--theme-accent', accent);
       
-      // Оновлюємо реальні елементи (використовуємо backgroundColor щоб не конфліктувати з backgroundImage)
+      // Оновлюємо body (backgroundColor щоб не конфліктувати з backgroundImage шпалерів)
       document.body.style.backgroundColor = bg;
       
+      // Toolbar
       const toolbarEl = document.querySelector('.toolbar');
-      const tabsBarEl = document.querySelector('.tabs-bar');
-      
       if (toolbarEl) {
         toolbarEl.style.background = lightenColor(bg, 10);
+        toolbarEl.style.borderBottomColor = lightenColor(bg, 20);
       }
+      
+      // Tabs bar
+      const tabsBarEl = document.querySelector('.tabs-bar');
       if (tabsBarEl) {
         tabsBarEl.style.background = lightenColor(bg, 5);
       }
 
-      // Оновлюємо tabs активний колір
+      // Активні вкладки - колір акценту
       document.querySelectorAll('.tab.active').forEach(tab => {
         tab.style.background = accent;
+        tab.style.borderColor = accent;
       });
+      
+      // Неактивні вкладки
+      document.querySelectorAll('.tab:not(.active)').forEach(tab => {
+        tab.style.background = lightenColor(bg, 15);
+        tab.style.borderColor = lightenColor(bg, 25);
+      });
+
+      // Address bar
+      const addressBar = document.querySelector('.address-bar');
+      if (addressBar) {
+        addressBar.style.background = bg;
+        addressBar.style.borderColor = lightenColor(bg, 30);
+      }
+
+      // Dropdown menu
+      const dropdownMenu = document.getElementById('dropdown-menu');
+      if (dropdownMenu) {
+        dropdownMenu.style.background = lightenColor(bg, 5);
+        dropdownMenu.style.borderColor = lightenColor(bg, 20);
+      }
+
+      // Sidebar
+      const sidebar = document.getElementById('notes-sidebar');
+      if (sidebar) {
+        sidebar.style.background = `linear-gradient(to bottom, ${lightenColor(bg, 10)} 0%, ${bg} 100%)`;
+        sidebar.style.borderLeftColor = lightenColor(bg, 20);
+      }
+
+      // Organize button - використовуємо accent колір
+      const organizeBtn = document.getElementById('organize-tabs-btn');
+      if (organizeBtn) {
+        organizeBtn.style.background = `rgba(${hexToRgb(accent)}, 0.15)`;
+        organizeBtn.style.color = accent;
+      }
 
       // Оновлюємо Preview
       updateThemePreviewBox(bg, accent);
@@ -2591,6 +2599,16 @@
       localStorage.setItem('themeAccent', accent);
       currentThemeBg = bg;
       currentThemeAccent = accent;
+      
+      console.log('✅ Тема застосована успішно');
+    }
+    
+    // Конвертація HEX в RGB
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? 
+        `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+        '59, 130, 246';
     }
 
     // Допоміжна функція для освітлення кольору
@@ -2625,28 +2643,41 @@
     // 4. Обробка кліку на кольорові кружечки
     themeColorButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        const newBg = btn.getAttribute('data-bg');
-        const newAccent = btn.getAttribute('data-accent');
+        const newBg = btn.dataset.bg;
+        const newAccent = btn.dataset.accent;
+        
+        console.log('🎨 Клік на колір:', { newBg, newAccent });
 
         if (newBg === 'custom' || newAccent === 'custom') {
           // Кастомний колір
           const colorInput = document.createElement('input');
           colorInput.type = 'color';
           colorInput.value = currentThemeAccent;
+          colorInput.addEventListener('input', () => {
+            applyBrowserTheme(currentThemeBg, colorInput.value);
+          });
           colorInput.addEventListener('change', () => {
             applyBrowserTheme(currentThemeBg, colorInput.value);
             updateThemeColorActive(btn);
+            // Надсилаємо в main process
+            setTimeout(() => {
+              if (typeof sendThemeSettings === 'function') sendThemeSettings();
+            }, 100);
           });
           colorInput.click();
-        } else {
+        } else if (newBg && newAccent) {
           applyBrowserTheme(newBg, newAccent);
           updateThemeColorActive(btn);
+          // Надсилаємо в main process
+          setTimeout(() => {
+            if (typeof sendThemeSettings === 'function') sendThemeSettings();
+          }, 100);
         }
       });
     });
 
     function updateThemeColorActive(activeBtn) {
-      themeColorButtons.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.color-option').forEach(b => b.classList.remove('active'));
       activeBtn.classList.add('active');
     }
 
@@ -2677,6 +2708,11 @@
             applyBrowserTheme('#f5f5f5', currentThemeAccent);
           }
         }
+        
+        // Надсилаємо в main process
+        setTimeout(() => {
+          if (typeof sendThemeSettings === 'function') sendThemeSettings();
+        }, 100);
       });
     });
 
@@ -2725,54 +2761,33 @@
 
     let currentWallpaper = localStorage.getItem('wallpaper') || 'none';
 
+    // Функція для надсилання налаштувань теми в main process
+    function sendThemeSettings() {
+      ipcRenderer.send('update-theme-settings', {
+        mode: currentThemeMode,
+        bg: currentThemeBg,
+        accent: currentThemeAccent,
+        wallpaper: currentWallpaper
+      });
+    }
+
     // Застосування шпалерів
     function applyWallpaper(wallpaperData) {
-      const bodyEl = document.body;
-      
       if (!wallpaperData || wallpaperData === 'none') {
-        bodyEl.style.backgroundImage = 'none';
-        bodyEl.style.backgroundSize = '';
-        bodyEl.style.backgroundPosition = '';
-        bodyEl.style.backgroundRepeat = '';
-        bodyEl.style.backgroundAttachment = '';
-        bodyEl.classList.remove('has-wallpaper');
         localStorage.removeItem('wallpaper');
         currentWallpaper = 'none';
-      } else if (wallpaperData.startsWith('data:') || wallpaperData.startsWith('http')) {
-        // Кастомна картинка (base64 або URL)
-        bodyEl.style.backgroundImage = `url(${wallpaperData})`;
-        bodyEl.style.backgroundSize = 'cover';
-        bodyEl.style.backgroundPosition = 'center';
-        bodyEl.style.backgroundRepeat = 'no-repeat';
-        bodyEl.style.backgroundAttachment = 'fixed';
-        bodyEl.classList.add('has-wallpaper');
+      } else {
         localStorage.setItem('wallpaper', wallpaperData);
         currentWallpaper = wallpaperData;
-      } else {
-        // Градієнтні пресети
-        const wallpaperGradients = {
-          'abstract1': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          'abstract2': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-          'abstract3': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-          'abstract4': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-          'abstract5': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-          'abstract6': 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
-        };
-        
-        if (wallpaperGradients[wallpaperData]) {
-          bodyEl.style.backgroundImage = wallpaperGradients[wallpaperData];
-          bodyEl.style.backgroundSize = 'cover';
-          bodyEl.style.backgroundPosition = 'center';
-          bodyEl.style.backgroundRepeat = 'no-repeat';
-          bodyEl.style.backgroundAttachment = 'fixed';
-          bodyEl.classList.add('has-wallpaper');
-          localStorage.setItem('wallpaper', wallpaperData);
-          currentWallpaper = wallpaperData;
-        }
       }
 
-      // Оновлюємо активний стан карток
+      // Оновлюємо активний стан карток в панелі
       updateWallpaperActive(wallpaperData);
+      
+      // Надсилаємо налаштування в main process для newtab
+      sendThemeSettings();
+      
+      console.log('🖼️ Шпалери змінено:', wallpaperData);
     }
 
     // Оновлення активної картки
@@ -2838,12 +2853,11 @@
       });
     }
 
-    // Завантажити збережені шпалери при старті
-    if (currentWallpaper && currentWallpaper !== 'none') {
-      applyWallpaper(currentWallpaper);
-    } else {
-      updateWallpaperActive('none');
-    }
+    // Завантажити збережені шпалери при старті (тільки оновлюємо UI карток)
+    updateWallpaperActive(currentWallpaper);
+    
+    // Надсилаємо початкові налаштування теми в main process
+    sendThemeSettings();
     
     console.log('✅ Панель налаштувань готова');
 
