@@ -136,6 +136,7 @@ function createWindow() {
     injectLinkXRay(browserView);
     injectTranslator(browserView);
     injectT9(browserView);
+    injectHotkeys(browserView);
   });
 
   browserView.webContents.on('did-navigate', () => {
@@ -151,6 +152,7 @@ function createWindow() {
     injectLinkXRay(browserView);
     injectTranslator(browserView);
     injectT9(browserView);
+    injectHotkeys(browserView);
   });
 
   // Додаємо контекстне меню для збереження виділеного тексту
@@ -177,6 +179,7 @@ function createWindow() {
     injectLinkXRay(browserView);
     injectTranslator(browserView);
     injectT9(browserView);
+    injectHotkeys(browserView);
   });
 
   // Перехоплюємо console.log з веб-сторінки (оновлений синтаксис без deprecated)
@@ -218,6 +221,24 @@ function createWindow() {
         `).catch(err => console.error('Помилка показу X-Ray:', err));
       } catch (error) {
         console.error('Помилка X-Ray:', error);
+      }
+    }
+    
+    // Обробка запитів до AI помічника (натискання K на виділений текст)
+    if (message.startsWith('AI_ASSISTANT_REQUEST:')) {
+      try {
+        const data = JSON.parse(message.replace('AI_ASSISTANT_REQUEST:', ''));
+        const result = await getAIExplanation(data.text);
+        
+        browserView.webContents.executeJavaScript(`
+          window.postMessage({ 
+            type: 'AI_ASSISTANT_RESULT', 
+            answer: ${JSON.stringify(result)},
+            originalText: ${JSON.stringify(data.text)}
+          }, '*');
+        `).catch(err => console.error('Помилка показу AI відповіді:', err));
+      } catch (error) {
+        console.error('Помилка AI помічника:', error);
       }
     }
     
@@ -709,6 +730,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     injectLinkXRay(newBrowserView);
     injectTranslator(newBrowserView);
     injectT9(newBrowserView);
+    injectHotkeys(newBrowserView);
     
     // Оновлюємо заголовок вкладки
     const title = newBrowserView.webContents.getTitle();
@@ -728,6 +750,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     injectLinkXRay(newBrowserView);
     injectTranslator(newBrowserView);
     injectT9(newBrowserView);
+    injectHotkeys(newBrowserView);
     const title = newBrowserView.webContents.getTitle();
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
   });
@@ -738,6 +761,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     injectLinkXRay(newBrowserView);
     injectTranslator(newBrowserView);
     injectT9(newBrowserView);
+    injectHotkeys(newBrowserView);
   });
   
   // Контекстне меню
@@ -790,6 +814,24 @@ ipcMain.handle('create-tab', async (event, url = null) => {
         `).catch(err => console.error('Помилка показу X-Ray:', err));
       } catch (error) {
         console.error('Помилка X-Ray:', error);
+      }
+    }
+    
+    // Обробка запитів до AI помічника (натискання K на виділений текст)
+    if (message.startsWith('AI_ASSISTANT_REQUEST:')) {
+      try {
+        const data = JSON.parse(message.replace('AI_ASSISTANT_REQUEST:', ''));
+        const result = await getAIExplanation(data.text);
+        
+        newBrowserView.webContents.executeJavaScript(`
+          window.postMessage({ 
+            type: 'AI_ASSISTANT_RESULT', 
+            answer: ${JSON.stringify(result)},
+            originalText: ${JSON.stringify(data.text)}
+          }, '*');
+        `).catch(err => console.error('Помилка показу AI відповіді:', err));
+      } catch (error) {
+        console.error('Помилка AI помічника:', error);
       }
     }
     
@@ -1229,6 +1271,24 @@ function injectT9(targetBrowserView = browserView) {
       });
   } catch (error) {
     console.error('Не вдалося прочитати T9 скрипти:', error);
+  }
+}
+
+// Функція для інжектування Hotkeys (гарячі клавіші)
+function injectHotkeys(targetBrowserView = browserView) {
+  const fs = require('fs');
+  try {
+    const hotkeysScript = fs.readFileSync(path.join(__dirname, 'modules', 'hotkeys.js'), 'utf8');
+    
+    targetBrowserView.webContents.executeJavaScript(hotkeysScript)
+      .then(() => {
+        console.log('✓ Hotkeys модуль активовано (K = AI, L = Переклад)');
+      })
+      .catch(err => {
+        console.error('Помилка інжекту Hotkeys:', err);
+      });
+  } catch (error) {
+    console.error('Не вдалося прочитати Hotkeys скрипт:', error);
   }
 }
 
