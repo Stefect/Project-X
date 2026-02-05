@@ -970,7 +970,7 @@
       flex: 1;
       overflow-x: auto;
       overflow-y: hidden;
-      -webkit-app-region: no-drag;
+      -webkit-app-region: drag;
       padding: 0 5px;
     }
 
@@ -1028,6 +1028,7 @@
       gap: 8px;
       cursor: pointer;
       user-select: none;
+      -webkit-app-region: no-drag;
       border: 1px solid #414868;
       border-bottom: none;
       transition: all 0.15s;
@@ -1400,6 +1401,22 @@
           <div class="toggle-switch active" id="shortcuts-toggle"></div>
         </div>
       </div>
+
+      <!-- Hotkeys Group -->
+      <div class="settings-group">
+        <h4 class="section-title">⌨️ Гарячі клавіші</h4>
+        <div class="settings-item">
+          <span>AI Помічник (виділіть текст і натисніть)</span>
+          <input type="text" id="hotkey-ai" class="hotkey-input" value="K" maxlength="1" style="width: 50px; text-align: center; background: var(--theme-surface); border: 1px solid var(--theme-border); color: var(--theme-text); padding: 8px; border-radius: 6px; text-transform: uppercase;">
+        </div>
+        <div class="settings-item">
+          <span>Автопереклад (виділіть текст і натисніть)</span>
+          <input type="text" id="hotkey-translator" class="hotkey-input" value="L" maxlength="1" style="width: 50px; text-align: center; background: var(--theme-surface); border: 1px solid var(--theme-border); color: var(--theme-text); padding: 8px; border-radius: 6px; text-transform: uppercase;">
+        </div>
+        <div style="margin-top: 12px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; font-size: 13px; color: #7aa2f7;">
+          💡 Порада: Виділіть будь-який текст на сторінці та натисніть відповідну клавішу для швидкого доступу
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1484,7 +1501,7 @@
       // ========== Система вкладок ==========
       
       // Створити нову вкладку
-      async function createTab(url = 'https://www.google.com') {
+      async function createTab(url = null) {
       const result = await ipcRenderer.invoke('create-tab', url);
       
       // Створюємо візуальний елемент вкладки
@@ -2858,6 +2875,56 @@
     
     // Надсилаємо початкові налаштування теми в main process
     sendThemeSettings();
+    
+    // ========== HOTKEYS SETTINGS ==========
+    const hotkeyAIInput = document.getElementById('hotkey-ai');
+    const hotkeyTranslatorInput = document.getElementById('hotkey-translator');
+    
+    // Завантажуємо збережені hotkeys
+    let savedHotkeys = {
+      aiAssistant: 'k',
+      translator: 'l'
+    };
+    
+    try {
+      const stored = localStorage.getItem('browserx_hotkeys');
+      if (stored) {
+        savedHotkeys = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error('Помилка завантаження hotkeys:', e);
+    }
+    
+    // Встановлюємо значення в inputs
+    if (hotkeyAIInput) hotkeyAIInput.value = savedHotkeys.aiAssistant.toUpperCase();
+    if (hotkeyTranslatorInput) hotkeyTranslatorInput.value = savedHotkeys.translator.toUpperCase();
+    
+    // Обробка зміни hotkeys
+    function saveHotkey(type, key) {
+      savedHotkeys[type] = key.toLowerCase();
+      localStorage.setItem('browserx_hotkeys', JSON.stringify(savedHotkeys));
+      console.log('⌨️ Hotkey збережено:', type, '=', key);
+    }
+    
+    if (hotkeyAIInput) {
+      hotkeyAIInput.addEventListener('input', (e) => {
+        const key = e.target.value.trim().toUpperCase();
+        if (key.length === 1 && /^[A-Z]$/i.test(key)) {
+          saveHotkey('aiAssistant', key);
+        }
+      });
+    }
+    
+    if (hotkeyTranslatorInput) {
+      hotkeyTranslatorInput.addEventListener('input', (e) => {
+        const key = e.target.value.trim().toUpperCase();
+        if (key.length === 1 && /^[A-Z]$/i.test(key)) {
+          saveHotkey('translator', key);
+        }
+      });
+    }
+    
+    console.log('✅ Hotkeys налаштування готові');
     
     console.log('✅ Панель налаштувань готова');
 
