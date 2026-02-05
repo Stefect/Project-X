@@ -1579,6 +1579,17 @@
           urlInput.value = url;
         }
       });
+
+      // Оновити назву вкладки
+      ipcRenderer.on('update-tab-title', (event, data) => {
+        const tabElement = document.querySelector(`[data-tab-id="${data.tabId}"]`);
+        if (tabElement) {
+          const titleElement = tabElement.querySelector('.tab-title');
+          if (titleElement) {
+            titleElement.textContent = data.title || 'Нова вкладка';
+          }
+        }
+      });
       
       // Якщо всі вкладки закрито, створити нову
       ipcRenderer.on('create-default-tab', () => {
