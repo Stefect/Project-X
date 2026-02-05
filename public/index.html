@@ -17,6 +17,31 @@
       display: flex;
       flex-direction: column;
       background: #1a1b26;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      transition: background 0.3s ease;
+      position: relative;
+    }
+
+    body.has-wallpaper::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body.has-wallpaper .container,
+    body.has-wallpaper .toolbar,
+    body.has-wallpaper .tabs-bar {
+      position: relative;
+      z-index: 1;
     }
 
     .container {
@@ -829,6 +854,113 @@
       transform: translateX(22px);
     }
 
+    /* Wallpaper Section */
+    .wallpaper-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .wallpaper-card {
+      height: 100px;
+      border-radius: 12px;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+      -webkit-app-region: no-drag;
+    }
+
+    .wallpaper-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .wallpaper-card.active {
+      border-color: var(--theme-accent);
+      box-shadow: 0 0 0 2px var(--theme-accent);
+    }
+
+    .wallpaper-card.active::after {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 24px;
+      height: 24px;
+      background: var(--theme-accent);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .wallpaper-card.upload-card {
+      background: var(--theme-bg);
+      border: 2px dashed var(--theme-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .wallpaper-card.upload-card:hover {
+      border-color: var(--theme-accent);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .upload-icon {
+      font-size: 32px;
+      opacity: 0.6;
+    }
+
+    .upload-text {
+      font-size: 12px;
+      opacity: 0.6;
+    }
+
+    .wallpaper-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .wallpaper-btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: 1px solid var(--theme-border);
+      background: transparent;
+      color: var(--theme-text);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+      -webkit-app-region: no-drag;
+    }
+
+    .wallpaper-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--theme-accent);
+    }
+
+    .wallpaper-btn.primary {
+      background: var(--theme-accent);
+      border-color: var(--theme-accent);
+      color: white;
+    }
+
+    .wallpaper-btn.primary:hover {
+      opacity: 0.9;
+    }
+
     /* Overlay */
     .panel-overlay {
       position: fixed;
@@ -1246,6 +1378,35 @@
         <!-- Кастомний -->
         <button class="color-option color-custom" data-bg="custom" data-accent="custom"></button>
       </div>
+
+      <!-- Wallpapers Section -->
+      <h4 class="section-title">Шпалери</h4>
+      <div class="wallpaper-grid" id="wallpaper-grid">
+        <!-- No wallpaper -->
+        <div class="wallpaper-card active" data-wallpaper="none" style="background: linear-gradient(135deg, var(--theme-bg), var(--theme-surface));">
+          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 32px; opacity: 0.3;">∅</div>
+        </div>
+        
+        <!-- Upload custom -->
+        <div class="wallpaper-card upload-card" id="upload-wallpaper">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Завантажити</div>
+        </div>
+
+        <!-- Preset wallpapers -->
+        <div class="wallpaper-card" data-wallpaper="abstract1" style="background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+        <div class="wallpaper-card" data-wallpaper="abstract2" style="background-image: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+        <div class="wallpaper-card" data-wallpaper="abstract3" style="background-image: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+        <div class="wallpaper-card" data-wallpaper="abstract4" style="background-image: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
+        <div class="wallpaper-card" data-wallpaper="abstract5" style="background-image: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
+        <div class="wallpaper-card" data-wallpaper="abstract6" style="background-image: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+      </div>
+
+      <div class="wallpaper-actions">
+        <button class="wallpaper-btn" id="clear-wallpaper">Очистити шпалери</button>
+        <button class="wallpaper-btn primary" id="upload-wallpaper-btn">Завантажити нову</button>
+      </div>
+      <input type="file" id="wallpaper-file-input" accept="image/*" style="display: none;">
 
       <!-- Settings Group -->
       <div class="settings-group">
@@ -2554,6 +2715,121 @@
         btn.classList.add('active');
       }
     });
+
+    // ========== WALLPAPERS SECTION ==========
+    const wallpaperCards = document.querySelectorAll('.wallpaper-card[data-wallpaper]');
+    const uploadWallpaperCard = document.getElementById('upload-wallpaper');
+    const uploadWallpaperBtn = document.getElementById('upload-wallpaper-btn');
+    const clearWallpaperBtn = document.getElementById('clear-wallpaper');
+    const wallpaperFileInput = document.getElementById('wallpaper-file-input');
+
+    let currentWallpaper = localStorage.getItem('wallpaper') || 'none';
+
+    // Застосування шпалерів
+    function applyWallpaper(wallpaperData) {
+      const bodyEl = document.body;
+      
+      if (!wallpaperData || wallpaperData === 'none') {
+        bodyEl.style.backgroundImage = 'none';
+        bodyEl.classList.remove('has-wallpaper');
+        localStorage.removeItem('wallpaper');
+        currentWallpaper = 'none';
+      } else if (wallpaperData.startsWith('data:') || wallpaperData.startsWith('http')) {
+        // Кастомна картинка (base64 або URL)
+        bodyEl.style.backgroundImage = `url(${wallpaperData})`;
+        bodyEl.style.backgroundSize = 'cover';
+        bodyEl.style.backgroundPosition = 'center';
+        bodyEl.style.backgroundRepeat = 'no-repeat';
+        bodyEl.classList.add('has-wallpaper');
+        localStorage.setItem('wallpaper', wallpaperData);
+        currentWallpaper = wallpaperData;
+      } else {
+        // Градієнтні пресети
+        const wallpaperCard = document.querySelector(`[data-wallpaper="${wallpaperData}"]`);
+        if (wallpaperCard) {
+          const bgImage = wallpaperCard.style.backgroundImage;
+          bodyEl.style.backgroundImage = bgImage;
+          bodyEl.style.backgroundSize = 'cover';
+          bodyEl.style.backgroundPosition = 'center';
+          bodyEl.classList.add('has-wallpaper');
+          localStorage.setItem('wallpaper', wallpaperData);
+          currentWallpaper = wallpaperData;
+        }
+      }
+
+      // Оновлюємо активний стан карток
+      updateWallpaperActive(wallpaperData);
+    }
+
+    // Оновлення активної картки
+    function updateWallpaperActive(wallpaperData) {
+      wallpaperCards.forEach(card => card.classList.remove('active'));
+      
+      if (!wallpaperData || wallpaperData === 'none') {
+        const noneCard = document.querySelector('[data-wallpaper="none"]');
+        if (noneCard) noneCard.classList.add('active');
+      } else if (wallpaperData.startsWith('data:') || wallpaperData.startsWith('http')) {
+        uploadWallpaperCard.classList.add('active');
+      } else {
+        const activeCard = document.querySelector(`[data-wallpaper="${wallpaperData}"]`);
+        if (activeCard) activeCard.classList.add('active');
+      }
+    }
+
+    // Клік на картки шпалерів
+    wallpaperCards.forEach(card => {
+      card.addEventListener('click', () => {
+        const wallpaper = card.dataset.wallpaper;
+        applyWallpaper(wallpaper);
+      });
+    });
+
+    // Завантаження кастомних шпалерів
+    if (uploadWallpaperCard) {
+      uploadWallpaperCard.addEventListener('click', () => {
+        wallpaperFileInput.click();
+      });
+    }
+
+    if (uploadWallpaperBtn) {
+      uploadWallpaperBtn.addEventListener('click', () => {
+        wallpaperFileInput.click();
+      });
+    }
+
+    if (wallpaperFileInput) {
+      wallpaperFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Перевірка розміру (макс 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('❌ Файл занадто великий! Максимум 5 МБ.');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imageData = event.target.result;
+          applyWallpaper(imageData);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Очистити шпалери
+    if (clearWallpaperBtn) {
+      clearWallpaperBtn.addEventListener('click', () => {
+        applyWallpaper('none');
+      });
+    }
+
+    // Завантажити збережені шпалери при старті
+    if (currentWallpaper && currentWallpaper !== 'none') {
+      applyWallpaper(currentWallpaper);
+    } else {
+      updateWallpaperActive('none');
+    }
     
     console.log('✅ Панель налаштувань готова');
 

@@ -272,7 +272,8 @@
     // Завантаження налаштувань теми
     function loadTheme() {
       const mode = localStorage.getItem('themeMode') || 'dark';
-      const accentColor = localStorage.getItem('accentColor') || '#3b82f6';
+      const themeBg = localStorage.getItem('themeBg');
+      const themeAccent = localStorage.getItem('themeAccent') || '#3b82f6';
       const wallpaper = localStorage.getItem('wallpaper');
       
       document.body.classList.remove('light-mode', 'dark-mode');
@@ -289,11 +290,40 @@
         document.body.classList.add('dark-mode');
       }
       
-      document.documentElement.style.setProperty('--accent-color', accentColor);
+      document.documentElement.style.setProperty('--accent-color', themeAccent);
       
-      if (wallpaper) {
-        document.body.style.backgroundImage = `url(${wallpaper})`;
+      // Застосовуємо фон з налаштувань браузера (якщо є)
+      if (themeBg) {
+        document.body.style.backgroundColor = themeBg;
+      }
+      
+      // Застосовуємо шпалери
+      if (wallpaper && wallpaper !== 'none') {
+        if (wallpaper.startsWith('data:') || wallpaper.startsWith('http')) {
+          // Кастомна картинка
+          document.body.style.backgroundImage = `url(${wallpaper})`;
+        } else {
+          // Градієнтні пресети - потрібно знайти відповідний градієнт
+          const wallpaperGradients = {
+            'abstract1': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            'abstract2': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            'abstract3': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+            'abstract4': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+            'abstract5': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+            'abstract6': 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
+          };
+          
+          if (wallpaperGradients[wallpaper]) {
+            document.body.style.backgroundImage = wallpaperGradients[wallpaper];
+          }
+        }
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundRepeat = 'no-repeat';
         document.body.classList.add('has-wallpaper');
+      } else {
+        document.body.style.backgroundImage = 'none';
+        document.body.classList.remove('has-wallpaper');
       }
     }
     
@@ -301,7 +331,7 @@
 
     // Слухаємо зміни теми
     window.addEventListener('storage', (e) => {
-      if (e.key === 'themeMode' || e.key === 'accentColor' || e.key === 'wallpaper') {
+      if (e.key === 'themeMode' || e.key === 'themeBg' || e.key === 'themeAccent' || e.key === 'wallpaper') {
         loadTheme();
       }
     });
