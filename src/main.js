@@ -1171,13 +1171,40 @@ ipcMain.on('close-tab', (event, tabId) => {
 });
 
 // Оновити URL активної вкладки
-ipcMain.on('navigate', (event, url) => {
+ipcMain.on('navigate', (event, input) => {
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (!activeTab) return;
   
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'https://' + url;
+  let url = input.trim();
+  
+  // Перевіряємо чи це URL чи пошуковий запит
+  const isURL = (str) => {
+    // Якщо вже є протокол
+    if (str.startsWith('http://') || str.startsWith('https://')) {
+      return true;
+    }
+    // Якщо виглядає як домен (має крапку і не має пробілів)
+    if (str.includes('.') && !str.includes(' ')) {
+      return true;
+    }
+    // Якщо localhost
+    if (str.startsWith('localhost')) {
+      return true;
+    }
+    return false;
+  };
+  
+  if (isURL(url)) {
+    // Це URL - додаємо https:// якщо немає протоколу
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+  } else {
+    // Це пошуковий запит - шукаємо в Google
+    url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
   }
+  
+  console.log('🔍 Навігація:', input, '→', url);
   activeTab.browserView.webContents.loadURL(url);
 });
 
