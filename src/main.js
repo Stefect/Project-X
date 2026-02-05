@@ -175,13 +175,7 @@ function createWindow() {
         label: '🤖 AI Помічник',
         click: async () => {
           const result = await getAIExplanation(selectedText);
-          browserView.webContents.executeJavaScript(`
-            window.postMessage({ 
-              type: 'AI_ASSISTANT_RESULT', 
-              answer: ${JSON.stringify(result)},
-              originalText: ${JSON.stringify(selectedText)}
-            }, '*');
-          `).catch(err => console.error('Помилка AI:', err));
+          showAIPopup(browserView, result, selectedText);
         }
       }));
       
@@ -191,13 +185,7 @@ function createWindow() {
         click: async () => {
           const result = await translateText(selectedText, 'uk');
           if (result.success) {
-            browserView.webContents.executeJavaScript(`
-              window.postMessage({ 
-                type: 'TRANSLATION_RESULT', 
-                translation: ${JSON.stringify(result.translation)},
-                originalText: ${JSON.stringify(selectedText)}
-              }, '*');
-            `).catch(err => console.error('Помилка перекладу:', err));
+            showTranslationPopup(browserView, result.translation, selectedText);
           }
         }
       }));
@@ -226,12 +214,6 @@ function createWindow() {
   // Перехоплюємо console.log з веб-сторінки (оновлений синтаксис без deprecated)
   browserView.webContents.on('console-message', async (event) => {
     const message = event.message;
-    
-    // Обробка виділеного тексту
-    if (message.startsWith('AI_SELECTED_TEXT:')) {
-      const text = message.replace('AI_SELECTED_TEXT:', '').trim();
-      ipcMain.emit('text-selected', null, text);
-    }
     
     // Обробка запитів на аналіз коду (Code Mate)
     if (message.startsWith('AI_CODE_REQUEST:')) {
@@ -365,6 +347,195 @@ ipcMain.on('apply-theme', (event, theme) => {
   // Відправляємо тему на головне вікно
   mainWindow.webContents.send('theme-changed', theme);
 });
+
+// Функція для показу popup з перекладом
+function showTranslationPopup(browserView, translation, originalText) {
+  const popupCode = `
+    (function() {
+      // Видаляємо попередній popup
+      const oldPopup = document.getElementById('browserx-translation-popup');
+      if (oldPopup) oldPopup.remove();
+      
+      const popup = document.createElement('div');
+      popup.id = 'browserx-translation-popup';
+      popup.innerHTML = \`
+        <div style="
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          max-width: 400px;
+          min-width: 280px;
+          background: linear-gradient(135deg, #1a1b26 0%, #24283b 100%);
+          border: 1px solid #3b82f6;
+          border-radius: 16px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(59, 130, 246, 0.2);
+          z-index: 999999;
+          font-family: 'Segoe UI', Arial, sans-serif;
+          color: #fff;
+          overflow: hidden;
+        ">
+          <div style="
+            padding: 14px 18px;
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          ">
+            <span style="font-weight: 600; font-size: 14px;">🌐 Переклад</span>
+            <button onclick="this.closest('#browserx-translation-popup').remove()" style="
+              background: rgba(255,255,255,0.2);
+              border: none;
+              color: white;
+              width: 24px;
+              height: 24px;
+              border-radius: 50%;
+              cursor: pointer;
+              font-size: 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">×</button>
+          </div>
+          <div style="padding: 16px;">
+            <div style="
+              font-size: 12px;
+              color: #888;
+              margin-bottom: 8px;
+            ">Оригінал:</div>
+            <div style="
+              font-size: 13px;
+              color: #a0a0a0;
+              margin-bottom: 12px;
+              padding: 10px;
+              background: rgba(0,0,0,0.3);
+              border-radius: 8px;
+              max-height: 60px;
+              overflow-y: auto;
+            ">\${${JSON.stringify(originalText)}.substring(0, 200)}...</div>
+            <div style="
+              font-size: 12px;
+              color: #888;
+              margin-bottom: 8px;
+            ">Переклад:</div>
+            <div style="
+              font-size: 15px;
+              line-height: 1.6;
+              color: #fff;
+              padding: 12px;
+              background: rgba(59, 130, 246, 0.1);
+              border-radius: 8px;
+              border-left: 3px solid #3b82f6;
+            ">\${${JSON.stringify(translation)}}</div>
+          </div>
+        </div>
+      \`;
+      document.body.appendChild(popup);
+      
+      // Автоматично закриваємо через 15 секунд
+      setTimeout(() => popup.remove(), 15000);
+    })();
+  `;
+  
+  browserView.webContents.executeJavaScript(popupCode).catch(err => {
+    console.error('Помилка показу popup перекладу:', err);
+  });
+}
+
+// Функція для показу popup з відповіддю AI
+function showAIPopup(browserView, result, originalText) {
+  const isError = result.includes('⚠️') || result.includes('❌');
+  const popupCode = `
+    (function() {
+      // Видаляємо попередній popup
+      const oldPopup = document.getElementById('browserx-ai-popup');
+      if (oldPopup) oldPopup.remove();
+      
+      const popup = document.createElement('div');
+      popup.id = 'browserx-ai-popup';
+      popup.innerHTML = \`
+        <div style="
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          max-width: 450px;
+          min-width: 300px;
+          background: linear-gradient(135deg, #1a1b26 0%, #24283b 100%);
+          border: 1px solid #8b5cf6;
+          border-radius: 16px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(139, 92, 246, 0.2);
+          z-index: 999999;
+          font-family: 'Segoe UI', Arial, sans-serif;
+          color: #fff;
+          overflow: hidden;
+        ">
+          <div style="
+            padding: 14px 18px;
+            background: linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          ">
+            <span style="font-weight: 600; font-size: 14px;">🤖 AI Помічник</span>
+            <button onclick="this.closest('#browserx-ai-popup').remove()" style="
+              background: rgba(255,255,255,0.2);
+              border: none;
+              color: white;
+              width: 24px;
+              height: 24px;
+              border-radius: 50%;
+              cursor: pointer;
+              font-size: 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">×</button>
+          </div>
+          <div style="padding: 16px;">
+            <div style="
+              font-size: 12px;
+              color: #888;
+              margin-bottom: 8px;
+            ">Запит:</div>
+            <div style="
+              font-size: 13px;
+              color: #a0a0a0;
+              margin-bottom: 12px;
+              padding: 10px;
+              background: rgba(0,0,0,0.3);
+              border-radius: 8px;
+              max-height: 60px;
+              overflow-y: auto;
+            ">\${${JSON.stringify(originalText)}.substring(0, 200)}...</div>
+            <div style="
+              font-size: 12px;
+              color: #888;
+              margin-bottom: 8px;
+            ">Відповідь:</div>
+            <div style="
+              font-size: 14px;
+              line-height: 1.6;
+              color: #fff;
+              padding: 12px;
+              background: rgba(139, 92, 246, 0.1);
+              border-radius: 8px;
+              border-left: 3px solid #8b5cf6;
+              max-height: 250px;
+              overflow-y: auto;
+            ">\${${JSON.stringify(result)}}</div>
+          </div>
+        </div>
+      \`;
+      document.body.appendChild(popup);
+      
+      // Автоматично закриваємо через 30 секунд
+      setTimeout(() => popup.remove(), 30000);
+    })();
+  `;
+  
+  browserView.webContents.executeJavaScript(popupCode).catch(err => {
+    console.error('Помилка показу AI popup:', err);
+  });
+}
 
 // Обробка перекладу тексту
 async function translateText(text, targetLanguage) {
@@ -866,11 +1037,6 @@ ipcMain.handle('create-tab', async (event, url = null) => {
   newBrowserView.webContents.on('console-message', async (event) => {
     const message = event.message;
     
-    if (message.startsWith('AI_SELECTED_TEXT:')) {
-      const text = message.replace('AI_SELECTED_TEXT:', '').trim();
-      ipcMain.emit('text-selected', null, text);
-    }
-    
     if (message.startsWith('AI_CODE_REQUEST:')) {
       try {
         const data = JSON.parse(message.replace('AI_CODE_REQUEST:', ''));
@@ -1103,23 +1269,6 @@ async function xrayLink(url) {
 // IPC handler для X-Ray (для зворотної сумісності)
 ipcMain.handle('xray-link', async (event, url) => {
   return await xrayLink(url);
-});
-
-// Обробка виділеного тексту та AI пояснення
-ipcMain.on('text-selected', async (event, selectedText) => {
-  try {
-    // Показуємо індикатор завантаження
-    showPopupInBrowser('⏳ Завантаження...');
-    
-    // Викликаємо Google Gemini API
-    const explanation = await getAIExplanation(selectedText);
-    
-    // Відправляємо пояснення назад у веб-вміст
-    showPopupInBrowser(explanation);
-  } catch (error) {
-    console.error('Помилка при отриманні пояснення:', error);
-    showPopupInBrowser('❌ Помилка: Перевірте API ключ у файлі config.js');
-  }
 });
 
 // Обробник для узагальнення нотаток через Groq

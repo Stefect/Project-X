@@ -75,15 +75,4 @@
       }
     }, 10000);
   };
-  
-  // Відслідковуємо виділення тексту
-  if (!window.aiSelectionListenerAdded) {
-    document.addEventListener('mouseup', () => {
-      const selectedText = window.getSelection().toString().trim();
-      if (selectedText.length > 0 && selectedText.length < 200) {
-        console.log('AI_SELECTED_TEXT:', selectedText);
-      }
-    });
-    window.aiSelectionListenerAdded = true;
-  }
 })();
