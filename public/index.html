@@ -1057,11 +1057,7 @@
     </button>
     <input type="text" class="address-bar" id="url" placeholder="Пошук або введіть адресу">
     <button class="organize-btn" id="organize-tabs-btn" title="AI організація вкладок">Організувати</button>
-    <button class="smart-search-btn" id="open-settings-btn" title="Налаштування">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M14.7 9.3l-1.2-.4c-.1-.4-.3-.8-.5-1.1l.7-1c.2-.3.1-.6-.1-.8l-1-1c-.2-.2-.5-.3-.8-.1l-1 .7c-.4-.2-.7-.4-1.1-.5l-.4-1.2c-.1-.3-.4-.5-.7-.5h-1.4c-.3 0-.6.2-.7.5l-.4 1.2c-.4.1-.8.3-1.1.5l-1-.7c-.3-.2-.6-.1-.8.1l-1 1c-.2.2-.3.5-.1.8l.7 1c-.2.4-.4.7-.5 1.1l-1.2.4c-.3.1-.5.4-.5.7v1.4c0 .3.2.6.5.7l1.2.4c.1.4.3.8.5 1.1l-.7 1c-.2.3-.1.6.1.8l1 1c.2.2.5.3.8.1l1-.7c.4.2.7.4 1.1.5l.4 1.2c.1.3.4.5.7.5h1.4c.3 0 .6-.2.7-.5l.4-1.2c.4-.1.8-.3 1.1-.5l1 .7c.3.2.6.1.8-.1l1-1c.2-.2.3-.5.1-.8l-.7-1c.2-.4.4-.7.5-1.1l1.2-.4c.3-.1.5-.4.5-.7V10c0-.3-.2-.6-.5-.7zM8 11c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/>
-      </svg>
-    </button>
+    <!-- Settings button removed (Simple Settings UI deprecated) -->
     <button class="smart-search-btn" id="theme-settings-btn" title="Налаштувати вигляд" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 50%;">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
         <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13A6 6 0 0 1 8 2a6 6 0 0 1 0 12z"/>
@@ -2108,13 +2104,7 @@
       });
     }
 
-    // Відкриття налаштувань
-    const openSettingsBtn = document.getElementById('open-settings-btn');
-    if (openSettingsBtn) {
-      openSettingsBtn.addEventListener('click', () => {
-        ipcRenderer.send('open-settings');
-      });
-    }
+    // Simple settings removed — open-settings button deprecated
 
     // Меню
     const dropdownMenu = document.getElementById('dropdown-menu');
@@ -2209,7 +2199,8 @@
             // Можна додати функціонал пошуку
             dropdownMenu.classList.remove('active');
           } else if (label === 'Параметри') {
-            ipcRenderer.send('open-settings');
+            // Open the theme/customize side panel instead (settings.html removed)
+            if (typeof openThemePanel === 'function') openThemePanel();
             dropdownMenu.classList.remove('active');
           } else if (label === 'Завантаження') {
             ipcRenderer.send('open-downloads');

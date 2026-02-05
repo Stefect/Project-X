@@ -271,44 +271,7 @@ ipcMain.on('window-close', () => {
   app.quit();
 });
 
-// Відкриття вікна налаштувань
-let settingsWindow = null;
-
-ipcMain.on('open-settings', () => {
-  if (settingsWindow) {
-    settingsWindow.focus();
-    return;
-  }
-
-  settingsWindow = new BrowserWindow({
-    width: 900,
-    height: 700,
-    parent: mainWindow,
-    modal: false,
-    frame: false,
-    backgroundColor: '#1a1b26',
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  });
-
-  settingsWindow.loadFile(path.join(__dirname, '..', 'public', 'settings.html'));
-  
-  settingsWindow.on('closed', () => {
-    settingsWindow = null;
-  });
-  
-  console.log('⚙️ Вікно налаштувань відкрито');
-});
-
-// Закриття вікна налаштувань
-ipcMain.on('close-settings-window', () => {
-  if (settingsWindow) {
-    settingsWindow.close();
-    settingsWindow = null;
-  }
-});
+// Simple settings window removed - functionality replaced by in-app theme panel
 
 // Застосування теми
 ipcMain.on('apply-theme', (event, theme) => {
