@@ -132,12 +132,13 @@ function createWindow() {
     // Якщо це newtab - інжектуємо налаштування теми
     if (currentUrl.includes('newtab.html')) {
       injectThemeToNewtab(browserView);
+    } else {
+      // Інжектуємо модулі тільки для звичайних сайтів (не для newtab)
+      injectSelectionListener(browserView);
+      injectCodeMate(browserView);
+      injectLinkXRay(browserView);
+      injectT9(browserView);
     }
-    
-    injectSelectionListener(browserView);
-    injectCodeMate(browserView);
-    injectLinkXRay(browserView);
-    injectT9(browserView);
   });
 
   browserView.webContents.on('did-navigate', () => {
@@ -146,16 +147,6 @@ function createWindow() {
     
     // Зберігаємо в історію
     storage.addToHistory(currentUrl, title);
-    
-    // Якщо це newtab - інжектуємо налаштування теми
-    if (currentUrl.includes('newtab.html')) {
-      injectThemeToNewtab(browserView);
-    }
-    
-    injectSelectionListener(browserView);
-    injectCodeMate(browserView);
-    injectLinkXRay(browserView);
-    injectT9(browserView);
   });
 
   // Додаємо контекстне меню для виділеного тексту
@@ -216,6 +207,24 @@ function createWindow() {
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
     injectT9(browserView);
+  });
+
+  // Оновлюємо назву вкладки при зміні
+  browserView.webContents.on('page-title-updated', (event, title) => {
+    const activeTab = tabs.find(t => t.id === activeTabId);
+    if (activeTab) {
+      activeTab.title = title;
+      mainWindow.webContents.send('update-tab-title', { tabId: activeTabId, title });
+    }
+  });
+
+  // Оновлюємо URL в адресній строці
+  browserView.webContents.on('did-navigate', (event, url) => {
+    mainWindow.webContents.send('update-url-bar', url);
+  });
+
+  browserView.webContents.on('did-navigate-in-page', (event, url) => {
+    mainWindow.webContents.send('update-url-bar', url);
   });
 
   // Перехоплюємо console.log з веб-сторінки (оновлений синтаксис без deprecated)
@@ -942,12 +951,13 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     // Якщо це newtab - інжектуємо налаштування теми
     if (currentUrl.includes('newtab.html')) {
       injectThemeToNewtab(newBrowserView);
+    } else {
+      // Інжектуємо модулі тільки для звичайних сайтів
+      injectSelectionListener(newBrowserView);
+      injectCodeMate(newBrowserView);
+      injectLinkXRay(newBrowserView);
+      injectT9(newBrowserView);
     }
-    
-    injectSelectionListener(newBrowserView);
-    injectCodeMate(newBrowserView);
-    injectLinkXRay(newBrowserView);
-    injectT9(newBrowserView);
     
     // Оновлюємо заголовок вкладки
     const title = newBrowserView.webContents.getTitle();
@@ -956,25 +966,32 @@ ipcMain.handle('create-tab', async (event, url = null) => {
   
   newBrowserView.webContents.on('did-navigate', () => {
     const currentUrl = newBrowserView.webContents.getURL();
-    
-    // Якщо це newtab - інжектуємо налаштування теми
-    if (currentUrl.includes('newtab.html')) {
-      injectThemeToNewtab(newBrowserView);
-    }
-    
-    injectSelectionListener(newBrowserView);
-    injectCodeMate(newBrowserView);
-    injectLinkXRay(newBrowserView);
-    injectT9(newBrowserView);
     const title = newBrowserView.webContents.getTitle();
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
   });
-  
-  newBrowserView.webContents.on('did-navigate-in-page', () => {
-    injectSelectionListener(newBrowserView);
-    injectCodeMate(newBrowserView);
-    injectLinkXRay(newBrowserView);
-    injectT9(newBrowserView);
+
+  // Оновлюємо назву вкладки при зміні
+  newBrowserView.webContents.on('page-title-updated', (event, title) => {
+    const tab = tabs.find(t => t.id === newTab.id);
+    if (tab) {
+      tab.title = title;
+      mainWindow.webContents.send('update-tab-title', { tabId: newTab.id, title });
+    }
+  });
+
+  // Оновлюємо URL для цієї вкладки
+  newBrowserView.webContents.on('did-navigate', (event, url) => {
+    const tab = tabs.find(t => t.id === newTab.id);
+    if (tab && tab.id === activeTabId) {
+      mainWindow.webContents.send('update-url-bar', url);
+    }
+  });
+
+  newBrowserView.webContents.on('did-navigate-in-page', (event, url) => {
+    const tab = tabs.find(t => t.id === newTab.id);
+    if (tab && tab.id === activeTabId) {
+      mainWindow.webContents.send('update-url-bar', url);
+    }
   });
   
   // Контекстне меню для виділеного тексту
