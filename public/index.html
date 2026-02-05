@@ -1572,7 +1572,12 @@
       
       // Оновити URL bar
       ipcRenderer.on('update-url-bar', (event, url) => {
-        urlInput.value = url;
+        // Не показуємо локальні файли (newtab)
+        if (url && (url.includes('newtab.html') || url.startsWith('file://'))) {
+          urlInput.value = '';
+        } else {
+          urlInput.value = url;
+        }
       });
       
       // Якщо всі вкладки закрито, створити нову
