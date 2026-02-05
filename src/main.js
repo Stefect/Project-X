@@ -20,6 +20,14 @@ let activeTabId = 1;
 let nextTabId = 2;
 let sidebarWidth = 0; // За замовчуванням sidebar згорнутий
 
+// Глобальні налаштування теми (синхронізуються з UI)
+let themeSettings = {
+  mode: 'dark',
+  bg: '#1a1b26',
+  accent: '#3b82f6',
+  wallpaper: 'none'
+};
+
 function createWindow() {
   // Ініціалізуємо Groq AI (швидше за Gemini!)
   try {
@@ -102,19 +110,27 @@ function createWindow() {
     height: true 
   });
 
-  // Завантажуємо стартову сторінку
-  browserView.webContents.loadURL('https://www.google.com');
+  // Завантажуємо стартову сторінку (нова вкладка)
+  const startUrl = `file://${path.join(__dirname, '../public/newtab.html')}`;
+  browserView.webContents.loadURL(startUrl);
   
   // Додаємо першу вкладку до масиву
   tabs.push({
     id: 1,
     browserView: browserView,
-    url: 'https://www.google.com',
+    url: startUrl,
     title: 'Нова вкладка'
   });
 
   // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator + T9
   browserView.webContents.on('did-finish-load', () => {
+    const currentUrl = browserView.webContents.getURL();
+    
+    // Якщо це newtab - інжектуємо налаштування теми
+    if (currentUrl.includes('newtab.html')) {
+      injectThemeToNewtab(browserView);
+    }
+    
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
@@ -123,6 +139,13 @@ function createWindow() {
   });
 
   browserView.webContents.on('did-navigate', () => {
+    const currentUrl = browserView.webContents.getURL();
+    
+    // Якщо це newtab - інжектуємо налаштування теми
+    if (currentUrl.includes('newtab.html')) {
+      injectThemeToNewtab(browserView);
+    }
+    
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
@@ -558,6 +581,76 @@ ipcMain.on('settings-panel-toggled', (event, isOpen) => {
   console.log(`⚙️ Панель налаштувань ${isOpen ? 'відкрита' : 'закрита'}`);
 });
 
+// ========== Синхронізація налаштувань теми ==========
+
+// Отримуємо оновлення налаштувань теми з UI
+ipcMain.on('update-theme-settings', (event, settings) => {
+  themeSettings = { ...themeSettings, ...settings };
+  console.log('🎨 Налаштування теми оновлено:', themeSettings);
+  
+  // Оновлюємо всі відкриті newtab сторінки
+  tabs.forEach(tab => {
+    const url = tab.browserView.webContents.getURL();
+    if (url.includes('newtab.html')) {
+      injectThemeToNewtab(tab.browserView);
+    }
+  });
+});
+
+// Інжектуємо налаштування теми в newtab
+function injectThemeToNewtab(browserView) {
+  const script = `
+    (function() {
+      const settings = ${JSON.stringify(themeSettings)};
+      
+      // Застосовуємо режим
+      document.body.classList.remove('light-mode', 'dark-mode');
+      if (settings.mode === 'light') {
+        document.body.classList.add('light-mode');
+      } else {
+        document.body.classList.add('dark-mode');
+      }
+      
+      // Застосовуємо акцентний колір
+      document.documentElement.style.setProperty('--accent-color', settings.accent);
+      
+      // Застосовуємо фон
+      if (settings.bg) {
+        document.body.style.backgroundColor = settings.bg;
+      }
+      
+      // Застосовуємо шпалери
+      if (settings.wallpaper && settings.wallpaper !== 'none') {
+        const wallpaperGradients = {
+          'abstract1': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          'abstract2': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+          'abstract3': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+          'abstract4': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+          'abstract5': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+          'abstract6': 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
+        };
+        
+        if (settings.wallpaper.startsWith('data:') || settings.wallpaper.startsWith('http')) {
+          document.body.style.backgroundImage = 'url(' + settings.wallpaper + ')';
+        } else if (wallpaperGradients[settings.wallpaper]) {
+          document.body.style.backgroundImage = wallpaperGradients[settings.wallpaper];
+        }
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundRepeat = 'no-repeat';
+      } else {
+        document.body.style.backgroundImage = 'none';
+      }
+      
+      console.log('🎨 Тема застосована до newtab:', settings);
+    })();
+  `;
+  
+  browserView.webContents.executeJavaScript(script).catch(err => {
+    console.log('Помилка інжекту теми:', err.message);
+  });
+}
+
 // ========== Система управління вкладками ==========
 
 // URL для нової вкладки
@@ -604,6 +697,13 @@ ipcMain.handle('create-tab', async (event, url = null) => {
   
   // Інжектуємо скрипти після завантаження
   newBrowserView.webContents.on('did-finish-load', () => {
+    const currentUrl = newBrowserView.webContents.getURL();
+    
+    // Якщо це newtab - інжектуємо налаштування теми
+    if (currentUrl.includes('newtab.html')) {
+      injectThemeToNewtab(newBrowserView);
+    }
+    
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
@@ -612,18 +712,23 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     
     // Оновлюємо заголовок вкладки
     const title = newBrowserView.webContents.getTitle();
-    const currentUrl = newBrowserView.webContents.getURL();
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
   });
   
   newBrowserView.webContents.on('did-navigate', () => {
+    const currentUrl = newBrowserView.webContents.getURL();
+    
+    // Якщо це newtab - інжектуємо налаштування теми
+    if (currentUrl.includes('newtab.html')) {
+      injectThemeToNewtab(newBrowserView);
+    }
+    
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
     injectTranslator(newBrowserView);
     injectT9(newBrowserView);
     const title = newBrowserView.webContents.getTitle();
-    const currentUrl = newBrowserView.webContents.getURL();
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
   });
   
