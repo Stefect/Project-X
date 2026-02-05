@@ -134,9 +134,7 @@ function createWindow() {
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
-    injectTranslator(browserView);
     injectT9(browserView);
-    injectHotkeys(browserView);
   });
 
   browserView.webContents.on('did-navigate', () => {
@@ -150,22 +148,67 @@ function createWindow() {
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
-    injectTranslator(browserView);
     injectT9(browserView);
-    injectHotkeys(browserView);
   });
 
-  // Додаємо контекстне меню для збереження виділеного тексту
+  // Додаємо контекстне меню для виділеного тексту
   browserView.webContents.on('context-menu', (event, params) => {
     const menu = new Menu();
 
-    // Якщо користувач виділив текст, показуємо опцію
+    // Якщо користувач виділив текст, показуємо опції
     if (params.selectionText) {
+      const selectedText = params.selectionText;
+      
+      // 1. Копіювати
+      menu.append(new MenuItem({
+        label: '📋 Копіювати',
+        accelerator: 'CmdOrCtrl+C',
+        click: () => {
+          require('electron').clipboard.writeText(selectedText);
+        }
+      }));
+      
+      menu.append(new MenuItem({ type: 'separator' }));
+      
+      // 2. AI Помічник
+      menu.append(new MenuItem({
+        label: '🤖 AI Помічник',
+        click: async () => {
+          const result = await getAIExplanation(selectedText);
+          browserView.webContents.executeJavaScript(`
+            window.postMessage({ 
+              type: 'AI_ASSISTANT_RESULT', 
+              answer: ${JSON.stringify(result)},
+              originalText: ${JSON.stringify(selectedText)}
+            }, '*');
+          `).catch(err => console.error('Помилка AI:', err));
+        }
+      }));
+      
+      // 3. Переклад
+      menu.append(new MenuItem({
+        label: '🌐 Перекласти',
+        click: async () => {
+          const result = await translateText(selectedText, 'uk');
+          if (result.success) {
+            browserView.webContents.executeJavaScript(`
+              window.postMessage({ 
+                type: 'TRANSLATION_RESULT', 
+                translation: ${JSON.stringify(result.translation)},
+                originalText: ${JSON.stringify(selectedText)}
+              }, '*');
+            `).catch(err => console.error('Помилка перекладу:', err));
+          }
+        }
+      }));
+      
+      menu.append(new MenuItem({ type: 'separator' }));
+      
+      // 4. Додати в нотатки
       menu.append(new MenuItem({
         label: '📌 Додати в конспект',
         click: () => {
-          // Відправляємо виділений текст у головне вікно
-          mainWindow.webContents.send('add-to-notes', params.selectionText);
+          mainWindow.webContents.send('add-to-notes', selectedText);
         }
       }));
       
@@ -177,9 +220,7 @@ function createWindow() {
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
-    injectTranslator(browserView);
     injectT9(browserView);
-    injectHotkeys(browserView);
   });
 
   // Перехоплюємо console.log з веб-сторінки (оновлений синтаксис без deprecated)
@@ -728,9 +769,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
-    injectTranslator(newBrowserView);
     injectT9(newBrowserView);
-    injectHotkeys(newBrowserView);
     
     // Оновлюємо заголовок вкладки
     const title = newBrowserView.webContents.getTitle();
@@ -748,9 +787,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
-    injectTranslator(newBrowserView);
     injectT9(newBrowserView);
-    injectHotkeys(newBrowserView);
     const title = newBrowserView.webContents.getTitle();
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
   });
@@ -759,21 +796,68 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     injectSelectionListener(newBrowserView);
     injectCodeMate(newBrowserView);
     injectLinkXRay(newBrowserView);
-    injectTranslator(newBrowserView);
     injectT9(newBrowserView);
-    injectHotkeys(newBrowserView);
   });
   
-  // Контекстне меню
+  // Контекстне меню для виділеного тексту
   newBrowserView.webContents.on('context-menu', (event, params) => {
     const menu = new Menu();
     if (params.selectionText) {
+      const selectedText = params.selectionText;
+      
+      // 1. Копіювати
+      menu.append(new MenuItem({
+        label: '📋 Копіювати',
+        accelerator: 'CmdOrCtrl+C',
+        click: () => {
+          require('electron').clipboard.writeText(selectedText);
+        }
+      }));
+      
+      menu.append(new MenuItem({ type: 'separator' }));
+      
+      // 2. AI Помічник
+      menu.append(new MenuItem({
+        label: '🤖 AI Помічник',
+        click: async () => {
+          const result = await getAIExplanation(selectedText);
+          newBrowserView.webContents.executeJavaScript(`
+            window.postMessage({ 
+              type: 'AI_ASSISTANT_RESULT', 
+              answer: ${JSON.stringify(result)},
+              originalText: ${JSON.stringify(selectedText)}
+            }, '*');
+          `).catch(err => console.error('Помилка AI:', err));
+        }
+      }));
+      
+      // 3. Переклад
+      menu.append(new MenuItem({
+        label: '🌐 Перекласти',
+        click: async () => {
+          const result = await translateText(selectedText, 'uk');
+          if (result.success) {
+            newBrowserView.webContents.executeJavaScript(`
+              window.postMessage({ 
+                type: 'TRANSLATION_RESULT', 
+                translation: ${JSON.stringify(result.translation)},
+                originalText: ${JSON.stringify(selectedText)}
+              }, '*');
+            `).catch(err => console.error('Помилка перекладу:', err));
+          }
+        }
+      }));
+      
+      menu.append(new MenuItem({ type: 'separator' }));
+      
+      // 4. Додати в нотатки
       menu.append(new MenuItem({
         label: '📌 Додати в конспект',
         click: () => {
-          mainWindow.webContents.send('add-to-notes', params.selectionText);
+          mainWindow.webContents.send('add-to-notes', selectedText);
         }
       }));
+      
       menu.popup();
     }
   });
@@ -1156,21 +1240,6 @@ function showPopupInBrowser(text) {
   `).catch(err => console.error('Помилка показу popup:', err));
 }
 
-// Функція для інжектування перекладача
-function injectTranslator(targetView = null) {
-  const fs = require('fs');
-  const translatorScript = fs.readFileSync(path.join(__dirname, 'modules', 'translator.js'), 'utf8');
-  const view = targetView || browserView;
-  
-  view.webContents.executeJavaScript(translatorScript)
-    .then(() => {
-      console.log('✓ Translator інжектовано');
-    })
-    .catch(err => {
-      console.error('Помилка інжекту translator:', err);
-    });
-}
-
 // Функція для інжектування світлої теми
 function injectLightTheme(targetView = null) {
   const view = targetView || browserView;
@@ -1271,24 +1340,6 @@ function injectT9(targetBrowserView = browserView) {
       });
   } catch (error) {
     console.error('Не вдалося прочитати T9 скрипти:', error);
-  }
-}
-
-// Функція для інжектування Hotkeys (гарячі клавіші)
-function injectHotkeys(targetBrowserView = browserView) {
-  const fs = require('fs');
-  try {
-    const hotkeysScript = fs.readFileSync(path.join(__dirname, 'modules', 'hotkeys.js'), 'utf8');
-    
-    targetBrowserView.webContents.executeJavaScript(hotkeysScript)
-      .then(() => {
-        console.log('✓ Hotkeys модуль активовано (K = AI, L = Переклад)');
-      })
-      .catch(err => {
-        console.error('Помилка інжекту Hotkeys:', err);
-      });
-  } catch (error) {
-    console.error('Не вдалося прочитати Hotkeys скрипт:', error);
   }
 }
 
