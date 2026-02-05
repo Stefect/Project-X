@@ -1127,7 +1127,7 @@
     </div>
     <div class="tabs-container">
       <div class="tab active" data-tab-id="1">
-        <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'">
+        <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.style.display='none'">
         <span class="tab-title">Нова вкладка</span>
         <span class="tab-close">✕</span>
       </div>
@@ -1409,7 +1409,7 @@
     
     <div id="notes-sidebar" class="collapsed" style="width: 0; padding: 0; overflow: hidden; border-left: none;">
       <h3>
-        <span>📝 Мій Конспект</span>
+        <span>Мій Конспект</span>
         <button id="toggle-sidebar" title="Показати панель">☰</button>
       </h3>
       
@@ -1417,8 +1417,8 @@
         <div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>
       </div>
 
-      <button id="summarize-btn">✨ Узагальнити через ШІ</button>
-      <button id="clear-btn">🗑️ Очистити все</button>
+      <button id="summarize-btn">Узагальнити через AI</button>
+      <button id="clear-btn">Очистити все</button>
     </div>
   </div>
 
@@ -1622,7 +1622,7 @@
       const allTabs = document.querySelectorAll('.tab');
       
       if (allTabs.length < 2) {
-        alert('📌 Потрібно хоча б 2 вкладки для організації!');
+        alert('Потрібно хоча б 2 вкладки для організації!');
         return;
       }
 
@@ -1651,7 +1651,7 @@
 
       } catch (error) {
         console.error('Помилка організації:', error);
-        alert('❌ Помилка: ' + error.message);
+        alert('Помилка: ' + error.message);
         organizeTabsBtn.innerHTML = '🧹 Навести лад';
         organizeTabsBtn.disabled = false;
       }
@@ -1730,7 +1730,7 @@
               ">
                 <img src="https://www.google.com/s2/favicons?domain=${new URL(tabData.url || 'https://google.com').hostname}" 
                      width="16" height="16" 
-                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'"
+                     onerror="this.style.display='none'"
                      style="flex-shrink: 0;">
                 <div style="flex: 1; min-width: 0;">
                   <div style="font-weight: 600; color: ${groupColor}; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
@@ -1753,7 +1753,7 @@
 
       groupsHTML += `
         <div style="margin-top: 20px; text-align: center; color: #64748b; font-size: 13px;">
-          💡 Порада: Закрийте непотрібні вкладки для кращої організації
+          Порада: Закрийте непотрібні вкладки для кращої організації
         </div>
       `;
 
@@ -1939,7 +1939,7 @@
 
       let themesHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-          <h2 style="margin: 0; color: var(--primary-color); font-size: 24px;">⚙️ Налаштування теми</h2>
+          <h2 style="margin: 0; color: var(--primary-color); font-size: 24px;">Налаштування теми</h2>
           <button id="close-settings-popup" style="
             background: #ef4444;
             color: white;
@@ -1984,7 +1984,7 @@
         </div>
 
         <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid var(--border-color); text-align: center; color: var(--text-color); font-size: 14px;">
-          💡 Тема автоматично зберігається
+          Тема автоматично зберігається
         </div>
       `;
 
@@ -2834,7 +2834,7 @@
 
         // Перевірка розміру (макс 5MB)
         if (file.size > 5 * 1024 * 1024) {
-          alert('❌ Файл занадто великий! Максимум 5 МБ.');
+          alert('Файл занадто великий! Максимум 5 МБ.');
           return;
         }
 

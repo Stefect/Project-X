@@ -388,7 +388,7 @@ function showTranslationPopup(browserView, translation, originalText) {
             align-items: center;
             justify-content: space-between;
           ">
-            <span style="font-weight: 600; font-size: 14px;">🌐 Переклад</span>
+            <span style="font-weight: 600; font-size: 14px;">Переклад</span>
             <button onclick="this.closest('#browserx-translation-popup').remove()" style="
               background: rgba(255,255,255,0.2);
               border: none;
@@ -482,7 +482,7 @@ function showAIPopup(browserView, result, originalText) {
             align-items: center;
             justify-content: space-between;
           ">
-            <span style="font-weight: 600; font-size: 14px;">🤖 AI Помічник</span>
+            <span style="font-weight: 600; font-size: 14px;">AI Помічник</span>
             <button onclick="this.closest('#browserx-ai-popup').remove()" style="
               background: rgba(255,255,255,0.2);
               border: none;

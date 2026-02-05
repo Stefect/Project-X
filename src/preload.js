@@ -116,7 +116,7 @@ function showPopup(text) {
 
   const content = document.createElement('div');
   content.style.paddingRight = '20px';
-  content.innerHTML = `<strong>🤖 AI Помічник:</strong><br><br>${text}`;
+  content.innerHTML = `<strong>AI Помічник:</strong><br><br>${text}`;
 
   popup.appendChild(closeBtn);
   popup.appendChild(content);
