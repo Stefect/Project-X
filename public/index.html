@@ -2565,8 +2565,8 @@
       document.documentElement.style.setProperty('--theme-bg', bg);
       document.documentElement.style.setProperty('--theme-accent', accent);
       
-      // Оновлюємо реальні елементи
-      document.body.style.background = bg;
+      // Оновлюємо реальні елементи (використовуємо backgroundColor щоб не конфліктувати з backgroundImage)
+      document.body.style.backgroundColor = bg;
       
       const toolbarEl = document.querySelector('.toolbar');
       const tabsBarEl = document.querySelector('.tabs-bar');
@@ -2731,6 +2731,10 @@
       
       if (!wallpaperData || wallpaperData === 'none') {
         bodyEl.style.backgroundImage = 'none';
+        bodyEl.style.backgroundSize = '';
+        bodyEl.style.backgroundPosition = '';
+        bodyEl.style.backgroundRepeat = '';
+        bodyEl.style.backgroundAttachment = '';
         bodyEl.classList.remove('has-wallpaper');
         localStorage.removeItem('wallpaper');
         currentWallpaper = 'none';
@@ -2740,17 +2744,27 @@
         bodyEl.style.backgroundSize = 'cover';
         bodyEl.style.backgroundPosition = 'center';
         bodyEl.style.backgroundRepeat = 'no-repeat';
+        bodyEl.style.backgroundAttachment = 'fixed';
         bodyEl.classList.add('has-wallpaper');
         localStorage.setItem('wallpaper', wallpaperData);
         currentWallpaper = wallpaperData;
       } else {
         // Градієнтні пресети
-        const wallpaperCard = document.querySelector(`[data-wallpaper="${wallpaperData}"]`);
-        if (wallpaperCard) {
-          const bgImage = wallpaperCard.style.backgroundImage;
-          bodyEl.style.backgroundImage = bgImage;
+        const wallpaperGradients = {
+          'abstract1': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          'abstract2': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+          'abstract3': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+          'abstract4': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+          'abstract5': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+          'abstract6': 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
+        };
+        
+        if (wallpaperGradients[wallpaperData]) {
+          bodyEl.style.backgroundImage = wallpaperGradients[wallpaperData];
           bodyEl.style.backgroundSize = 'cover';
           bodyEl.style.backgroundPosition = 'center';
+          bodyEl.style.backgroundRepeat = 'no-repeat';
+          bodyEl.style.backgroundAttachment = 'fixed';
           bodyEl.classList.add('has-wallpaper');
           localStorage.setItem('wallpaper', wallpaperData);
           currentWallpaper = wallpaperData;
