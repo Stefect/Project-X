@@ -1,21 +1,23 @@
 {
-  "name": "ai-browser",
+  "name": "browserx",
   "version": "1.0.0",
-  "description": "AI-powered browser with smart features",
+  "description": "BrowserX - AI-powered browser with smart features, history, bookmarks and session memory",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win",
-    "build:portable": "electron-builder --win portable"
+    "build:portable": "electron-builder --win portable",
+    "build:all": "electron-builder --win --publish never"
   },
   "keywords": [
     "browser",
     "chromium",
     "electron",
-    "ai"
+    "ai",
+    "groq"
   ],
-  "author": "Your Name",
-  "license": "ISC",
+  "author": "Stefect",
+  "license": "MIT",
   "devDependencies": {
     "electron": "^40.1.0",
     "electron-builder": "^25.1.8"
@@ -26,14 +28,26 @@
     "groq-sdk": "^0.37.0"
   },
   "build": {
-    "appId": "com.aibrowser.app",
-    "productName": "AI Browser",
+    "appId": "com.browserx.app",
+    "productName": "BrowserX",
+    "copyright": "Copyright © 2024-2026 Stefect",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
       "**/*",
-      "!dist/**"
+      "!dist/**",
+      "!.git/**",
+      "!.gitignore",
+      "!README.md",
+      "!CHANGELOG.md"
+    ],
+    "extraResources": [
+      {
+        "from": "config.js",
+        "to": "config.js"
+      }
     ],
     "win": {
       "target": [
@@ -42,15 +56,28 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
         }
-      ]
+      ],
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "AI Browser"
+      "shortcutName": "BrowserX",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "BrowserX-Portable-${version}.${ext}"
     }
   }
 }

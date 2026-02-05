@@ -3,6 +3,9 @@ const path = require('path');
 const Groq = require('groq-sdk');
 const EventEmitter = require('events');
 
+// Модуль збереження даних (історія, закладки, сесія)
+const storage = require('./modules/storage');
+
 // Увеличиваем лимит слушателей событий для избежания предупреждений
 EventEmitter.defaultMaxListeners = 20;
 
@@ -139,6 +142,10 @@ function createWindow() {
 
   browserView.webContents.on('did-navigate', () => {
     const currentUrl = browserView.webContents.getURL();
+    const title = browserView.webContents.getTitle();
+    
+    // Зберігаємо в історію
+    storage.addToHistory(currentUrl, title);
     
     // Якщо це newtab - інжектуємо налаштування теми
     if (currentUrl.includes('newtab.html')) {
@@ -1567,3 +1574,91 @@ async function getAIExplanation(text) {
     return `❌ Помилка AI: ${error.message}`;
   }
 }
+
+// ==================== IPC HANDLERS ДЛЯ STORAGE ====================
+
+// Історія
+ipcMain.handle('get-history', (event, limit) => {
+  return storage.getHistory(limit || 100);
+});
+
+ipcMain.handle('search-history', (event, query) => {
+  return storage.searchHistory(query);
+});
+
+ipcMain.on('clear-history', () => {
+  storage.clearHistory();
+  console.log('🗑️ Історію очищено');
+});
+
+// Закладки
+ipcMain.handle('get-bookmarks', () => {
+  return storage.getBookmarks();
+});
+
+ipcMain.handle('add-bookmark', (event, { url, title, favicon }) => {
+  const added = storage.addBookmark(url, title, favicon);
+  console.log(added ? '⭐ Закладку додано:' : '⭐ Закладка вже існує:', url);
+  return added;
+});
+
+ipcMain.on('remove-bookmark', (event, url) => {
+  storage.removeBookmark(url);
+  console.log('⭐ Закладку видалено:', url);
+});
+
+ipcMain.handle('is-bookmarked', (event, url) => {
+  return storage.isBookmarked(url);
+});
+
+// Сесія (вкладки)
+ipcMain.on('save-session', () => {
+  const sessionTabs = tabs.map(tab => ({
+    url: tab.browserView?.webContents?.getURL() || '',
+    title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
+  }));
+  storage.saveSession(sessionTabs);
+  console.log('💾 Сесію збережено:', sessionTabs.length, 'вкладок');
+});
+
+ipcMain.handle('get-session', () => {
+  return storage.getSession();
+});
+
+// Налаштування
+ipcMain.handle('get-settings', () => {
+  return storage.getAllSettings();
+});
+
+ipcMain.on('save-settings', (event, settings) => {
+  storage.setAllSettings(settings);
+  console.log('⚙️ Налаштування збережено');
+});
+
+// Нотатки з пам'яттю
+ipcMain.on('save-note', (event, { text, url }) => {
+  storage.addNote(text, url);
+  console.log('📝 Нотатку збережено');
+});
+
+ipcMain.handle('get-notes', () => {
+  return storage.getNotes();
+});
+
+ipcMain.on('delete-note', (event, id) => {
+  storage.deleteNote(id);
+});
+
+ipcMain.on('clear-notes', () => {
+  storage.clearNotes();
+});
+
+// Зберігаємо сесію перед закриттям
+app.on('before-quit', () => {
+  const sessionTabs = tabs.map(tab => ({
+    url: tab.browserView?.webContents?.getURL() || '',
+    title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
+  }));
+  storage.saveSession(sessionTabs);
+  console.log('💾 Сесію автоматично збережено при закритті');
+});
