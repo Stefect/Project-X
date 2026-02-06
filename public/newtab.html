@@ -59,34 +59,6 @@
       text-shadow: none;
     }
 
-    .search-box {
-      width: 100%;
-      max-width: 600px;
-      margin-bottom: 50px;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 16px 24px;
-      font-size: 16px;
-      border: none;
-      border-radius: 30px;
-      background: var(--input-bg, rgba(36, 40, 59, 0.95));
-      color: var(--text-color);
-      box-shadow: 0 4px 20px var(--shadow-color, rgba(0, 0, 0, 0.3));
-      outline: none;
-      transition: all 0.3s ease;
-    }
-
-    .search-input::placeholder {
-      color: #6b7280;
-    }
-
-    .search-input:focus {
-      box-shadow: 0 6px 30px var(--shadow-color, rgba(0, 0, 0, 0.4));
-      transform: translateY(-2px);
-    }
-
     .shortcuts {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -189,15 +161,11 @@
   <div class="container">
     <div class="greeting" id="greeting">Привіт!</div>
     <div class="logo">BrowserX</div>
-    
-    <div class="search-box">
-      <input type="text" class="search-input" id="search" placeholder="Пошук в Google або введіть URL">
-    </div>
 
     <div class="shortcuts" id="shortcuts">
-      <a href="https://www.google.com" class="shortcut">
-        <div class="shortcut-icon">G</div>
-        <span class="shortcut-name">Google</span>
+      <a href="https://duckduckgo.com" class="shortcut">
+        <div class="shortcut-icon">🦆</div>
+        <span class="shortcut-name">DuckDuckGo</span>
       </a>
       <a href="https://www.youtube.com" class="shortcut">
         <div class="shortcut-icon">▶</div>
@@ -252,22 +220,6 @@
     }
     
     updateGreeting();
-
-    // Пошук
-    document.getElementById('search').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        const query = e.target.value.trim();
-        if (query) {
-          if (query.includes('.') && !query.includes(' ')) {
-            // URL
-            window.location.href = query.startsWith('http') ? query : 'https://' + query;
-          } else {
-            // Google search
-            window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-          }
-        }
-      }
-    });
 
     // Завантаження налаштувань теми
     function loadTheme() {
@@ -335,9 +287,6 @@
         loadTheme();
       }
     });
-
-    // Фокус на пошуковому полі
-    document.getElementById('search').focus();
   </script>
 </body>
 </html>
