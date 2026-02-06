@@ -1,6 +1,6 @@
 {
   "name": "browserx",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "BrowserX - AI-powered browser with smart features, history, bookmarks and session memory",
   "main": "src/main.js",
   "scripts": {
