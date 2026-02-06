@@ -4,7 +4,7 @@
   "description": "BrowserX - AI-powered browser with smart features, history, bookmarks and session memory",
   "main": "src/main.js",
   "scripts": {
-    "start": "chcp 65001 > nul && electron .",
+    "start": "electron .",
     "build": "electron-builder --win",
     "build:portable": "electron-builder --win portable",
     "build:all": "electron-builder --win --publish never"
