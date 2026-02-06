@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';">
-  <title>AI Browser</title>
+  <title>BrowserX</title>
   <style>
     * {
       margin: 0;
@@ -1164,8 +1164,11 @@
         <path d="M13 8c0-2.76-2.24-5-5-5-1.5 0-2.85.66-3.77 1.7L2 2v5h5L4.5 4.5C5.2 3.6 6.5 3 8 3c2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.11 0-2.11-.45-2.83-1.17L3.76 11.24C4.82 12.3 6.33 13 8 13c2.76 0 5-2.24 5-5z"/>
       </svg>
     </button>
-    <input type="text" class="address-bar" id="url" placeholder="Пошук або введіть адресу">
+    <input type="text" class="address-bar" id="url" placeholder="DuckDuckGo пошук або введіть адресу">
     <button class="organize-btn" id="organize-tabs-btn" title="AI організація вкладок">Організувати</button>
+    <button class="nav-button" id="tor-btn" title="Перемкнути Tor" style="font-weight: 600; color: #9ca3af;">
+      Tor: OFF
+    </button>
     <!-- Settings button removed (Simple Settings UI deprecated) -->
     <button class="smart-search-btn" id="theme-settings-btn" title="Налаштувати вигляд" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 50%;">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
@@ -2879,6 +2882,69 @@
     console.log('✅ Панель налаштувань готова');
 
     // ===================== END ПАНЕЛЬ НАЛАШТУВАНЬ =====================
+
+    // ===================== TOR INTEGRATION =====================
+    const torBtn = document.getElementById('tor-btn');
+    
+    // Функція для показу повідомлень
+    function showTorNotification(message) {
+      console.log('Tor:', message);
+      // Можна додати красиве сповіщення пізніше
+    }
+    
+    if (torBtn) {
+      // Завантажуємо початковий статус
+      ipcRenderer.invoke('get-tor-status').then(status => {
+        if (status.active) {
+          torBtn.textContent = 'Tor: ON';
+          torBtn.style.color = '#8b5cf6';
+        } else {
+          torBtn.textContent = 'Tor: OFF';
+          torBtn.style.color = '#9ca3af';
+        }
+      }).catch(err => {
+        console.error('Помилка отримання статусу Tor:', err);
+        torBtn.textContent = 'Tor: OFF';
+        torBtn.style.color = '#9ca3af';
+      });
+      
+      // Обробник кліку
+      torBtn.addEventListener('click', async () => {
+        torBtn.textContent = 'Підключення...';
+        torBtn.disabled = true;
+        
+        try {
+          const result = await ipcRenderer.invoke('toggle-tor');
+          
+          if (result.status) {
+            torBtn.textContent = 'Tor: ON';
+            torBtn.style.color = '#8b5cf6';
+          } else {
+            torBtn.textContent = 'Tor: OFF';
+            torBtn.style.color = '#9ca3af';
+          }
+          
+          // Показуємо повідомлення
+          showTorNotification(result.message);
+        } catch (error) {
+          console.error('Помилка перемикання Tor:', error);
+          torBtn.textContent = 'Tor: OFF';
+          torBtn.style.color = '#dc2626';
+          showTorNotification('Помилка підключення Tor');
+        } finally {
+          torBtn.disabled = false;
+        }
+      });
+    }
+    
+    // Слухаємо готовність Tor
+    ipcRenderer.on('tor-ready', (event, ready) => {
+      if (ready && torBtn) {
+        console.log('Tor готовий до використання');
+      }
+    });
+    
+    // ===================== END TOR INTEGRATION =====================
     
   } catch (error) {
     console.error('❌ КРИТИЧНА ПОМИЛКА в index.html:', error);

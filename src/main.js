@@ -1,7 +1,19 @@
-const { app, BrowserWindow, BrowserView, ipcMain, Menu, MenuItem } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain, Menu, MenuItem, session } = require('electron');
 const path = require('path');
+const { spawn } = require('child_process');
 const Groq = require('groq-sdk');
 const EventEmitter = require('events');
+
+// Встановлюємо UTF-8 кодування для консолі
+if (process.platform === 'win32') {
+  process.stdout.setDefaultEncoding('utf8');
+  const { execSync } = require('child_process');
+  try {
+    execSync('chcp 65001', { stdio: 'ignore' });
+  } catch (e) {
+    // Ігноруємо помилки
+  }
+}
 
 // Модуль збереження даних (історія, закладки, сесія)
 const storage = require('./modules/storage');
@@ -16,6 +28,8 @@ const config = require('./config');
 let mainWindow;
 let browserView;
 let groqClient;
+let torProcess;
+let isTorActive = false;
 
 // Система управління вкладками
 let tabs = [];
@@ -30,6 +44,57 @@ let themeSettings = {
   accent: '#3b82f6',
   wallpaper: 'none'
 };
+
+// Функція запуску Tor
+function startTor() {
+  const torPath = path.join(__dirname, '..', 'bin', 'tor', 'tor.exe');
+  const fs = require('fs');
+  
+  // Перевіряємо чи існує tor.exe
+  if (!fs.existsSync(torPath)) {
+    console.log('Tor не знайдено. Завантажте Tor Expert Bundle та помістіть tor.exe в папку bin/');
+    return;
+  }
+  
+  console.log('Запускаємо Tor з:', torPath);
+  
+  const geoipPath = path.join(__dirname, '..', 'bin', 'data', 'geoip');
+  const geoip6Path = path.join(__dirname, '..', 'bin', 'data', 'geoip6');
+  
+  torProcess = spawn(torPath, [
+    '--GeoIPFile', geoipPath,
+    '--GeoIPv6File', geoip6Path
+  ], {
+    cwd: path.join(__dirname, '..', 'bin', 'tor'),
+    windowsHide: true // Приховуємо консольне вікно на Windows
+  });
+  
+  torProcess.stdout.on('data', (data) => {
+    const output = data.toString('utf8');
+    console.log('Tor:', output);
+    
+    // Перевіряємо чи Tor готовий
+    if (output.includes('Bootstrapped 100%')) {
+      console.log('Tor успішно підключено!');
+      if (mainWindow) {
+        mainWindow.webContents.send('tor-ready', true);
+      }
+    }
+  });
+  
+  torProcess.stderr.on('data', (data) => {
+    const output = data.toString('utf8');
+    // Tor виводить багато інформації в stderr - це нормально
+    // Показуємо тільки справжні помилки
+    if (output.includes('[err]') || output.includes('ERROR')) {
+      console.error('Tor Error:', output);
+    }
+  });
+  
+  torProcess.on('close', (code) => {
+    console.log('Tor процес завершено з кодом:', code);
+  });
+}
 
 function createWindow() {
   // Ініціалізуємо Groq AI (швидше за Gemini!)
@@ -318,6 +383,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  startTor(); // Запускаємо Tor у фоні
   createWindow();
 
   app.on('activate', () => {
@@ -330,6 +396,14 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+// Вбиваємо процес Tor при закритті
+app.on('will-quit', () => {
+  if (torProcess) {
+    console.log('Закриваємо Tor...');
+    torProcess.kill();
   }
 });
 
@@ -1224,8 +1298,8 @@ ipcMain.on('navigate', (event, input) => {
       url = 'https://' + url;
     }
   } else {
-    // Це пошуковий запит - шукаємо в Google
-    url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+    // Це пошуковий запит - шукаємо в DuckDuckGo (дружній до Tor)
+    url = 'https://duckduckgo.com/?q=' + encodeURIComponent(url);
   }
   
   console.log('🔍 Навігація:', input, '→', url);
@@ -1678,4 +1752,42 @@ app.on('before-quit', () => {
   }));
   storage.saveSession(sessionTabs);
   console.log('💾 Сесію автоматично збережено при закритті');
+});
+
+// ==================== TOR INTEGRATION ====================
+
+// Перемикач Tor
+ipcMain.handle('toggle-tor', async () => {
+  const ses = session.defaultSession;
+  
+  if (isTorActive) {
+    // Вимикаємо Tor - пряме підключення
+    await ses.setProxy({ mode: 'direct' });
+    isTorActive = false;
+    console.log('Tor вимкнено - звичайне підключення');
+    return { 
+      status: false, 
+      message: 'Tor вимкнено. Ви використовуєте звичайне підключення.' 
+    };
+  } else {
+    // Вмикаємо Tor - SOCKS5 proxy
+    await ses.setProxy({
+      mode: 'fixed_servers',
+      proxyRules: 'socks5://127.0.0.1:9050'
+    });
+    isTorActive = true;
+    console.log('Tor увімкнено - трафік через SOCKS5 proxy');
+    return { 
+      status: true, 
+      message: 'Tor увімкнено! Ваше підключення тепер анонімне.' 
+    };
+  }
+});
+
+// Отримати статус Tor
+ipcMain.handle('get-tor-status', () => {
+  return { 
+    active: isTorActive,
+    processRunning: torProcess !== null && torProcess.exitCode === null
+  };
 });
