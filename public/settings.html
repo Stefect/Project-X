@@ -287,7 +287,7 @@
     <div class="header">
         <h1>ПРОСТЕ НАЛАШТУВАННЯ</h1>
         <div class="header-actions">
-            <button class="icon-btn" id="close-btn">✕</button>
+            <button class="icon-btn" id="close-btn"></button>
         </div>
     </div>
 
@@ -303,7 +303,7 @@
             </div>
             <div class="presets-grid">
                 <div class="preset-card active" data-preset="opera">
-                    <div class="preset-icon" style="color: #f7768e;">⭕</div>
+                    <div class="preset-icon" style="color: #f7768e;"></div>
                 </div>
                 <div class="preset-card" data-preset="gx">
                     <div class="preset-icon" style="color: #9d7cd8;">GX</div>
@@ -429,7 +429,7 @@
     <script>
         try {
             const { ipcRenderer } = require('electron');
-            console.log('✅ IPC Renderer завантажено');
+            console.log(' IPC Renderer завантажено');
 
             // Теми
             const themes = {
@@ -484,10 +484,10 @@
             const closeBtn = document.getElementById('close-btn');
             if (closeBtn) {
                 closeBtn.addEventListener('click', () => {
-                    console.log('🔴 Закриття вікна...');
+                    console.log(' Закриття вікна...');
                     ipcRenderer.send('close-settings-window');
                 });
-                console.log('✅ Кнопка закриття налаштована');
+                console.log(' Кнопка закриття налаштована');
             }
 
             // Завантаження збереженої теми
@@ -495,7 +495,7 @@
             const savedThemeCard = document.querySelector(`[data-theme="${savedTheme}"]`);
             if (savedThemeCard) {
                 savedThemeCard.classList.add('active');
-                console.log('✅ Збережена тема:', savedTheme);
+                console.log(' Збережена тема:', savedTheme);
             }
 
             // Обробка вибору тем
@@ -504,10 +504,10 @@
                     const themeId = this.dataset.theme;
                     const theme = themes[themeId];
                     
-                    console.log('🎨 Вибрано тему:', themeId);
+                    console.log(' Вибрано тему:', themeId);
                     
                     if (!theme) {
-                        console.error('❌ Тема не знайдена:', themeId);
+                        console.error(' Тема не знайдена:', themeId);
                         return;
                     }
 
@@ -521,15 +521,15 @@
                     // Відправляємо на головне вікно
                     ipcRenderer.send('apply-theme', theme);
 
-                    console.log('✅ Тема застосована:', theme.name);
+                    console.log(' Тема застосована:', theme.name);
                 });
             });
-            console.log('✅ Обробники тем налаштовані');
+            console.log(' Обробники тем налаштовані');
 
             // Обробка вибору шпалер
             document.querySelectorAll('.wallpaper-card').forEach(card => {
                 card.addEventListener('click', function() {
-                    console.log('🖼️ Вибрано шпалери');
+                    console.log(' Вибрано шпалери');
                     document.querySelectorAll('.wallpaper-card').forEach(c => c.classList.remove('active'));
                     this.classList.add('active');
                 });
@@ -538,15 +538,15 @@
             // Обробка пресетів
             document.querySelectorAll('.preset-card').forEach(card => {
                 card.addEventListener('click', function() {
-                    console.log('⚙️ Вибрано пресет');
+                    console.log(' Вибрано пресет');
                     document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
                     this.classList.add('active');
                 });
             });
 
-            console.log('✅ Всі обробники готові');
+            console.log(' Всі обробники готові');
         } catch (error) {
-            console.error('❌ Помилка завантаження налаштувань:', error);
+            console.error(' Помилка завантаження налаштувань:', error);
             alert('Помилка: ' + error.message);
         }
     </script>

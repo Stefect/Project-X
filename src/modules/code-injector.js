@@ -15,7 +15,7 @@
 
       // Створюємо кнопку
       const btn = document.createElement('button');
-      btn.innerText = "🤖 Пояснити";
+      btn.innerText = " Пояснити";
       btn.className = 'my-ai-code-btn';
       btn.title = "Отримати AI пояснення цього коду";
       
@@ -66,7 +66,7 @@
         e.stopPropagation();
         
         const originalText = btn.innerText;
-        btn.innerText = "⏳ Думаю...";
+        btn.innerText = " Думаю...";
         btn.disabled = true;
         btn.style.cursor = 'wait';
         
@@ -92,7 +92,7 @@ ${codeText}
           
         } catch (err) {
           console.error('Помилка аналізу коду:', err);
-          btn.innerText = "❌ Помилка";
+          btn.innerText = " Помилка";
           setTimeout(() => {
             btn.innerText = originalText;
             btn.disabled = false;
@@ -108,8 +108,8 @@ ${codeText}
     // Знаходимо кнопку і відновлюємо її стан
     const buttons = document.querySelectorAll('.my-ai-code-btn');
     buttons.forEach(btn => {
-      if (btn.innerText === "⏳ Думаю...") {
-        btn.innerText = "🤖 Пояснити";
+      if (btn.innerText === " Думаю...") {
+        btn.innerText = " Пояснити";
         btn.disabled = false;
         btn.style.cursor = 'pointer';
       }
@@ -120,7 +120,7 @@ ${codeText}
       window.showAIPopup(explanation);
     } else {
       // Якщо функція недоступна, створюємо простий alert
-      alert("🤖 AI Аналіз коду:\n\n" + explanation);
+      alert(" AI Аналіз коду:\n\n" + explanation);
     }
   };
 
