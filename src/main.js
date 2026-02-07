@@ -100,13 +100,13 @@ function createWindow() {
   // Ініціалізуємо Groq AI (швидше за Gemini!)
   try {
     if (!config.GROQ_API_KEY || config.GROQ_API_KEY === 'YOUR_GROQ_API_KEY_HERE') {
-      console.error('✗ API ключ не налаштовано в config.js');
+      console.error('[ERROR] API ключ не налаштовано в config.js');
     } else {
       groqClient = new Groq({ apiKey: config.GROQ_API_KEY });
-      console.log('✓ Groq AI ініціалізовано з ключем:', config.GROQ_API_KEY.substring(0, 10) + '...');
+      console.log('[OK] Groq AI ініціалізовано з ключем:', config.GROQ_API_KEY.substring(0, 10) + '...');
     }
   } catch (error) {
-    console.error('✗ Помилка ініціалізації Groq:', error.message);
+    console.error('[ERROR] Помилка ініціалізації Groq:', error.message);
   }
 
   // Створюємо головне вікно (без рамок, як Chrome)
@@ -224,7 +224,7 @@ function createWindow() {
       
       // 1. Копіювати
       menu.append(new MenuItem({
-        label: '📋 Копіювати',
+        label: 'Копіювати',
         accelerator: 'CmdOrCtrl+C',
         click: () => {
           require('electron').clipboard.writeText(selectedText);
@@ -235,7 +235,7 @@ function createWindow() {
       
       // 2. AI Помічник
       menu.append(new MenuItem({
-        label: '🤖 AI Помічник',
+        label: 'AI Помічник',
         click: async () => {
           const result = await getAIExplanation(selectedText);
           showAIPopup(browserView, result, selectedText);
@@ -244,7 +244,7 @@ function createWindow() {
       
       // 3. Переклад
       menu.append(new MenuItem({
-        label: '🌐 Перекласти',
+        label: 'Перекласти',
         click: async () => {
           const result = await translateText(selectedText, 'uk');
           if (result.success) {
@@ -257,7 +257,7 @@ function createWindow() {
       
       // 4. Додати в нотатки
       menu.append(new MenuItem({
-        label: '📌 Додати в конспект',
+        label: 'Додати в конспект',
         click: () => {
           mainWindow.webContents.send('add-to-notes', selectedText);
         }
@@ -382,9 +382,113 @@ function createWindow() {
   });
 }
 
+// Функція відновлення сесії (вкладок) з попереднього запуску
+function restoreSession() {
+  try {
+    const session = storage.getSession();
+    const sessionTabs = session.tabs || [];
+    
+    // Якщо немає збережених вкладок - нічого не робимо
+    if (sessionTabs.length === 0) {
+      console.log('[SESSION] Немає збережених вкладок для відновлення');
+      return;
+    }
+    
+    console.log('[SESSION] Відновлюю', sessionTabs.length, 'вкладок...');
+    
+    // Закриваємо дефолтну newtab вкладку
+    if (tabs.length === 1 && tabs[0].url.includes('newtab.html')) {
+      tabs = [];
+      nextTabId = 1;
+    }
+    
+    // Відновлюємо кожну вкладку
+    sessionTabs.forEach((tab, index) => {
+      if (tab.url && tab.url.trim() !== '') {
+        // Створюємо новий BrowserView для вкладки
+        const tabView = new BrowserView({
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true
+          }
+        });
+        
+        const tabData = {
+          id: nextTabId,
+          browserView: tabView,
+          url: tab.url,
+          title: tab.title || 'Завантаження...'
+        };
+        
+        tabs.push(tabData);
+        
+        // Завантажуємо URL
+        tabView.webContents.loadURL(tab.url).catch(err => {
+          console.log('[ERROR] Не вдалося завантажити вкладку:', tab.url);
+        });
+        
+        // Додаємо обробники для відновленої вкладки
+        tabView.webContents.on('did-finish-load', () => {
+          const currentUrl = tabView.webContents.getURL();
+          if (!currentUrl.includes('newtab.html')) {
+            injectSelectionListener(tabView);
+            injectCodeMate(tabView);
+            injectLinkXRay(tabView);
+            injectT9(tabView);
+          }
+        });
+        
+        tabView.webContents.on('page-title-updated', (event, title) => {
+          const tab = tabs.find(t => t.id === tabData.id);
+          if (tab) {
+            tab.title = title;
+            mainWindow.webContents.send('update-tab-title', { tabId: tabData.id, title });
+          }
+        });
+        
+        // Відправляємо на UI щоб показати вкладку
+        mainWindow.webContents.send('tab-restored', {
+          tabId: nextTabId,
+          url: tab.url,
+          title: tab.title
+        });
+        
+        nextTabId++;
+      }
+    });
+    
+    // Активуємо першу вкладку
+    if (tabs.length > 0) {
+      activeTabId = tabs[0].id;
+      mainWindow.setBrowserView(tabs[0].browserView);
+      
+      const bounds = mainWindow.getContentBounds();
+      tabs[0].browserView.setBounds({
+        x: 0,
+        y: 100,
+        width: bounds.width - sidebarWidth,
+        height: bounds.height - 100
+      });
+      
+      mainWindow.webContents.send('tab-activated', activeTabId);
+    }
+    
+    console.log('[SESSION] Сесію відновлено успішно!');
+  } catch (error) {
+    console.error('[ERROR] Помилка відновлення сесії:', error.message);
+  }
+}
+
 app.whenReady().then(() => {
   startTor(); // Запускаємо Tor у фоні
   createWindow();
+  
+  // Відновлюємо сесію (вкладки) після завантаження вікна
+  mainWindow.webContents.once('did-finish-load', () => {
+    setTimeout(() => {
+      restoreSession();
+    }, 500); // Невелика затримка для стабільності
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -421,7 +525,7 @@ ipcMain.on('window-maximize', () => {
 });
 
 ipcMain.on('window-close', () => {
-  console.log('❌ Отримано команду закриття вікна');
+  console.log(' Отримано команду закриття вікна');
   if (mainWindow) {
     mainWindow.close();
   }
@@ -432,7 +536,7 @@ ipcMain.on('window-close', () => {
 
 // Застосування теми
 ipcMain.on('apply-theme', (event, theme) => {
-  console.log('🎨 Застосовується тема:', theme.name);
+  console.log('[THEME] Застосовується тема:', theme.name);
   
   // Відправляємо тему на головне вікно
   mainWindow.webContents.send('theme-changed', theme);
@@ -533,7 +637,7 @@ function showTranslationPopup(browserView, translation, originalText) {
 
 // Функція для показу popup з відповіддю AI
 function showAIPopup(browserView, result, originalText) {
-  const isError = result.includes('⚠️') || result.includes('❌');
+  const isError = result.includes('[WARNING]') || result.includes('[ERROR]');
   const popupCode = `
     (function() {
       // Видаляємо попередній popup
@@ -630,12 +734,12 @@ function showAIPopup(browserView, result, originalText) {
 // Обробка перекладу тексту
 async function translateText(text, targetLanguage) {
   try {
-    console.log('🌐 Переклад на', targetLanguage + ':', text.substring(0, 50) + '...');
+    console.log(' Переклад на', targetLanguage + ':', text.substring(0, 50) + '...');
 
     if (!groqClient) {
       return { 
         success: false, 
-        message: '⚠️ AI не ініціалізовано. Перевірте API ключ у config.js' 
+        message: ' AI не ініціалізовано. Перевірте API ключ у config.js' 
       };
     }
 
@@ -661,7 +765,7 @@ async function translateText(text, targetLanguage) {
 Текст для перекладу:
 ${text}`;
 
-    console.log('🤔 Перекладаю через Groq AI...');
+    console.log(' Перекладаю через Groq AI...');
 
     // Питаємо Groq AI
     const completion = await groqClient.chat.completions.create({
@@ -676,11 +780,11 @@ ${text}`;
     if (!translation) {
       return { 
         success: false, 
-        message: '❌ Помилка перекладу' 
+        message: ' Помилка перекладу' 
       };
     }
 
-    console.log('✓ Переклад готовий');
+    console.log(' Переклад готовий');
     return { 
       success: true, 
       translation: translation 
@@ -690,7 +794,7 @@ ${text}`;
     console.error('Помилка перекладу:', error);
     return { 
       success: false, 
-      message: `❌ ${error.message}` 
+      message: ` ${error.message}` 
     };
   }
 }
@@ -701,7 +805,7 @@ ipcMain.handle('translate-text', async (event, text, targetLanguage) => {
 
 // Обробка зміни мови перекладу
 ipcMain.on('change-translation-language', (event, language) => {
-  console.log('🌐 Мова перекладу змінена на:', language);
+  console.log(' Мова перекладу змінена на:', language);
   
   // Відправляємо повідомлення всім вкладкам
   tabs.forEach(tab => {
@@ -714,19 +818,19 @@ ipcMain.on('change-translation-language', (event, language) => {
 // Розумний Організатор Вкладок (Tab Zen Master)
 ipcMain.handle('organize-tabs', async (event) => {
   try {
-    console.log('🧘‍♂️ Організовую вкладки через AI...');
+    console.log(' Організовую вкладки через AI...');
 
     if (!groqClient) {
       return { 
         success: false, 
-        message: '⚠️ AI не ініціалізовано. Перевірте API ключ у config.js' 
+        message: ' AI не ініціалізовано. Перевірте API ключ у config.js' 
       };
     }
 
     if (tabs.length < 2) {
       return { 
         success: false, 
-        message: '📌 Занадто мало вкладок для організації (потрібно хоча б 2)' 
+        message: ' Занадто мало вкладок для організації (потрібно хоча б 2)' 
       };
     }
 
@@ -774,7 +878,7 @@ ipcMain.handle('organize-tabs', async (event) => {
 Список вкладок:
 ${tabsListString}`;
 
-    console.log('🤔 Аналізую вкладки через Groq AI...');
+    console.log(' Аналізую вкладки через Groq AI...');
 
     // Питаємо Groq AI
     const completion = await groqClient.chat.completions.create({
@@ -789,7 +893,7 @@ ${tabsListString}`;
     if (!responseText) {
       return { 
         success: false, 
-        message: '❌ Помилка отримання відповіді від AI' 
+        message: ' Помилка отримання відповіді від AI' 
       };
     }
 
@@ -803,11 +907,11 @@ ${tabsListString}`;
       console.error('Помилка парсингу JSON:', responseText);
       return { 
         success: false, 
-        message: '❌ AI повернув некоректний формат відповіді' 
+        message: ' AI повернув некоректний формат відповіді' 
       };
     }
 
-    console.log('✓ Організація готова:', groupsData);
+    console.log(' Організація готова:', groupsData);
     return { 
       success: true, 
       groups: groupsData.groups,
@@ -818,7 +922,7 @@ ${tabsListString}`;
     console.error('Помилка організації вкладок:', error);
     return { 
       success: false, 
-      message: `❌ ${error.message}` 
+      message: ` ${error.message}` 
     };
   }
 });
@@ -847,7 +951,7 @@ ipcMain.on('sidebar-toggled', (event, isCollapsed) => {
     });
   }
   
-  console.log(`📐 Панель ${isCollapsed ? 'згорнуто' : 'розгорнуто'}, ширина браузера: ${bounds.width - sidebarWidth}px`);
+  console.log(` Панель ${isCollapsed ? 'згорнуто' : 'розгорнуто'}, ширина браузера: ${bounds.width - sidebarWidth}px`);
 });
 
 // Обробка відкриття/закриття меню
@@ -874,7 +978,7 @@ ipcMain.on('menu-toggled', (event, isOpen) => {
       });
     }
   }
-  console.log(`📋 Меню ${isOpen ? 'відкрито' : 'закрито'}`);
+  console.log(` Меню ${isOpen ? 'відкрито' : 'закрито'}`);
 });
 
 // Обробник для панелі налаштувань (Chrome-style settings)
@@ -901,7 +1005,7 @@ ipcMain.on('settings-panel-toggled', (event, isOpen) => {
       });
     }
   }
-  console.log(`⚙️ Панель налаштувань ${isOpen ? 'відкрита' : 'закрита'}`);
+  console.log(` Панель налаштувань ${isOpen ? 'відкрита' : 'закрита'}`);
 });
 
 // ========== Синхронізація налаштувань теми ==========
@@ -909,7 +1013,7 @@ ipcMain.on('settings-panel-toggled', (event, isOpen) => {
 // Отримуємо оновлення налаштувань теми з UI
 ipcMain.on('update-theme-settings', (event, settings) => {
   themeSettings = { ...themeSettings, ...settings };
-  console.log('🎨 Налаштування теми оновлено:', themeSettings);
+  console.log(' Налаштування теми оновлено:', themeSettings);
   
   // Оновлюємо всі відкриті newtab сторінки
   tabs.forEach(tab => {
@@ -965,7 +1069,7 @@ function injectThemeToNewtab(browserView) {
         document.body.style.backgroundImage = 'none';
       }
       
-      console.log('🎨 Тема застосована до newtab:', settings);
+      console.log(' Тема застосована до newtab:', settings);
     })();
   `;
   
@@ -1076,7 +1180,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       
       // 1. Копіювати
       menu.append(new MenuItem({
-        label: '📋 Копіювати',
+        label: ' Копіювати',
         accelerator: 'CmdOrCtrl+C',
         click: () => {
           require('electron').clipboard.writeText(selectedText);
@@ -1087,7 +1191,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       
       // 2. AI Помічник
       menu.append(new MenuItem({
-        label: '🤖 AI Помічник',
+        label: ' AI Помічник',
         click: async () => {
           const result = await getAIExplanation(selectedText);
           newBrowserView.webContents.executeJavaScript(`
@@ -1102,7 +1206,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       
       // 3. Переклад
       menu.append(new MenuItem({
-        label: '🌐 Перекласти',
+        label: ' Перекласти',
         click: async () => {
           const result = await translateText(selectedText, 'uk');
           if (result.success) {
@@ -1121,7 +1225,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       
       // 4. Додати в нотатки
       menu.append(new MenuItem({
-        label: '📌 Додати в конспект',
+        label: ' Додати в конспект',
         click: () => {
           mainWindow.webContents.send('add-to-notes', selectedText);
         }
@@ -1233,7 +1337,7 @@ ipcMain.on('switch-tab', (event, tabId) => {
   const url = tab.browserView.webContents.getURL();
   mainWindow.webContents.send('update-url-bar', url);
   
-  console.log('🔄 Перемкнуто на вкладку:', tabId);
+  console.log(' Перемкнуто на вкладку:', tabId);
 });
 
 // Закрити вкладку
@@ -1245,7 +1349,7 @@ ipcMain.on('close-tab', (event, tabId) => {
   
   // Якщо це остання вкладка, закриваємо браузер
   if (tabs.length <= 1) {
-    console.log('🚪 Закриття останньої вкладки - закриваємо браузер');
+    console.log(' Закриття останньої вкладки - закриваємо браузер');
     mainWindow.close();
     return;
   }
@@ -1265,7 +1369,7 @@ ipcMain.on('close-tab', (event, tabId) => {
   tab.browserView.webContents.destroy();
   tabs.splice(tabIndex, 1);
   
-  console.log('❌ Закрито вкладку:', tabId, '| Залишилось вкладок:', tabs.length);
+  console.log(' Закрито вкладку:', tabId, '| Залишилось вкладок:', tabs.length);
 });
 
 // Оновити URL активної вкладки
@@ -1298,11 +1402,17 @@ ipcMain.on('navigate', (event, input) => {
       url = 'https://' + url;
     }
   } else {
-    // Це пошуковий запит - шукаємо в DuckDuckGo (дружній до Tor)
-    url = 'https://duckduckgo.com/?q=' + encodeURIComponent(url);
+    // Це пошуковий запит - вибираємо пошукову систему залежно від Tor
+    if (isTorActive) {
+      // З Tor - використовуємо DuckDuckGo (privacy-friendly)
+      url = 'https://duckduckgo.com/?q=' + encodeURIComponent(url);
+    } else {
+      // Без Tor - використовуємо Google
+      url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+    }
   }
   
-  console.log('🔍 Навігація:', input, '→', url);
+  console.log(' Навігація:', input, '→', url);
   activeTab.browserView.webContents.loadURL(url);
 });
 
@@ -1311,7 +1421,7 @@ ipcMain.on('go-back', () => {
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (activeTab && activeTab.browserView.webContents.canGoBack()) {
     activeTab.browserView.webContents.goBack();
-    console.log('⬅️ Назад');
+    console.log(' Назад');
   }
 });
 
@@ -1319,7 +1429,7 @@ ipcMain.on('go-forward', () => {
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (activeTab && activeTab.browserView.webContents.canGoForward()) {
     activeTab.browserView.webContents.goForward();
-    console.log('➡️ Вперед');
+    console.log(' Вперед');
   }
 });
 
@@ -1327,7 +1437,7 @@ ipcMain.on('reload', () => {
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (activeTab) {
     activeTab.browserView.webContents.reload();
-    console.log('🔄 Оновлено');
+    console.log(' Оновлено');
   }
 });
 
@@ -1335,10 +1445,10 @@ ipcMain.on('reload', () => {
 // Функція для сканування посилань через AI
 async function xrayLink(url) {
   try {
-    console.log('🦴 X-Ray сканування:', url);
+    console.log(' X-Ray сканування:', url);
     
     if (!groqClient) {
-      return '⚠️ AI не ініціалізовано';
+      return ' AI не ініціалізовано';
     }
     
     // Використовуємо вбудований fetch (Node.js 18+)
@@ -1368,8 +1478,8 @@ async function xrayLink(url) {
         role: 'user', 
         content: `Проаналізуй цей текст веб-сторінки (це перегляд посилання).
 Напиши ДУЖЕ коротко (максимум 10-15 слів) про що ця сторінка.
-Якщо це схоже на спам, продаж або клікбейт — почни з ⚠️.
-Якщо це корисний контент — почни з ✅.
+Якщо це схоже на спам, продаж або клікбейт — почни з .
+Якщо це корисний контент — почни з .
 
 Текст: ${cleanText}` 
       }],
@@ -1379,15 +1489,15 @@ async function xrayLink(url) {
     });
     
     const result = completion.choices[0]?.message?.content || 'Не вдалося проаналізувати';
-    console.log('✓ X-Ray результат:', result);
+    console.log(' X-Ray результат:', result);
     return result;
     
   } catch (error) {
-    console.error('❌ X-Ray помилка:', error.message);
+    console.error(' X-Ray помилка:', error.message);
     if (error.name === 'AbortError') {
-      return '⏱️ Таймаут - сторінка завантажується занадто довго';
+      return ' Таймаут - сторінка завантажується занадто довго';
     }
-    return '❌ Не вдалося просканувати';
+    return ' Не вдалося просканувати';
   }
 }
 
@@ -1403,7 +1513,7 @@ ipcMain.handle('ask-gemini', async (event, prompt) => {
       throw new Error('AI не ініціалізовано. Перевірте API ключ у config.js');
     }
 
-    console.log('📝 Отримано запит на узагальнення нотаток...');
+    console.log(' Отримано запит на узагальнення нотаток...');
     
     const completion = await groqClient.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
@@ -1413,10 +1523,10 @@ ipcMain.handle('ask-gemini', async (event, prompt) => {
     });
     
     const text = completion.choices[0]?.message?.content || 'Помилка: не отримано відповідь';
-    console.log('✓ Відповідь отримана від Groq (блискавично!)');
+    console.log(' Відповідь отримана від Groq (блискавично!)');
     return text;
   } catch (error) {
-    console.error('❌ Помилка Groq API:', error);
+    console.error(' Помилка Groq API:', error);
     throw new Error(`Не вдалося отримати відповідь від AI: ${error.message}`);
   }
 });
@@ -1424,12 +1534,12 @@ ipcMain.handle('ask-gemini', async (event, prompt) => {
 // Обробник розумного пошуку
 ipcMain.handle('smart-search', async (event, query) => {
   try {
-    console.log('🔍 Розумний пошук:', query);
+    console.log(' Розумний пошук:', query);
 
     if (!groqClient) {
       return { 
         success: false, 
-        message: '⚠️ AI не ініціалізовано. Перевірте API ключ у config.js' 
+        message: ' AI не ініціалізовано. Перевірте API ключ у config.js' 
       };
     }
 
@@ -1439,7 +1549,7 @@ ipcMain.handle('smart-search', async (event, query) => {
     if (!pageText || pageText.trim().length === 0) {
       return { 
         success: false, 
-        message: '❌ Сторінка порожня або не завантажилась' 
+        message: ' Сторінка порожня або не завантажилась' 
       };
     }
 
@@ -1457,7 +1567,7 @@ ipcMain.handle('smart-search', async (event, query) => {
 Текст сторінки:
 ${cleanText}`;
 
-    console.log('🤔 Аналізую сенс через Groq AI...');
+    console.log(' Аналізую сенс через Groq AI...');
 
     // Питаємо Groq AI
     const completion = await groqClient.chat.completions.create({
@@ -1472,14 +1582,14 @@ ${cleanText}`;
     if (exactQuote.includes('NOT_FOUND') || exactQuote.length < 5) {
       return { 
         success: false, 
-        message: '❌ Нічого схожого не знайшов. Спробуйте інший запит.' 
+        message: ' Нічого схожого не знайшов. Спробуйте інший запит.' 
       };
     }
 
     // Очищаємо цитату від лапок
     const cleanQuote = exactQuote.replace(/^["']|["']$/g, '').trim();
 
-    console.log('✓ Знайдено фразу:', cleanQuote);
+    console.log(' Знайдено фразу:', cleanQuote);
 
     // Використовуємо вбудований пошук Chromium
     const requestId = await browserView.webContents.findInPage(cleanQuote, {
@@ -1488,15 +1598,15 @@ ${cleanText}`;
 
     return { 
       success: true, 
-      message: '✅ Знайдено! Підсвічено на сторінці.',
+      message: ' Знайдено! Підсвічено на сторінці.',
       quote: cleanQuote 
     };
 
   } catch (error) {
-    console.error('❌ Помилка розумного пошуку:', error);
+    console.error(' Помилка розумного пошуку:', error);
     return { 
       success: false, 
-      message: `❌ Помилка: ${error.message}` 
+      message: ` Помилка: ${error.message}` 
     };
   }
 });
@@ -1536,7 +1646,7 @@ function injectLightTheme(targetView = null) {
   
   view.webContents.insertCSS(lightThemeCSS)
     .then(() => {
-      console.log('✓ Світла тема активована');
+      console.log(' Світла тема активована');
     })
     .catch(err => {
       console.error('Помилка інжекту світлої теми:', err);
@@ -1564,7 +1674,7 @@ function injectCodeMate(targetView = null) {
     
     view.webContents.executeJavaScript(codeInjectorScript)
       .then(() => {
-        console.log('✓ Code Mate активовано на сторінці');
+        console.log(' Code Mate активовано на сторінці');
       })
       .catch(err => {
         console.error('Помилка інжекту Code Mate:', err);
@@ -1583,7 +1693,7 @@ function injectLinkXRay(targetView = null) {
     
     view.webContents.executeJavaScript(linkXRayScript)
       .then(() => {
-        console.log('✓ Link X-Ray активовано на сторінці');
+        console.log(' Link X-Ray активовано на сторінці');
       })
       .catch(err => {
         console.error('Помилка інжекту Link X-Ray:', err);
@@ -1607,7 +1717,7 @@ function injectT9(targetBrowserView = browserView) {
         return targetBrowserView.webContents.executeJavaScript(t9UIScript);
       })
       .then(() => {
-        console.log('✓ T9 предиктивний ввод активовано на сторінці');
+        console.log(' T9 предиктивний ввод активовано на сторінці');
       })
       .catch(err => {
         console.error('Помилка інжекту T9:', err);
@@ -1622,11 +1732,11 @@ async function getAIExplanation(text) {
   const apiKey = config.GROQ_API_KEY;
   
   if (apiKey === 'YOUR_GROQ_API_KEY_HERE' || !apiKey) {
-    return '⚠️ API ключ не налаштовано!\n\n1. Відкрийте https://console.groq.com/keys\n2. Натисніть "Create API Key"\n3. Скопіюйте ключ у файл config.js';
+    return ' API ключ не налаштовано!\n\n1. Відкрийте https://console.groq.com/keys\n2. Натисніть "Create API Key"\n3. Скопіюйте ключ у файл config.js';
   }
 
   if (!groqClient) {
-    return '❌ AI не ініціалізовано.\n\nПеревірте що:\n1. API ключ правильний\n2. Groq API активовано';
+    return ' AI не ініціалізовано.\n\nПеревірте що:\n1. API ключ правильний\n2. Groq API активовано';
   }
 
   try {
@@ -1659,10 +1769,10 @@ async function getAIExplanation(text) {
     console.error('API Error:', error);
     
     if (error.message.includes('404') || error.message.includes('not found')) {
-      return `❌ API ключ невірний!\n\n1. Перейдіть на https://console.groq.com/keys\n2. Створіть новий ключ\n3. Оновіть config.js`;
+      return ` API ключ невірний!\n\n1. Перейдіть на https://console.groq.com/keys\n2. Створіть новий ключ\n3. Оновіть config.js`;
     }
     
-    return `❌ Помилка AI: ${error.message}`;
+    return ` Помилка AI: ${error.message}`;
   }
 }
 
@@ -1679,7 +1789,7 @@ ipcMain.handle('search-history', (event, query) => {
 
 ipcMain.on('clear-history', () => {
   storage.clearHistory();
-  console.log('🗑️ Історію очищено');
+  console.log(' Історію очищено');
 });
 
 // Закладки
@@ -1689,13 +1799,13 @@ ipcMain.handle('get-bookmarks', () => {
 
 ipcMain.handle('add-bookmark', (event, { url, title, favicon }) => {
   const added = storage.addBookmark(url, title, favicon);
-  console.log(added ? '⭐ Закладку додано:' : '⭐ Закладка вже існує:', url);
+  console.log(added ? ' Закладку додано:' : ' Закладка вже існує:', url);
   return added;
 });
 
 ipcMain.on('remove-bookmark', (event, url) => {
   storage.removeBookmark(url);
-  console.log('⭐ Закладку видалено:', url);
+  console.log(' Закладку видалено:', url);
 });
 
 ipcMain.handle('is-bookmarked', (event, url) => {
@@ -1709,7 +1819,7 @@ ipcMain.on('save-session', () => {
     title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
   }));
   storage.saveSession(sessionTabs);
-  console.log('💾 Сесію збережено:', sessionTabs.length, 'вкладок');
+  console.log(' Сесію збережено:', sessionTabs.length, 'вкладок');
 });
 
 ipcMain.handle('get-session', () => {
@@ -1723,13 +1833,13 @@ ipcMain.handle('get-settings', () => {
 
 ipcMain.on('save-settings', (event, settings) => {
   storage.setAllSettings(settings);
-  console.log('⚙️ Налаштування збережено');
+  console.log(' Налаштування збережено');
 });
 
 // Нотатки з пам'яттю
 ipcMain.on('save-note', (event, { text, url }) => {
   storage.addNote(text, url);
-  console.log('📝 Нотатку збережено');
+  console.log(' Нотатку збережено');
 });
 
 ipcMain.handle('get-notes', () => {
@@ -1751,7 +1861,7 @@ app.on('before-quit', () => {
     title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
   }));
   storage.saveSession(sessionTabs);
-  console.log('💾 Сесію автоматично збережено при закритті');
+  console.log(' Сесію автоматично збережено при закритті');
 });
 
 // ==================== TOR INTEGRATION ====================
@@ -1765,9 +1875,13 @@ ipcMain.handle('toggle-tor', async () => {
     await ses.setProxy({ mode: 'direct' });
     isTorActive = false;
     console.log('Tor вимкнено - звичайне підключення');
+    
+    // Оновлюємо placeholder адресної строки
+    mainWindow.webContents.send('update-search-engine', 'Google');
+    
     return { 
       status: false, 
-      message: 'Tor вимкнено. Ви використовуєте звичайне підключення.' 
+      message: 'Tor вимкнено. Пошук: Google' 
     };
   } else {
     // Вмикаємо Tor - SOCKS5 proxy
@@ -1777,9 +1891,13 @@ ipcMain.handle('toggle-tor', async () => {
     });
     isTorActive = true;
     console.log('Tor увімкнено - трафік через SOCKS5 proxy');
+    
+    // Оновлюємо placeholder адресної строки
+    mainWindow.webContents.send('update-search-engine', 'DuckDuckGo');
+    
     return { 
       status: true, 
-      message: 'Tor увімкнено! Ваше підключення тепер анонімне.' 
+      message: 'Tor увімкнено! Пошук: DuckDuckGo' 
     };
   }
 });

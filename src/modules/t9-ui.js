@@ -70,7 +70,7 @@
 
     // Добавляем заголовок
     const header = document.createElement('div');
-    header.textContent = '💡 T9 Подсказки';
+    header.textContent = ' T9 Подсказки';
     header.style.cssText = `
       color: white;
       font-size: 11px;
@@ -372,5 +372,5 @@
     init: initT9
   };
 
-  console.log('✓ T9 UI загружен и активирован');
+  console.log(' T9 UI загружен и активирован');
 })();
