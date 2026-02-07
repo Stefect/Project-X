@@ -95,7 +95,7 @@ function showPopup(text) {
   document.head.appendChild(style);
 
   const closeBtn = document.createElement('button');
-  closeBtn.textContent = '✕';
+  closeBtn.textContent = '';
   closeBtn.style.cssText = `
     position: absolute;
     top: 8px;

@@ -188,5 +188,5 @@
     }
   };
 
-  console.log('✓ T9 Engine загружен');
+  console.log(' T9 Engine загружен');
 })();

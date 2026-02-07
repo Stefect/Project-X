@@ -765,7 +765,7 @@
     }
 
     .color-option.active::after {
-      content: '✓';
+      content: '';
       position: absolute;
       top: 50%;
       left: 50%;
@@ -862,7 +862,7 @@
     }
 
     .wallpaper-card.active::after {
-      content: '✓';
+      content: '';
       position: absolute;
       top: 8px;
       right: 8px;
@@ -1129,7 +1129,7 @@
       <div class="tab active" data-tab-id="1">
         <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.style.display='none'">
         <span class="tab-title">Нова вкладка</span>
-        <span class="tab-close">✕</span>
+        <span class="tab-close"></span>
       </div>
       <button class="new-tab-btn" id="new-tab-btn" title="Нова вкладка (Ctrl+T)">+</button>
     </div>
@@ -1164,7 +1164,7 @@
         <path d="M13 8c0-2.76-2.24-5-5-5-1.5 0-2.85.66-3.77 1.7L2 2v5h5L4.5 4.5C5.2 3.6 6.5 3 8 3c2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.11 0-2.11-.45-2.83-1.17L3.76 11.24C4.82 12.3 6.33 13 8 13c2.76 0 5-2.24 5-5z"/>
       </svg>
     </button>
-    <input type="text" class="address-bar" id="url" placeholder="DuckDuckGo пошук або введіть адресу">
+    <input type="text" class="address-bar" id="url" placeholder="Google пошук або введіть адресу">
     <button class="organize-btn" id="organize-tabs-btn" title="AI організація вкладок">Організувати</button>
     <button class="nav-button" id="tor-btn" title="Перемкнути Tor" style="font-weight: 600; color: #9ca3af;">
       Tor: OFF
@@ -1215,7 +1215,7 @@
       <div class="zoom-value" id="zoom-value">100%</div>
       <button class="zoom-btn" id="zoom-in">+</button>
       <button class="zoom-btn" id="zoom-reset" title="Скинути масштаб">⟲</button>
-      <button class="zoom-btn" id="fullscreen" title="Повноекранний режим">⛶</button>
+      <button class="zoom-btn" id="fullscreen" title="Повноекранний режим"></button>
     </div>
 
     <div class="menu-separator"></div>
@@ -1301,7 +1301,7 @@
   <div id="theme-panel" class="side-panel">
     <div class="panel-header">
       <h3>Налаштувати вигляд</h3>
-      <button class="close-panel-btn" id="close-panel-btn">✕</button>
+      <button class="close-panel-btn" id="close-panel-btn"></button>
     </div>
 
     <div class="panel-content">
@@ -1323,9 +1323,9 @@
 
       <!-- Mode Switch -->
       <div class="mode-switch">
-        <button class="mode-btn" data-mode="light">☀️ Світла</button>
-        <button class="mode-btn active" data-mode="dark">🌙 Темна</button>
-        <button class="mode-btn" data-mode="system">💻 Система</button>
+        <button class="mode-btn" data-mode="light"> Світла</button>
+        <button class="mode-btn active" data-mode="dark"> Темна</button>
+        <button class="mode-btn" data-mode="system"> Система</button>
       </div>
 
       <!-- Color Grid - СПЛІТ КРУЖЕЧКИ -->
@@ -1369,7 +1369,7 @@
         
         <!-- Upload custom -->
         <div class="wallpaper-card upload-card" id="upload-wallpaper">
-          <div class="upload-icon">📷</div>
+          <div class="upload-icon"></div>
           <div class="upload-text">Завантажити</div>
         </div>
 
@@ -1413,7 +1413,7 @@
     <div id="notes-sidebar" class="collapsed" style="width: 0; padding: 0; overflow: hidden; border-left: none;">
       <h3>
         <span>Мій Конспект</span>
-        <button id="toggle-sidebar" title="Показати панель">☰</button>
+        <button id="toggle-sidebar" title="Показати панель"></button>
       </h3>
       
       <div id="notes-list">
@@ -1426,11 +1426,11 @@
   </div>
 
   <script>
-    console.log('🚀 JavaScript починає виконання');
+    console.log(' JavaScript починає виконання');
     
     try {
       const { ipcRenderer } = require('electron');
-      console.log('✅ IPC Renderer завантажено в main window');
+      console.log(' IPC Renderer завантажено в main window');
       
       // ========== Кнопки керування вікном ==========
       const minimizeBtn = document.getElementById('minimize-btn');
@@ -1439,21 +1439,21 @@
       
       if (minimizeBtn) {
         minimizeBtn.addEventListener('click', () => {
-          console.log('🔽 Згортання вікна');
+          console.log(' Згортання вікна');
           ipcRenderer.send('window-minimize');
         });
       }
       
       if (maximizeBtn) {
         maximizeBtn.addEventListener('click', () => {
-          console.log('🔼 Розгортання вікна');
+          console.log(' Розгортання вікна');
           ipcRenderer.send('window-maximize');
         });
       }
       
       if (closeBtn) {
         closeBtn.addEventListener('click', () => {
-          console.log('❌ Закриття вікна');
+          console.log(' Закриття вікна');
           ipcRenderer.send('window-close');
         });
       }
@@ -1484,6 +1484,35 @@
       
       let isSidebarCollapsed = true; // Завжди згорнута за замовчуванням
       let currentTabId = 1; // Поточна активна вкладка
+      
+      // Завантаження нотаток з storage при запуску
+      (async () => {
+        try {
+          const savedNotes = await ipcRenderer.invoke('get-notes');
+          if (savedNotes && savedNotes.length > 0) {
+            collectedNotes = savedNotes;
+            
+            // Очищуємо empty state
+            notesList.innerHTML = '';
+            
+            // Відображаємо збережені нотатки
+            savedNotes.forEach(note => {
+              const noteItem = document.createElement('div');
+              noteItem.className = 'note-item';
+              noteItem.dataset.noteId = note.id;
+              noteItem.innerHTML = `
+                <span>• ${note.text}</span>
+                <button class="delete-btn" onclick="deleteNote('${note.id}')"></button>
+              `;
+              notesList.appendChild(noteItem);
+            });
+            
+            console.log('[NOTES] Завантажено нотаток:', savedNotes.length);
+          }
+        } catch (error) {
+          console.error('[ERROR] Помилка завантаження нотаток:', error);
+        }
+      })();
 
       // ========== Система вкладок ==========
       
@@ -1497,9 +1526,9 @@
       tabElement.dataset.tabId = result.id;
       
       tabElement.innerHTML = `
-        <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'">
+        <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22></text></svg>'">
         <span class="tab-title">${result.title}</span>
-        <span class="tab-close">✕</span>
+        <span class="tab-close"></span>
       `;
       
       // Додаємо перед кнопкою "+" в контейнер вкладок
@@ -1646,15 +1675,15 @@
       }
 
       // Показуємо індикатор завантаження
-      organizeTabsBtn.innerHTML = '🧠 Думаю...';
+      organizeTabsBtn.innerHTML = ' Думаю...';
       organizeTabsBtn.disabled = true;
 
       try {
         const result = await ipcRenderer.invoke('organize-tabs');
         
         if (!result.success) {
-          alert(result.message || '❌ Не вдалося згрупувати вкладки');
-          organizeTabsBtn.innerHTML = '🧹 Навести лад';
+          alert(result.message || ' Не вдалося згрупувати вкладки');
+          organizeTabsBtn.innerHTML = ' Навести лад';
           organizeTabsBtn.disabled = false;
           return;
         }
@@ -1662,16 +1691,16 @@
         // Показуємо результат користувачу
         displayOrganizedGroups(result.groups, result.tabsData);
         
-        organizeTabsBtn.innerHTML = '✅ Готово!';
+        organizeTabsBtn.innerHTML = ' Готово!';
         setTimeout(() => {
-          organizeTabsBtn.innerHTML = '🧹 Навести лад';
+          organizeTabsBtn.innerHTML = ' Навести лад';
           organizeTabsBtn.disabled = false;
         }, 2000);
 
       } catch (error) {
         console.error('Помилка організації:', error);
         alert('Помилка: ' + error.message);
-        organizeTabsBtn.innerHTML = '🧹 Навести лад';
+        organizeTabsBtn.innerHTML = ' Навести лад';
         organizeTabsBtn.disabled = false;
       }
     });
@@ -1700,7 +1729,7 @@
       
       let groupsHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="margin: 0; color: #10b981; font-size: 22px;">🧘‍♂️ AI організував ваші вкладки</h2>
+          <h2 style="margin: 0; color: #10b981; font-size: 22px;"> AI організував ваші вкладки</h2>
           <button id="close-organize-popup" style="
             background: #ef4444;
             color: white;
@@ -1710,7 +1739,7 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
-          ">✕</button>
+          "></button>
         </div>
       `;
 
@@ -1726,7 +1755,7 @@
             border-radius: 10px;
           ">
             <h3 style="margin: 0 0 12px 0; color: ${groupColor}; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-              📁 ${group.name}
+               ${group.name}
               <span style="font-size: 12px; color: #666; font-weight: normal;">(${group.tabIds.length} вкладок)</span>
             </h3>
             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -1797,15 +1826,15 @@
     const settingsBtn = document.getElementById('settings-btn');
     
     if (!settingsBtn) {
-      console.error('❌ Кнопка налаштувань не знайдена!');
+      console.error(' Кнопка налаштувань не знайдена!');
     } else {
-      console.log('✓ Кнопка налаштувань знайдена');
+      console.log(' Кнопка налаштувань знайдена');
     }
     
     // Готові теми
     const themes = {
       light: {
-        name: '☀️ Світла',
+        name: ' Світла',
         colors: {
           '--primary-color': '#3b82f6',
           '--primary-dark': '#1e40af',
@@ -1822,7 +1851,7 @@
         }
       },
       dark: {
-        name: '🌙 Темна',
+        name: ' Темна',
         colors: {
           '--primary-color': '#60a5fa',
           '--primary-dark': '#3b82f6',
@@ -1839,7 +1868,7 @@
         }
       },
       ocean: {
-        name: '🌊 Океан',
+        name: ' Океан',
         colors: {
           '--primary-color': '#06b6d4',
           '--primary-dark': '#0891b2',
@@ -1856,7 +1885,7 @@
         }
       },
       forest: {
-        name: '🌲 Ліс',
+        name: ' Ліс',
         colors: {
           '--primary-color': '#10b981',
           '--primary-dark': '#059669',
@@ -1873,7 +1902,7 @@
         }
       },
       sunset: {
-        name: '🌅 Захід',
+        name: ' Захід',
         colors: {
           '--primary-color': '#f59e0b',
           '--primary-dark': '#d97706',
@@ -1890,7 +1919,7 @@
         }
       },
       purple: {
-        name: '💜 Фіолетова',
+        name: ' Фіолетова',
         colors: {
           '--primary-color': '#a855f7',
           '--primary-dark': '#7e22ce',
@@ -1920,17 +1949,17 @@
 
       // Зберігаємо вибір
       localStorage.setItem('selectedTheme', themeName);
-      showNotification(`✨ Тему "${theme.name}" застосовано!`);
+      showNotification(` Тему "${theme.name}" застосовано!`);
     }
 
     // Показати панель налаштувань
     if (settingsBtn) {
       settingsBtn.addEventListener('click', () => {
-        console.log('🎨 Відкриваю налаштування тем');
+        console.log(' Відкриваю налаштування тем');
         showSettingsPopup();
       });
     } else {
-      console.error('❌ Не можу додати обробник - кнопка не знайдена');
+      console.error(' Не можу додати обробник - кнопка не знайдена');
     }
 
     function showSettingsPopup() {
@@ -1968,7 +1997,7 @@
             cursor: pointer;
             font-size: 18px;
             font-weight: bold;
-          ">✕</button>
+          "></button>
         </div>
 
         <div style="margin-bottom: 20px;">
@@ -2064,11 +2093,11 @@
     // Застосовуємо збережений стан (за замовчуванням згорнута)
     if (isSidebarCollapsed) {
       notesSidebar.classList.add('collapsed');
-      toggleSidebarBtn.textContent = '☰';
+      toggleSidebarBtn.textContent = '';
       toggleSidebarBtn.title = 'Показати панель';
     } else {
       notesSidebar.classList.add('expanded');
-      toggleSidebarBtn.textContent = '✕';
+      toggleSidebarBtn.textContent = '';
       toggleSidebarBtn.title = 'Згорнути панель';
     }
 
@@ -2090,7 +2119,7 @@
         notesSidebar.classList.add('expanded');
       }
       
-      toggleSidebarBtn.textContent = isSidebarCollapsed ? '☰' : '✕';
+      toggleSidebarBtn.textContent = isSidebarCollapsed ? '' : '';
       toggleSidebarBtn.title = isSidebarCollapsed ? 'Показати панель' : 'Згорнути панель';
       localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
       ipcRenderer.send('sidebar-toggled', isSidebarCollapsed);
@@ -2117,21 +2146,21 @@
     // Навігація
     if (backBtn) {
       backBtn.addEventListener('click', () => {
-        console.log('⬅️ Кнопка Назад натиснута');
+        console.log(' Кнопка Назад натиснута');
         ipcRenderer.send('go-back');
       });
     }
 
     if (forwardBtn) {
       forwardBtn.addEventListener('click', () => {
-        console.log('➡️ Кнопка Вперед натиснута');
+        console.log(' Кнопка Вперед натиснута');
         ipcRenderer.send('go-forward');
       });
     }
 
     if (reloadBtn) {
       reloadBtn.addEventListener('click', () => {
-        console.log('🔄 Кнопка Оновити натиснута');
+        console.log(' Кнопка Оновити натиснута');
         ipcRenderer.send('reload');
       });
     }
@@ -2139,7 +2168,7 @@
     if (urlInput) {
       urlInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-          console.log('🔍 Навігація до:', urlInput.value);
+          console.log(' Навігація до:', urlInput.value);
           ipcRenderer.send('navigate', urlInput.value);
         }
       });
@@ -2158,21 +2187,22 @@
         emptyState.remove();
       }
 
-      const noteId = Date.now(); // Унікальний ID замість індексу
-      collectedNotes.push({ id: noteId, text: text });
+      const noteId = Date.now().toString(); // Унікальний ID як рядок
+      const newNote = { id: noteId, text: text, url: '', createdAt: Date.now() };
+      collectedNotes.push(newNote);
       
       const noteItem = document.createElement('div');
       noteItem.className = 'note-item';
       noteItem.dataset.noteId = noteId;
       noteItem.innerHTML = `
         <span>• ${text}</span>
-        <button class="delete-btn" onclick="deleteNote(${noteId})">✕</button>
+        <button class="delete-btn" onclick="deleteNote('${noteId}')"></button>
       `;
       
       notesList.appendChild(noteItem);
       
-      // Зберігаємо в localStorage
-      localStorage.setItem('sharedNotes', JSON.stringify(collectedNotes));
+      // Зберігаємо в storage через IPC
+      ipcRenderer.send('save-note', { text, url: '' });
     }
 
     // Видалення нотатки
@@ -2192,8 +2222,8 @@
           notesList.innerHTML = '<div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>';
         }
         
-        // Оновлюємо localStorage
-        localStorage.setItem('sharedNotes', JSON.stringify(collectedNotes));
+        // Видаляємо з storage через IPC
+        ipcRenderer.send('delete-note', noteId);
       }
     };
 
@@ -2209,7 +2239,7 @@
         const notesText = collectedNotes.map(note => note.text || note).join('\n---\n');
         const prompt = `Я зібрав наступні нотатки з інтернету. Будь ласка, проаналізуй їх, структуруй, видали дублікати та створи короткий навчальний конспект українською мовою:\n\n${notesText}`;
 
-        summarizeBtn.textContent = '⏳ Думаю...';
+        summarizeBtn.textContent = ' Думаю...';
         summarizeBtn.disabled = true;
 
         try {
@@ -2221,7 +2251,7 @@
         } catch (error) {
           alert('Помилка при узагальненні: ' + error.message);
         } finally {
-          summarizeBtn.textContent = '✨ Узагальнити через ШІ';
+          summarizeBtn.textContent = ' Узагальнити через ШІ';
           summarizeBtn.disabled = false;
         }
       });
@@ -2237,7 +2267,7 @@
         if (confirm('Очистити всі нотатки?')) {
           collectedNotes = [];
           notesList.innerHTML = '<div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>';
-          localStorage.removeItem('sharedNotes');
+          ipcRenderer.send('clear-notes');
         }
       });
     }
@@ -2247,7 +2277,7 @@
     if (translationLanguageSelect) {
       translationLanguageSelect.addEventListener('change', (e) => {
         const selectedLanguage = e.target.value;
-        console.log('🌐 Вибрано мову перекладу:', selectedLanguage);
+        console.log(' Вибрано мову перекладу:', selectedLanguage);
         ipcRenderer.send('change-translation-language', selectedLanguage);
       });
     }
@@ -2360,7 +2390,7 @@
 
     // Застосування теми
     ipcRenderer.on('theme-changed', (event, theme) => {
-      console.log('🎨 Отримано нову тему:', theme.name);
+      console.log(' Отримано нову тему:', theme.name);
       applyTheme(theme);
     });
 
@@ -2413,7 +2443,7 @@
         organizeBtn.style.color = colors.primary;
       }
 
-      console.log('✅ Тема застосована успішно');
+      console.log(' Тема застосована успішно');
     }
 
     // Завантаження збереженої теми при старті
@@ -2493,7 +2523,7 @@
           noteItem.dataset.noteId = noteId;
           noteItem.innerHTML = `
             <span>• ${text}</span>
-            <button class="delete-btn" onclick="deleteNote(${noteId})">✕</button>
+            <button class="delete-btn" onclick="deleteNote(${noteId})"></button>
           `;
           notesList.appendChild(noteItem);
         });
@@ -2502,7 +2532,7 @@
       }
     }
     
-    console.log('✅ Всі обробники index.html налаштовані');
+    console.log(' Всі обробники index.html налаштовані');
 
     // ===================== НОВА ПАНЕЛЬ НАЛАШТУВАНЬ =====================
     const themePanel = document.getElementById('theme-panel');
@@ -2549,7 +2579,7 @@
 
     // 3. Застосування теми (CSS змінні - магія!)
     function applyBrowserTheme(bg, accent) {
-      console.log('🎨 Застосовую тему:', { bg, accent });
+      console.log(' Застосовую тему:', { bg, accent });
       
       // CSS змінні
       document.documentElement.style.setProperty('--theme-bg', bg);
@@ -2620,7 +2650,7 @@
       currentThemeBg = bg;
       currentThemeAccent = accent;
       
-      console.log('✅ Тема застосована успішно');
+      console.log(' Тема застосована успішно');
     }
     
     // Конвертація HEX в RGB
@@ -2666,7 +2696,7 @@
         const newBg = btn.dataset.bg;
         const newAccent = btn.dataset.accent;
         
-        console.log('🎨 Клік на колір:', { newBg, newAccent });
+        console.log(' Клік на колір:', { newBg, newAccent });
 
         if (newBg === 'custom' || newAccent === 'custom') {
           // Кастомний колір
@@ -2807,7 +2837,7 @@
       // Надсилаємо налаштування в main process для newtab
       sendThemeSettings();
       
-      console.log('🖼️ Шпалери змінено:', wallpaperData);
+      console.log(' Шпалери змінено:', wallpaperData);
     }
 
     // Оновлення активної картки
@@ -2879,7 +2909,7 @@
     // Надсилаємо початкові налаштування теми в main process
     sendThemeSettings();
     
-    console.log('✅ Панель налаштувань готова');
+    console.log(' Панель налаштувань готова');
 
     // ===================== END ПАНЕЛЬ НАЛАШТУВАНЬ =====================
 
@@ -2895,12 +2925,20 @@
     if (torBtn) {
       // Завантажуємо початковий статус
       ipcRenderer.invoke('get-tor-status').then(status => {
+        const urlInput = document.getElementById('url');
+        
         if (status.active) {
           torBtn.textContent = 'Tor: ON';
           torBtn.style.color = '#8b5cf6';
+          if (urlInput) {
+            urlInput.placeholder = 'DuckDuckGo пошук або введіть адресу';
+          }
         } else {
           torBtn.textContent = 'Tor: OFF';
           torBtn.style.color = '#9ca3af';
+          if (urlInput) {
+            urlInput.placeholder = 'Google пошук або введіть адресу';
+          }
         }
       }).catch(err => {
         console.error('Помилка отримання статусу Tor:', err);
@@ -2944,10 +2982,19 @@
       }
     });
     
+    // Слухаємо зміну пошукової системи при перемиканні Tor
+    ipcRenderer.on('update-search-engine', (event, searchEngine) => {
+      const urlInput = document.getElementById('url');
+      if (urlInput) {
+        urlInput.placeholder = `${searchEngine} пошук або введіть адресу`;
+        console.log('[SEARCH] Пошукова система змінена на:', searchEngine);
+      }
+    });
+    
     // ===================== END TOR INTEGRATION =====================
     
   } catch (error) {
-    console.error('❌ КРИТИЧНА ПОМИЛКА в index.html:', error);
+    console.error(' КРИТИЧНА ПОМИЛКА в index.html:', error);
     alert('Помилка завантаження браузера: ' + error.message);
   }
   </script>

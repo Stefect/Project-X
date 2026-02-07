@@ -37,7 +37,7 @@
     }
 
     const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕';
+    closeBtn.textContent = '';
     closeBtn.style.cssText = `
       position: absolute;
       top: 8px;
@@ -61,7 +61,7 @@
     content.textContent = text;
     
     const header = document.createElement('div');
-    header.innerHTML = '<strong>🤖 AI Помічник:</strong><br><br>';
+    header.innerHTML = '<strong> AI Помічник:</strong><br><br>';
     content.insertBefore(header.firstChild, content.firstChild);
 
     popup.appendChild(closeBtn);
