@@ -1,25 +1,4 @@
-﻿@import "tailwindcss";
-
-/* CSS Variables */
-:root {
-  --dark-bg: #1a1b26;
-  --dark-surface: #24283b;
-  --dark-highlight: #414868;
-  --dark-text: #c0caf5;
-  --dark-comment: #565f89;
-  --accent-blue: #3b82f6;
-  --accent-purple: #8b5cf6;
-  --accent-red: #f7768e;
-  --accent-green: #34a853;
-  --accent-orange: #ff9e64;
-  --theme-bg: #1a1b26;
-  --theme-surface: #24283b;
-  --theme-border: #414868;
-  --theme-text: #c0caf5;
-  --theme-accent: #3b82f6;
-}
-
-  
+﻿  
     * {
       margin: 0;
       padding: 0;
@@ -337,8 +316,11 @@
     .address-bar::placeholder {
       color: #565f89;
     }
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      background: #ffffff;
+    }
 
-    /* Розумний пошук */
+    /* ╨а╨╛╨╖╤Г╨╝╨╜╨╕╨╣ ╨┐╨╛╤И╤Г╨║ */
     #smart-search-box {
       display: none;
       position: absolute;
@@ -1124,3 +1106,90 @@
     .new-tab-btn:hover {
       background: rgba(247, 118, 142, 0.2);
     }
+  
+
+<body>
+  <!-- ╨Я╨░╨╜╨╡╨╗╤М ╨▓╨║╨╗╨░╨┤╨╛╨║ ╨╖ ╨║╨╜╨╛╨┐╨║╨░╨╝╨╕ ╨▓╤Ц╨║╨╜╨░ -->
+  <div class="tabs-bar" id="tabs-bar">
+    <div class="menu-section">
+      <button class="menu-btn" id="menu-btn" title="╨Ь╨╡╨╜╤О">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M1 2h14v2H1V2zm0 5h14v2H1V7zm0 5h14v2H1v-2z"/>
+        </svg>
+      </button>
+      <span class="logo">BrowserX</span>
+    </div>
+    <div class="tabs-container">
+      <div class="tab active" data-tab-id="1">
+        <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.style.display='none'">
+        <span class="tab-title">╨Э╨╛╨▓╨░ ╨▓╨║╨╗╨░╨┤╨║╨░</span>
+        <span class="tab-close"></span>
+      </div>
+      <button class="new-tab-btn" id="new-tab-btn" title="╨Э╨╛╨▓╨░ ╨▓╨║╨╗╨░╨┤╨║╨░ (Ctrl+T)">+</button>
+    </div>
+    
+    <!-- ╨Ъ╨╜╨╛╨┐╨║╨╕ ╨║╨╡╤А╤Г╨▓╨░╨╜╨╜╤П ╨▓╤Ц╨║╨╜╨╛╨╝ -->
+    <div class="window-controls">
+      <button class="window-btn" id="minimize-btn" title="╨Ч╨│╨╛╤А╨╜╤Г╤В╨╕">
+        <svg width="10" height="1" viewBox="0 0 10 1"><path fill="currentColor" d="M0 0h10v1H0z"/></svg>
+      </button>
+      <button class="window-btn" id="maximize-btn" title="╨а╨╛╨╖╨│╨╛╤А╨╜╤Г╤В╨╕">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path fill="currentColor" d="M0 0v10h10V0H0zm1 1h8v8H1V1z"/></svg>
+      </button>
+      <button class="window-btn close" id="close-btn" title="╨Ч╨░╨║╤А╨╕╤В╨╕">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path fill="currentColor" d="M0 0l1-1 4 4 4-4 1 1-4 4 4 4-1 1-4-4-4 4-1-1 4-4z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="nav-button" id="back" title="╨Э╨░╨╖╨░╨┤">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10 14L4 8l6-6"/>
+      </svg>
+    </button>
+    <button class="nav-button" id="forward" title="╨Т╨┐╨╡╤А╨╡╨┤">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 14l6-6-6-6"/>
+      </svg>
+    </button>
+    <button class="nav-button" id="reload" title="╨Ю╨╜╨╛╨▓╨╕╤В╨╕">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M13 8c0-2.76-2.24-5-5-5-1.5 0-2.85.66-3.77 1.7L2 2v5h5L4.5 4.5C5.2 3.6 6.5 3 8 3c2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.11 0-2.11-.45-2.83-1.17L3.76 11.24C4.82 12.3 6.33 13 8 13c2.76 0 5-2.24 5-5z"/>
+      </svg>
+    </button>
+    <input type="text" class="address-bar" id="url" placeholder="Google ╨┐╨╛╤И╤Г╨║ ╨░╨▒╨╛ ╨▓╨▓╨╡╨┤╤Ц╤В╤М ╨░╨┤╤А╨╡╤Б╤Г">
+    <button class="organize-btn" id="organize-tabs-btn" title="AI ╨╛╤А╨│╨░╨╜╤Ц╨╖╨░╤Ж╤Ц╤П ╨▓╨║╨╗╨░╨┤╨╛╨║">╨Ю╤А╨│╨░╨╜╤Ц╨╖╤Г╨▓╨░╤В╨╕</button>
+    <button class="nav-button" id="tor-btn" title="╨Я╨╡╤А╨╡╨╝╨║╨╜╤Г╤В╨╕ Tor" style="font-weight: 600; color: #9ca3af;">
+      Tor: OFF
+    </button>
+    <!-- Settings button removed (Simple Settings UI deprecated) -->
+    <button class="smart-search-btn" id="theme-settings-btn" title="╨Э╨░╨╗╨░╤И╤В╤Г╨▓╨░╤В╨╕ ╨▓╨╕╨│╨╗╤П╨┤" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 50%;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
+        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13A6 6 0 0 1 8 2a6 6 0 0 1 0 12z"/>
+        <circle cx="8" cy="8" r="3" fill="white"/>
+      </svg>
+    </button>
+    <button class="smart-search-btn" id="toggle-sidebar-toolbar" title="╨Я╨╛╨║╨░╨╖╨░╤В╨╕/╤Б╤Е╨╛╨▓╨░╤В╨╕ ╨║╨╛╨╜╤Б╨┐╨╡╨║╤В (Ctrl+B)">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M3 2h10c.55 0 1 .45 1 1v10c0 .55-.45 1-1 1H3c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1zm0 2v8h10V4H3zm2 2h6v1H5V6zm0 2h6v1H5V8zm0 2h4v1H5v-1z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ╨Т╨╕╨┐╨░╨┤╨░╤О╤З╨╡ ╨╝╨╡╨╜╤О -->
+  <div class="dropdown-menu" id="dropdown-menu">
+    <button class="menu-item">
+      <span class="label">╨Э╨╛╨▓╨░ ╨▓╨║╨╗╨░╨┤╨║╨░</span>
+      <span class="shortcut">CTRL + T</span>
+    </button>
+    <button class="menu-item">
+      <span class="label">╨Э╨╛╨▓╨░ ╨▓╨║╨╗╨░╨┤╨║╨░ ╨▓ ╨╛╤Б╤В╤А╨╛╨▓╤Ц ╨▓╨║╨╗╨░╨┤╨╛╨║</span>
+      <span class="shortcut">ALT + T</span>
+    </button>
+    <button class="menu-item">
+      <span class="label">╨Э╨╛╨▓╨╡ ╨▓╤Ц╨║╨╜╨╛</span>
+      <span class="shortcut">CTRL + N</span>
+    </button>
+    <button class="menu-item">
+
