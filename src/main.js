@@ -190,7 +190,7 @@ function createWindow() {
     title: 'Нова вкладка'
   });
 
-  // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator + T9
+  // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator + T9 + AI-T9
   browserView.webContents.on('did-finish-load', () => {
     const currentUrl = browserView.webContents.getURL();
     
@@ -203,6 +203,7 @@ function createWindow() {
       injectCodeMate(browserView);
       injectLinkXRay(browserView);
       injectT9(browserView);
+      injectAIT9(browserView); // AI-автозаповнення з Groq
     }
   });
 
@@ -435,6 +436,7 @@ function restoreSession() {
             injectCodeMate(tabView);
             injectLinkXRay(tabView);
             injectT9(tabView);
+            injectAIT9(tabView); // AI-автозаповнення
           }
         });
         
@@ -1135,6 +1137,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       injectCodeMate(newBrowserView);
       injectLinkXRay(newBrowserView);
       injectT9(newBrowserView);
+      injectAIT9(newBrowserView); // AI-автозаповнення
     }
     
     // Оновлюємо заголовок вкладки
@@ -1727,6 +1730,24 @@ function injectT9(targetBrowserView = browserView) {
   }
 }
 
+// Функція для інжектування AI-T9 Autocomplete (Groq-powered автозаповнення)
+function injectAIT9(targetBrowserView = browserView) {
+  const fs = require('fs');
+  try {
+    const aiT9Script = fs.readFileSync(path.join(__dirname, 'modules', 'ai-t9.js'), 'utf8');
+    
+    targetBrowserView.webContents.executeJavaScript(aiT9Script)
+      .then(() => {
+        console.log(' AI-T9 автозаповнення активовано на сторінці');
+      })
+      .catch(err => {
+        console.error('Помилка інжекту AI-T9:', err);
+      });
+  } catch (error) {
+    console.error('Не вдалося прочитати ai-t9.js:', error);
+  }
+}
+
 // Функція для отримання пояснення від Groq AI
 async function getAIExplanation(text) {
   const apiKey = config.GROQ_API_KEY;
@@ -1908,4 +1929,39 @@ ipcMain.handle('get-tor-status', () => {
     active: isTorActive,
     processRunning: torProcess !== null && torProcess.exitCode === null
   };
+});
+
+// AI-автозаповнення з Groq
+ipcMain.handle('predict-text', async (event, currentText) => {
+  try {
+    // Якщо тексту мало або немає Groq клієнта, не питаємо
+    if (!currentText || currentText.length < 3 || !groqClient) return null;
+
+    console.log('AI-T9: Запит автозаповнення для:', currentText.substring(0, 30) + '...');
+
+    const completion = await groqClient.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are an autocomplete engine. Your task is to complete the user's sentence. Return ONLY the missing part of the word or sentence. Do not repeat the input. Do not add quotes. If unsure, return empty string. Keep it under 5 words."
+        },
+        {
+          role: "user",
+          content: `Complete this text: "${currentText}"`
+        }
+      ],
+      model: "llama3-8b-8192", // Найшвидша модель Groq
+      max_tokens: 15, // Обмежуємо для швидкості
+      temperature: 0.1, // Мінімальна креативність для точності
+      stop: ["\n", ".", "!", "?"] // Зупиняємось на кінці речення
+    });
+
+    const suggestion = completion.choices[0]?.message?.content?.trim() || "";
+    console.log('AI-T9: Відповідь:', suggestion);
+    return suggestion;
+
+  } catch (error) {
+    console.error('AI-T9 Error:', error.message);
+    return null;
+  }
 });
