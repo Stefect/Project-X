@@ -1,7 +1,7 @@
 {
   "name": "browserx",
-  "version": "2.1.0",
-  "description": "BrowserX - AI-powered browser with smart features, history, bookmarks and session memory",
+  "version": "2.2.0",
+  "description": "BrowserX - AI-powered browser with smart features, AI autocomplete, history, bookmarks and session memory",
   "main": "src/main.js",
   "scripts": {
     "start": "npm run build:css && electron .",
