@@ -35,6 +35,11 @@ contextBridge.exposeInMainWorld('browserStorage', {
   clearNotes: () => ipcRenderer.send('clear-notes')
 });
 
+// API для AI-автозаповнення (T9 на стероїдах)
+contextBridge.exposeInMainWorld('aiAutocomplete', {
+  predict: (text) => ipcRenderer.invoke('predict-text', text)
+});
+
 // Відслідковуємо виділення тексту після завантаження сторінки
 window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mouseup', () => {
