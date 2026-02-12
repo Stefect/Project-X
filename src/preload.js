@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('browserStorage', {
   getHistory: (limit) => ipcRenderer.invoke('get-history', limit),
   searchHistory: (query) => ipcRenderer.invoke('search-history', query),
   clearHistory: () => ipcRenderer.send('clear-history'),
+  deleteHistoryItem: (url) => ipcRenderer.send('delete-history-item', url),
+  openUrl: (url) => ipcRenderer.send('open-url-from-history', url),
   
   // Закладки
   getBookmarks: () => ipcRenderer.invoke('get-bookmarks'),
