@@ -370,6 +370,12 @@
       const tabsContainer = tabsBar.querySelector('.tabs-container');
       const newTabBtn = document.getElementById('new-tab-btn');
       
+      console.log('🔍 Ініціалізація вкладок:', {
+        tabsBar: !!tabsBar,
+        tabsContainer: !!tabsContainer,
+        newTabBtn: !!newTabBtn
+      });
+      
       let collectedNotes = [];
       
       // ВИДАЛЯЄМО старе значення з localStorage, щоб панель завжди була згорнута при запуску
@@ -411,26 +417,37 @@
       
       // Створити нову вкладку
       async function createTab(url = null) {
-      const result = await ipcRenderer.invoke('create-tab', url);
-      
-      // Створюємо візуальний елемент вкладки
-      const tabElement = document.createElement('div');
-      tabElement.className = 'tab';
-      tabElement.dataset.tabId = result.id;
-      
-      tabElement.innerHTML = `
-        <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22></text></svg>'">
-        <span class="tab-title">${result.title}</span>
-        <span class="tab-close"></span>
-      `;
-      
-      // Додаємо перед кнопкою "+" в контейнер вкладок
-      tabsContainer.insertBefore(tabElement, newTabBtn);
-      
-      // Перемикаємось на нову вкладку
-      switchTab(result.id);
-      
-      return result.id;
+        try {
+          const result = await ipcRenderer.invoke('create-tab', url);
+          
+          if (!result || !result.id) {
+            console.error('Помилка створення вкладки: немає результату');
+            return null;
+          }
+          
+          // Створюємо візуальний елемент вкладки
+          const tabElement = document.createElement('div');
+          tabElement.className = 'tab';
+          tabElement.dataset.tabId = result.id;
+          
+          tabElement.innerHTML = `
+            <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'">
+            <span class="tab-title">${result.title || 'Нова вкладка'}</span>
+            <span class="tab-close">×</span>
+          `;
+          
+          // Додаємо перед кнопкою "+" в контейнер вкладок
+          tabsContainer.insertBefore(tabElement, newTabBtn);
+          
+          // Перемикаємось на нову вкладку
+          switchTab(result.id);
+          
+          console.log('✅ Створено вкладку:', result.id);
+          return result.id;
+        } catch (error) {
+          console.error('❌ Помилка створення вкладки:', error);
+          return null;
+        }
       }
       
       // Перемкнутися на вкладку
@@ -472,11 +489,19 @@
       
       // Закрити вкладку
       function closeTab(tabId) {
-        const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-        if (tabElement) {
-          tabElement.remove();
+        try {
+          console.log('🗑️ Закриваємо вкладку:', tabId);
+          const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+          if (tabElement) {
+            tabElement.remove();
+            console.log('✅ Елемент вкладки видалено з DOM');
+          } else {
+            console.warn('⚠️ Елемент вкладки не знайдено в DOM');
+          }
+          ipcRenderer.send('close-tab', tabId);
+        } catch (error) {
+          console.error('❌ Помилка закриття вкладки:', error);
         }
-        ipcRenderer.send('close-tab', tabId);
       }
       
       // Оновити інформацію вкладки (заголовок, favicon)
@@ -554,28 +579,38 @@
     
     // Обробники подій для вкладок
     if (tabsBar) {
+      console.log('✅ Прив\'язуємо event delegation до tabsBar');
       tabsBar.addEventListener('click', (e) => {
-      const tab = e.target.closest('.tab');
-      if (!tab) return;
-      
-      const tabId = parseInt(tab.dataset.tabId);
-      
-      // Якщо клікнули на кнопку закриття
-      if (e.target.classList.contains('tab-close')) {
-        e.stopPropagation();
-        closeTab(tabId);
-      } else {
-        // Перемкнутись на вкладку
-        switchTab(tabId);
-      }
-    });
+        const tab = e.target.closest('.tab');
+        if (!tab) return;
+        
+        const tabId = parseInt(tab.dataset.tabId);
+        console.log('🖱️ Клік на вкладку:', tabId);
+        
+        // Якщо клікнули на кнопку закриття
+        if (e.target.classList.contains('tab-close')) {
+          console.log('❌ Клік на кнопку закриття вкладки');
+          e.stopPropagation();
+          closeTab(tabId);
+        } else {
+          // Перемкнутись на вкладку
+          console.log('🔄 Перемикання на вкладку');
+          switchTab(tabId);
+        }
+      });
+    } else {
+      console.error('❌ tabsBar не знайдено!');
     }
     
     // Кнопка створення нової вкладки
     if (newTabBtn) {
-        newTabBtn.addEventListener('click', () => {
+      console.log('✅ Прив\'язуємо обробник до кнопки створення вкладки');
+      newTabBtn.addEventListener('click', () => {
+        console.log('🆕 Клік на кнопку створення вкладки');
         createTab();
       });
+    } else {
+      console.error('❌ Кнопка створення вкладки не знайдена!');
     }
     
     // Гаряча клавіша Ctrl+T для нової вкладки
