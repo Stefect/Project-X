@@ -1706,11 +1706,8 @@
         const dropdownMenu = document.getElementById('dropdown-menu');
         if (dropdownMenu) dropdownMenu.classList.remove('active');
         ipcRenderer.send('menu-toggled', false);
-        // Відкриваємо історію в новій вкладці
-        createTab().then(() => {
-          const historyUrl = `file://${require('path').join(__dirname, 'history.html')}`;
-          ipcRenderer.send('navigate', historyUrl);
-        });
+        // Відкриваємо історію в активній вкладці
+        ipcRenderer.send('open-history');
       });
     }
     
