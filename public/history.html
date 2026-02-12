@@ -204,7 +204,7 @@
   </div>
 
   <script>
-    const { ipcRenderer } = require('electron');
+    // Використовуємо API через preload
     const historyList = document.getElementById('history-list');
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-btn');
@@ -213,7 +213,7 @@
 
     // Завантажуємо історію
     async function loadHistory() {
-      allHistory = await ipcRenderer.invoke('get-history', 1000);
+      allHistory = await window.browserStorage.getHistory(1000);
       renderHistory(allHistory);
     }
 
@@ -341,7 +341,7 @@
 
     // Відкриваємо URL
     function openUrl(url) {
-      ipcRenderer.send('open-url-from-history', url);
+      window.browserStorage.openUrl(url);
     }
 
     // Видаляємо елемент
@@ -350,7 +350,7 @@
         allHistory = allHistory.filter(item => item.url !== url);
         renderHistory(allHistory);
         // Видаляємо з storage
-        ipcRenderer.send('delete-history-item', url);
+        window.browserStorage.deleteHistoryItem(url);
       }
     }
 
@@ -389,7 +389,7 @@
     // Очистити історію
     clearBtn.addEventListener('click', async () => {
       if (confirm('Ви впевнені що хочете очистити всю історію?')) {
-        ipcRenderer.send('clear-history');
+        window.browserStorage.clearHistory();
         allHistory = [];
         renderHistory([]);
       }

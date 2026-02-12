@@ -419,17 +419,32 @@ function createWindow() {
 
   // Оновлюємо розміри при зміні розміру вікна
   mainWindow.on('resize', () => {
+    updateBrowserViewBounds();
+  });
+  
+  // Оновлюємо розміри при максимізації
+  mainWindow.on('maximize', () => {
+    updateBrowserViewBounds();
+  });
+  
+  // Оновлюємо розміри при відновленні
+  mainWindow.on('unmaximize', () => {
+    updateBrowserViewBounds();
+  });
+  
+  // Функція для оновлення розмірів BrowserView
+  function updateBrowserViewBounds() {
     const bounds = mainWindow.getContentBounds();
     const activeTab = tabs.find(t => t.id === activeTabId);
     if (activeTab && activeTab.browserView) {
       activeTab.browserView.setBounds({ 
         x: 0, 
         y: 100, // 40px tabs + 60px toolbar
-        width: bounds.width - sidebarWidth, // Використовуємо поточну ширину sidebar
+        width: bounds.width - sidebarWidth,
         height: bounds.height - 100 
       });
     }
-  });
+  }
   
   // Автоматичне збереження сесії при закритті вікна
   mainWindow.on('close', () => {
