@@ -308,15 +308,16 @@
     // Створюємо HTML елемент історії
     function createHistoryItem(item) {
       const faviconUrl = item.favicon || getFaviconFromUrl(item.url);
+      const escapedUrl = escapeHtml(item.url).replace(/'/g, '&apos;');
       return `
-        <div class="history-item" onclick="openUrl('${item.url}')">
+        <div class="history-item" data-url="${escapedUrl}">
           <img class="favicon" src="${faviconUrl}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'">
           <div class="history-content">
             <div class="history-title">${escapeHtml(item.title)}</div>
             <div class="history-url">${escapeHtml(item.url)}</div>
           </div>
           <div class="history-time">${formatTime(item.visitedAt)}</div>
-          <button class="delete-btn" onclick="deleteItem('${item.url}', event)">Видалити</button>
+          <button class="delete-btn" data-url="${escapedUrl}">Видалити</button>
         </div>
       `;
     }
@@ -340,15 +341,11 @@
 
     // Відкриваємо URL
     function openUrl(url) {
-      // Закриваємо поточну вкладку історії і відкриваємо URL
-      window.close();
-      // Відправляємо команду на відкриття URL в основному вікні
       ipcRenderer.send('open-url-from-history', url);
     }
 
     // Видаляємо елемент
-    function deleteItem(url, event) {
-      event.stopPropagation();
+    function deleteItem(url) {
       if (confirm('Видалити цей запис з історії?')) {
         allHistory = allHistory.filter(item => item.url !== url);
         renderHistory(allHistory);
@@ -370,6 +367,23 @@
         item.url.toLowerCase().includes(query)
       );
       renderHistory(filtered);
+    });
+
+    // Event delegation для кліків на історію
+    historyList.addEventListener('click', (e) => {
+      const historyItem = e.target.closest('.history-item');
+      const deleteBtn = e.target.closest('.delete-btn');
+
+      if (deleteBtn && historyItem) {
+        // Клік на кнопку видалення
+        e.stopPropagation();
+        const url = deleteBtn.dataset.url.replace(/&apos;/g, "'");
+        deleteItem(url);
+      } else if (historyItem && !deleteBtn) {
+        // Клік на елемент історії
+        const url = historyItem.dataset.url.replace(/&apos;/g, "'");
+        openUrl(url);
+      }
     });
 
     // Очистити історію
