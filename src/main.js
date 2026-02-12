@@ -2036,5 +2036,4 @@ ipcMain.handle('predict-completion', async (event, currentText) => {
     } catch (error) {
         console.error("Groq Error:", error);
         return null;
-    }
-});
+    }});
