@@ -236,8 +236,13 @@ function createWindow() {
     const currentUrl = browserView.webContents.getURL();
     const title = browserView.webContents.getTitle();
     
-    // Зберігаємо в історію
-    storage.addToHistory(currentUrl, title);
+    // Зберігаємо в історію з favicon
+    try {
+      const favicon = new URL(currentUrl).origin + '/favicon.ico';
+      storage.addToHistory(currentUrl, title, favicon);
+    } catch (err) {
+      storage.addToHistory(currentUrl, title);
+    }
   });
 
   // Додаємо контекстне меню для виділеного тексту
@@ -1191,6 +1196,15 @@ ipcMain.handle('create-tab', async (event, url = null) => {
   newBrowserView.webContents.on('did-navigate', () => {
     const currentUrl = newBrowserView.webContents.getURL();
     const title = newBrowserView.webContents.getTitle();
+    
+    // Зберігаємо в історію з favicon
+    try {
+      const favicon = new URL(currentUrl).origin + '/favicon.ico';
+      storage.addToHistory(currentUrl, title, favicon);
+    } catch (err) {
+      storage.addToHistory(currentUrl, title);
+    }
+    
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
   });
 
@@ -1879,6 +1893,19 @@ ipcMain.handle('search-history', (event, query) => {
 ipcMain.on('clear-history', () => {
   storage.clearHistory();
   console.log(' Історію очищено');
+});
+
+ipcMain.on('delete-history-item', (event, url) => {
+  storage.deleteHistoryItem(url);
+  console.log('🗑️ Запис з історії видалено:', url);
+});
+
+ipcMain.on('open-url-from-history', (event, url) => {
+  const activeTab = tabs.find(t => t.isActive);
+  if (activeTab && activeTab.view) {
+    activeTab.view.webContents.loadURL(url);
+    console.log('🔗 Відкрито з історії:', url);
+  }
 });
 
 // Закладки

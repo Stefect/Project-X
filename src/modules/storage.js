@@ -114,6 +114,12 @@ function clearHistory() {
   setData('history', []);
 }
 
+function deleteHistoryItem(url) {
+  const data = getData();
+  const history = data.history || [];
+  setData('history', history.filter(h => h.url !== url));
+}
+
 // ==================== ЗАКЛАДКИ ====================
 function addBookmark(url, title, favicon = '', folder = 'Загальні') {
   const data = getData();
@@ -235,6 +241,7 @@ module.exports = {
   getHistory,
   searchHistory,
   clearHistory,
+  deleteHistoryItem,
   
   // Закладки
   addBookmark,
