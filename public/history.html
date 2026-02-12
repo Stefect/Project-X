@@ -340,15 +340,21 @@
 
     // Відкриваємо URL
     function openUrl(url) {
-      ipcRenderer.send('navigate', url);
+      // Закриваємо поточну вкладку історії і відкриваємо URL
+      window.close();
+      // Відправляємо команду на відкриття URL в основному вікні
+      ipcRenderer.send('open-url-from-history', url);
     }
 
     // Видаляємо елемент
     function deleteItem(url, event) {
       event.stopPropagation();
-      allHistory = allHistory.filter(item => item.url !== url);
-      renderHistory(allHistory);
-      // TODO: Додати API для видалення окремих записів з історії
+      if (confirm('Видалити цей запис з історії?')) {
+        allHistory = allHistory.filter(item => item.url !== url);
+        renderHistory(allHistory);
+        // Видаляємо з storage
+        ipcRenderer.send('delete-history-item', url);
+      }
     }
 
     // Пошук
