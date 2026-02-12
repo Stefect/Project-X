@@ -47,27 +47,50 @@ let themeSettings = {
 
 // Функція запуску Tor
 function startTor() {
-  const torPath = path.join(__dirname, '..', 'bin', 'tor', 'tor.exe');
+  // Визначаємо платформу для вибору правильного бінарника
+  const isWindows = process.platform === 'win32';
+  const torBinary = isWindows ? 'tor.exe' : 'tor';
+  const torPath = path.join(__dirname, '..', 'bin', 'tor', torBinary);
   const fs = require('fs');
   
-  // Перевіряємо чи існує tor.exe
+  // Перевіряємо чи існує tor
   if (!fs.existsSync(torPath)) {
-    console.log('Tor не знайдено. Завантажте Tor Expert Bundle та помістіть tor.exe в папку bin/');
+    console.log(`❌ Tor не знайдено за шляхом: ${torPath}`);
+    console.log('💡 Завантажте Tor Expert Bundle та помістіть бінарник в папку bin/tor/');
+    console.log(`   Windows: tor.exe | macOS/Linux: tor`);
     return;
   }
   
-  console.log('Запускаємо Tor з:', torPath);
+  // Для Unix систем встановлюємо права на виконання
+  if (!isWindows) {
+    try {
+      fs.chmodSync(torPath, 0o755);
+      console.log('✓ Встановлено права на виконання для Tor');
+    } catch (err) {
+      console.error('⚠️ Не вдалося встановити права на виконання:', err.message);
+    }
+  }
+  
+  console.log(`🚀 Запускаємо Tor (${process.platform}):`, torPath);
   
   const geoipPath = path.join(__dirname, '..', 'bin', 'data', 'geoip');
   const geoip6Path = path.join(__dirname, '..', 'bin', 'data', 'geoip6');
   
-  torProcess = spawn(torPath, [
+  const torArgs = [
     '--GeoIPFile', geoipPath,
     '--GeoIPv6File', geoip6Path
-  ], {
-    cwd: path.join(__dirname, '..', 'bin', 'tor'),
-    windowsHide: true // Приховуємо консольне вікно на Windows
-  });
+  ];
+  
+  const spawnOptions = {
+    cwd: path.join(__dirname, '..', 'bin', 'tor')
+  };
+  
+  // Приховуємо консольне вікно тільки на Windows
+  if (isWindows) {
+    spawnOptions.windowsHide = true;
+  }
+  
+  torProcess = spawn(torPath, torArgs, spawnOptions);
   
   torProcess.stdout.on('data', (data) => {
     const output = data.toString('utf8');
