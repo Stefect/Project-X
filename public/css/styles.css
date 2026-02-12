@@ -35,7 +35,8 @@
       transition: background-color 0.3s ease;
     }
 
-    .container {
+    /* Main browser container (not for newtab page) */
+    body:not(.newtab-page) .container {
       display: flex;
       height: calc(100vh - 100px); /* 40px tabs + 60px toolbar */
     }
@@ -1172,6 +1173,8 @@ body[class*="mode"] .container {
   justify-content: center;
   min-height: 100vh;
   padding: 40px 20px;
+  width: 100%;
+  max-width: none;
 }
 
 /* Newtab logo (different from sidebar logo) */
