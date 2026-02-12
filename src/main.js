@@ -1,19 +1,10 @@
 const { app, BrowserWindow, BrowserView, ipcMain, Menu, MenuItem, session } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const Groq = require('groq-sdk');
 const EventEmitter = require('events');
 
-// Встановлюємо UTF-8 кодування для консолі
-if (process.platform === 'win32') {
-  process.stdout.setDefaultEncoding('utf8');
-  const { execSync } = require('child_process');
-  try {
-    execSync('chcp 65001', { stdio: 'ignore' });
-  } catch (e) {
-    // Ігноруємо помилки
-  }
-}
+console.log('[CONSOLE] Starting BrowserX...');
 
 // Модуль збереження даних (історія, закладки, сесія)
 const storage = require('./modules/storage');
@@ -55,8 +46,8 @@ function startTor() {
   
   // Перевіряємо чи існує tor
   if (!fs.existsSync(torPath)) {
-    console.log(`❌ Tor не знайдено за шляхом: ${torPath}`);
-    console.log('💡 Завантажте Tor Expert Bundle та помістіть бінарник в папку bin/tor/');
+    console.log(`[TOR] Tor not found at path: ${torPath}`);
+    console.log('[TOR] Download Tor Expert Bundle and place binary in bin/tor/ folder');
     console.log(`   Windows: tor.exe | macOS/Linux: tor`);
     return;
   }
@@ -65,13 +56,13 @@ function startTor() {
   if (!isWindows) {
     try {
       fs.chmodSync(torPath, 0o755);
-      console.log('✓ Встановлено права на виконання для Tor');
+      console.log('[TOR] Set execution permissions for Tor');
     } catch (err) {
-      console.error('⚠️ Не вдалося встановити права на виконання:', err.message);
+      console.error('[TOR] Failed to set execution permissions:', err.message);
     }
   }
   
-  console.log(`🚀 Запускаємо Tor (${process.platform}):`, torPath);
+  console.log(`[TOR] Starting Tor (${process.platform}):`, torPath);
   
   const geoipPath = path.join(__dirname, '..', 'bin', 'data', 'geoip');
   const geoip6Path = path.join(__dirname, '..', 'bin', 'data', 'geoip6');
@@ -98,7 +89,7 @@ function startTor() {
     
     // Перевіряємо чи Tor готовий
     if (output.includes('Bootstrapped 100%')) {
-      console.log('Tor успішно підключено!');
+      console.log('[TOR] Tor successfully connected!');
       if (mainWindow) {
         mainWindow.webContents.send('tor-ready', true);
       }
@@ -115,7 +106,7 @@ function startTor() {
   });
   
   torProcess.on('close', (code) => {
-    console.log('Tor процес завершено з кодом:', code);
+    console.log('[TOR] Tor process exited with code:', code);
   });
 }
 
@@ -123,13 +114,13 @@ function createWindow() {
   // Ініціалізуємо Groq AI (швидше за Gemini!)
   try {
     if (!config.GROQ_API_KEY || config.GROQ_API_KEY === 'YOUR_GROQ_API_KEY_HERE') {
-      console.error('[ERROR] API ключ не налаштовано в config.js');
+      console.error('[ERROR] API key not configured in config.js');
     } else {
       groqClient = new Groq({ apiKey: config.GROQ_API_KEY });
-      console.log('[OK] Groq AI ініціалізовано з ключем:', config.GROQ_API_KEY.substring(0, 10) + '...');
+      console.log('[OK] Groq AI initialized with key:', config.GROQ_API_KEY.substring(0, 10) + '...');
     }
   } catch (error) {
-    console.error('[ERROR] Помилка ініціалізації Groq:', error.message);
+    console.error('[ERROR] Groq initialization error:', error.message);
   }
 
   // Створюємо головне вікно (без рамок, як Chrome)
@@ -245,6 +236,14 @@ function createWindow() {
     }
   });
 
+  // Obrobka pomylok zavantazhennya
+  browserView.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    if (errorCode !== -3) { // -3 tse cancelled (norma pry navigatsii)
+      console.error(`[LOAD ERROR] Pomylka zavantazhennya: ${errorDescription} (kod: ${errorCode})`);
+      console.error(`[LOAD ERROR] URL: ${validatedURL}`);
+    }
+  });
+
   // Додаємо контекстне меню для виділеного тексту
   browserView.webContents.on('context-menu', (event, params) => {
     const menu = new Menu();
@@ -266,20 +265,32 @@ function createWindow() {
       
       // 2. AI Помічник
       menu.append(new MenuItem({
-        label: 'AI Помічник',
+        label: '🤖 AI Помічник',
         click: async () => {
           const result = await getAIExplanation(selectedText);
-          showAIPopup(browserView, result, selectedText);
+          browserView.webContents.executeJavaScript(`
+            window.postMessage({ 
+              type: 'AI_ASSISTANT_RESULT', 
+              answer: ${JSON.stringify(result)},
+              originalText: ${JSON.stringify(selectedText)}
+            }, '*');
+          `).catch(err => console.error('Помилка AI:', err));
         }
       }));
       
       // 3. Переклад
       menu.append(new MenuItem({
-        label: 'Перекласти',
+        label: '🌐 Перекласти',
         click: async () => {
           const result = await translateText(selectedText, 'uk');
           if (result.success) {
-            showTranslationPopup(browserView, result.translation, selectedText);
+            browserView.webContents.executeJavaScript(`
+              window.postMessage({ 
+                type: 'TRANSLATION_RESULT', 
+                translation: ${JSON.stringify(result.translation)},
+                originalText: ${JSON.stringify(selectedText)}
+              }, '*');
+            `).catch(err => console.error('Помилка перекладу:', err));
           }
         }
       }));
@@ -325,8 +336,15 @@ function createWindow() {
   });
 
   // Перехоплюємо console.log з веб-сторінки
-  browserView.webContents.on('console-message', async (event) => {
-    const message = event.message;
+  browserView.webContents.on('console-message', async (event, level, message, line, sourceId) => {
+    // Виводимо всі консольні повідомлення для діагностики
+    const logPrefix = sourceId.includes('history.html') ? '[HISTORY PAGE]' : '[WEB]';
+    const levelMap = { 0: 'LOG', 1: 'WARN', 2: 'ERROR' };
+    const levelName = levelMap[level] || 'LOG';
+    
+    if (level >= 1) { // Warn або Error
+      console.log(`${logPrefix} [${levelName}] ${message} (${sourceId}:${line})`);
+    }
     
     // Обробка запитів на аналіз коду (Code Mate)
     if (message.startsWith('AI_CODE_REQUEST:')) {
@@ -341,7 +359,7 @@ function createWindow() {
           }
         `).catch(err => console.error('Помилка показу пояснення коду:', err));
       } catch (error) {
-        console.error('Помилка обробки запиту на аналіз коду:', error);
+        console.error('[CODE MATE] Error processing code analysis request:', error);
       }
     }
     
@@ -423,7 +441,7 @@ function createWindow() {
       .filter(tab => !tab.url.includes('newtab.html')); // НЕ зберігаємо newtab
     
     storage.saveSession(sessionTabs);
-    console.log('[SESSION] Автозбереження при закритті:', sessionTabs.length, 'вкладок');
+    console.log('[SESSION] Auto-save on close:', sessionTabs.length, 'tabs');
   });
 }
 
@@ -1208,6 +1226,14 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     mainWindow.webContents.send('update-tab-info', newTab.id, title, currentUrl);
   });
 
+  // Obrobka pomylok zavantazhennya dlya novykh vkladok
+  newBrowserView.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    if (errorCode !== -3) { // -3 tse cancelled (norma pry navigatsii)
+      console.error(`[LOAD ERROR] [TAB ${newTab.id}] Pomylka zavantazhennya: ${errorDescription} (kod: ${errorCode})`);
+      console.error(`[LOAD ERROR] [TAB ${newTab.id}] URL: ${validatedURL}`);
+    }
+  });
+
   // Оновлюємо назву вкладки при зміні
   newBrowserView.webContents.on('page-title-updated', (event, title) => {
     const tab = tabs.find(t => t.id === newTab.id);
@@ -1251,7 +1277,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       
       // 2. AI Помічник
       menu.append(new MenuItem({
-        label: ' AI Помічник',
+        label: '🤖 AI Помічник',
         click: async () => {
           const result = await getAIExplanation(selectedText);
           newBrowserView.webContents.executeJavaScript(`
@@ -1266,7 +1292,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       
       // 3. Переклад
       menu.append(new MenuItem({
-        label: ' Перекласти',
+        label: '🌐 Перекласти',
         click: async () => {
           const result = await translateText(selectedText, 'uk');
           if (result.success) {
@@ -1296,8 +1322,15 @@ ipcMain.handle('create-tab', async (event, url = null) => {
   });
   
   // Console message handler
-  newBrowserView.webContents.on('console-message', async (event) => {
-    const message = event.message;
+  newBrowserView.webContents.on('console-message', async (event, level, message, line, sourceId) => {
+    // Виводимо всі консольні повідомлення для діагностики
+    const logPrefix = sourceId.includes('history.html') ? '[HISTORY PAGE]' : '[WEB]';
+    const levelMap = { 0: 'LOG', 1: 'WARN', 2: 'ERROR' };
+    const levelName = levelMap[level] || 'LOG';
+    
+    if (level >= 1) { // Warn або Error
+      console.log(`${logPrefix} [${levelName}] ${message} (${sourceId}:${line})`);
+    }
     
     if (message.startsWith('AI_CODE_REQUEST:')) {
       try {
@@ -1897,23 +1930,37 @@ ipcMain.on('clear-history', () => {
 
 ipcMain.on('delete-history-item', (event, url) => {
   storage.deleteHistoryItem(url);
-  console.log('🗑️ Запис з історії видалено:', url);
+  console.log('[HISTORY] Запис видалено:', url);
 });
 
 ipcMain.on('open-url-from-history', (event, url) => {
-  const activeTab = tabs.find(t => t.isActive);
-  if (activeTab && activeTab.view) {
-    activeTab.view.webContents.loadURL(url);
-    console.log('🔗 Відкрито з історії:', url);
+  console.log('[HISTORY] Відкриваємо URL з історії:', url);
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  if (activeTab && activeTab.browserView) {
+    activeTab.browserView.webContents.loadURL(url).catch(err => {
+      console.error('[HISTORY] Помилка завантаження URL:', err.message);
+    });
+    console.log('[HISTORY] URL відкрито:', url);
+  } else {
+    console.error('[HISTORY] Активна вкладка не знайдена');
   }
 });
 
 ipcMain.on('open-history', async () => {
+  console.log('[HISTORY] Відкриваємо сторінку історії...');
   const historyUrl = `file://${path.join(__dirname, '../public/history.html')}`;
-  const activeTab = tabs.find(t => t.isActive);
-  if (activeTab && activeTab.view) {
-    activeTab.view.webContents.loadURL(historyUrl);
-    console.log('📜 Відкрито сторінку історії');
+  console.log('[HISTORY] URL історії:', historyUrl);
+  
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  if (activeTab && activeTab.browserView) {
+    try {
+      await activeTab.browserView.webContents.loadURL(historyUrl);
+      console.log('[HISTORY] Сторінка історії успішно завантажена');
+    } catch (err) {
+      console.error('[HISTORY] Помилка завантаження історії:', err.message);
+    }
+  } else {
+    console.error('[HISTORY] Активна вкладка не знайдена');
   }
 });
 
@@ -1924,13 +1971,13 @@ ipcMain.handle('get-bookmarks', () => {
 
 ipcMain.handle('add-bookmark', (event, { url, title, favicon }) => {
   const added = storage.addBookmark(url, title, favicon);
-  console.log(added ? ' Закладку додано:' : ' Закладка вже існує:', url);
+  console.log(added ? '[BOOKMARK] Bookmark added:' : '[BOOKMARK] Bookmark already exists:', url);
   return added;
 });
 
 ipcMain.on('remove-bookmark', (event, url) => {
   storage.removeBookmark(url);
-  console.log(' Закладку видалено:', url);
+  console.log('[BOOKMARK] Bookmark removed:', url);
 });
 
 ipcMain.handle('is-bookmarked', (event, url) => {
