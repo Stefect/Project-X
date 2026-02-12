@@ -1331,6 +1331,10 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     }
   });
   
+  // Встановлюємо новий BrowserView як активний
+  mainWindow.setBrowserView(newBrowserView);
+  activeTabId = newTab.id;
+  
   newBrowserView.webContents.loadURL(targetUrl);
   
   return { id: newTab.id, url: targetUrl, title: newTab.title };
@@ -1370,10 +1374,10 @@ ipcMain.on('close-tab', (event, tabId) => {
   
   const tab = tabs[tabIndex];
   
-  // Якщо це остання вкладка, створюємо нову newtab замість закриття браузера
+  // Якщо це остання вкладка, закриваємо браузер
   if (tabs.length <= 1) {
-    console.log(' Закриття останньої вкладки - створюємо нову');
-    event.sender.send('create-new-tab-requested');
+    console.log(' Закриття останньої вкладки - закриваємо браузер');
+    app.quit();
     return;
   }
   
