@@ -73,6 +73,11 @@ AI підказує: "...Україні!"
 
 **Потрібно:** Node.js і 5 хвилин вільного часу 
 
+### Підтримувані платформи
+-  **Windows** (Windows 10/11)
+-  **macOS** (Intel & Apple Silicon)
+-  **Linux** (Ubuntu, Debian, Arch, Fedora)
+
 ### Крок 1: Завантаж код
 ```bash
 git clone https://github.com/Stefect/Project-X.git
@@ -89,13 +94,45 @@ npm install
 1. Йди на https://console.groq.com/keys (це швидко і безкоштовно! )
 2. Зареєструйся (якщо ще не маєш акаунт)
 3. Скопіюй свій API ключ
-4. Відкрий файл `src/config.js` і вставв його сюди:
+4. Відкрий файл `config.js` (в корені проекту) і вставв його сюди:
 
 ```javascript
 module.exports = {
   GROQ_API_KEY: 'сюди_вставти_свій_ключ'
 };
 ```
+
+### Крок 3.5: Налаштуй Tor (опціонально для анонімності)
+Tor забезпечує анонімний доступ до інтернету.
+
+#### Windows
+```bash
+# Завантаж Tor Expert Bundle: https://www.torproject.org/download/tor/
+# Розпакуй і скопіюй tor.exe в bin/tor/
+```
+
+#### macOS
+```bash
+# Через Homebrew (рекомендовано)
+brew install tor
+cp $(which tor) bin/tor/tor
+chmod +x bin/tor/tor
+```
+
+#### Linux
+```bash
+# Ubuntu/Debian
+sudo apt-get install tor
+cp /usr/bin/tor bin/tor/tor
+chmod +x bin/tor/tor
+
+# Arch Linux
+sudo pacman -S tor
+cp /usr/bin/tor bin/tor/tor
+chmod +x bin/tor/tor
+```
+
+*Детальніше в [bin/README.md](bin/README.md)*
 
 ### Крок 4: Запускай і насолоджуйся! 
 ```bash
@@ -218,5 +255,9 @@ npm start
 
 Дякуємо що використовуєш наш браузер! Є ідеї або знайшов баг? 
 [Створи Issue на GitHub](https://github.com/Stefect/Project-X/issues) - ми обов'язково подивимось!
+
+##  Автори
+
+**[@AlegZabivnoy](https://github.com/AlegZabivnoy)** - Cross-platform support, Tor integration, History UI
 
 **Зроблено з любов'ю та AI **
