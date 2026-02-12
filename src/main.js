@@ -1908,6 +1908,15 @@ ipcMain.on('open-url-from-history', (event, url) => {
   }
 });
 
+ipcMain.on('open-history', async () => {
+  const historyUrl = `file://${path.join(__dirname, '../public/history.html')}`;
+  const activeTab = tabs.find(t => t.isActive);
+  if (activeTab && activeTab.view) {
+    activeTab.view.webContents.loadURL(historyUrl);
+    console.log('📜 Відкрито сторінку історії');
+  }
+});
+
 // Закладки
 ipcMain.handle('get-bookmarks', () => {
   return storage.getBookmarks();
