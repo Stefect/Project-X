@@ -130,8 +130,8 @@
 
     <div class="menu-separator"></div>
 
-    <button class="menu-item has-submenu">
-      <span class="label">Журнал</span>
+    <button class="menu-item has-submenu" id="history-menu">
+      <span class="label">📚 Журнал (Історія)</span>
     </button>
     <button class="menu-item">
       <span class="label">Завантаження</span>
@@ -1699,6 +1699,22 @@
     });
 
     // 7. Відкриття з меню
+    // Історія
+    const historyMenuItem = document.getElementById('history-menu');
+    if (historyMenuItem) {
+      historyMenuItem.addEventListener('click', () => {
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        if (dropdownMenu) dropdownMenu.classList.remove('active');
+        ipcRenderer.send('menu-toggled', false);
+        // Відкриваємо історію в новій вкладці
+        createTab().then(() => {
+          const historyUrl = `file://${require('path').join(__dirname, 'history.html')}`;
+          ipcRenderer.send('navigate', historyUrl);
+        });
+      });
+    }
+    
+    // Налаштування вигляду
     const customizeMenuItem = document.getElementById('customize-menu');
     if (customizeMenuItem) {
       customizeMenuItem.addEventListener('click', () => {
