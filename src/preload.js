@@ -40,6 +40,22 @@ contextBridge.exposeInMainWorld('aiAutocomplete', {
   predict: (text) => ipcRenderer.invoke('predict-text', text)
 });
 
+// API для Smart Compose (розумного помічника тексту)
+contextBridge.exposeInMainWorld('api', {
+  invoke: (channel, ...args) => {
+    const validChannels = ['predict-completion', 'predict-text'];
+    if (validChannels.includes(channel)) {
+      return ipcRenderer.invoke(channel, ...args);
+    }
+    return Promise.resolve(null);
+  }
+});
+
+// Додатковий API для зворотної сумісності
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Smart Compose API готовий!');
+});
+
 // Відслідковуємо виділення тексту після завантаження сторінки
 window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mouseup', () => {

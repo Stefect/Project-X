@@ -24,7 +24,7 @@ const defaultData = {
     },
     homepage: 'newtab',
     searchEngine: 'google',
-    restoreSession: true
+    restoreSession: false // Вимкнено за замовчуванням, щоб завжди показувати нативну стартову сторінку
   },
   notes: [],
   downloads: []

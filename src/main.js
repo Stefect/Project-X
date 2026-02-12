@@ -22,8 +22,8 @@ const storage = require('./modules/storage');
 EventEmitter.defaultMaxListeners = 20;
 
 // Очищаємо кеш config при кожному запуску
-delete require.cache[require.resolve('./config')];
-const config = require('./config');
+delete require.cache[require.resolve('../config')];
+const config = require('../config');
 
 let mainWindow;
 let browserView;
@@ -155,7 +155,8 @@ function createWindow() {
   browserView = new BrowserView({
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
   mainWindow.setBrowserView(browserView);
@@ -204,6 +205,7 @@ function createWindow() {
       injectLinkXRay(browserView);
       injectT9(browserView);
       injectAIT9(browserView); // AI-автозаповнення з Groq
+      injectSmartCompose(browserView); // Новий Smart Compose згідно з інструкціями
     }
   });
 
@@ -273,6 +275,7 @@ function createWindow() {
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
     injectT9(browserView);
+    injectSmartCompose(browserView); // Додаємо і тут
   });
 
   // Оновлюємо назву вкладки при зміні
@@ -293,7 +296,7 @@ function createWindow() {
     mainWindow.webContents.send('update-url-bar', url);
   });
 
-  // Перехоплюємо console.log з веб-сторінки (оновлений синтаксис без deprecated)
+  // Перехоплюємо console.log з веб-сторінки
   browserView.webContents.on('console-message', async (event) => {
     const message = event.message;
     
@@ -381,27 +384,39 @@ function createWindow() {
       });
     }
   });
+  
+  // Автоматичне збереження сесії при закритті вікна
+  mainWindow.on('close', () => {
+    const sessionTabs = tabs
+      .map(tab => ({
+        url: tab.browserView?.webContents?.getURL() || '',
+        title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
+      }))
+      .filter(tab => !tab.url.includes('newtab.html')); // НЕ зберігаємо newtab
+    
+    storage.saveSession(sessionTabs);
+    console.log('[SESSION] Автозбереження при закритті:', sessionTabs.length, 'вкладок');
+  });
 }
 
-// Функція відновлення сесії (вкладок) з попереднього запуску
-function restoreSession() {
+// Розумне відновлення сесії - перша вкладка завжди newtab, потім решта
+function restoreSessionSmart() {
   try {
     const session = storage.getSession();
     const sessionTabs = session.tabs || [];
     
-    // Якщо немає збережених вкладок - нічого не робимо
+    console.log('[SESSION] Знайдено збережених вкладок:', sessionTabs.length);
+    
+    // Перша вкладка вже є (newtab), відновлюємо тільки інші
     if (sessionTabs.length === 0) {
-      console.log('[SESSION] Немає збережених вкладок для відновлення');
+      console.log('[SESSION] Немає вкладок для відновлення - показуємо тільки newtab');
       return;
     }
     
     console.log('[SESSION] Відновлюю', sessionTabs.length, 'вкладок...');
     
-    // Закриваємо дефолтну newtab вкладку
-    if (tabs.length === 1 && tabs[0].url.includes('newtab.html')) {
-      tabs = [];
-      nextTabId = 1;
-    }
+    // НЕ закриваємо newtab - вона залишається першою
+    // Додаємо відновлені вкладки після неї
     
     // Відновлюємо кожну вкладку
     sessionTabs.forEach((tab, index) => {
@@ -410,7 +425,8 @@ function restoreSession() {
         const tabView = new BrowserView({
           webPreferences: {
             nodeIntegration: false,
-            contextIsolation: true
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js')
           }
         });
         
@@ -437,6 +453,7 @@ function restoreSession() {
             injectLinkXRay(tabView);
             injectT9(tabView);
             injectAIT9(tabView); // AI-автозаповнення
+            injectSmartCompose(tabView); // Smart Compose 
           }
         });
         
@@ -483,13 +500,14 @@ function restoreSession() {
 
 app.whenReady().then(() => {
   startTor(); // Запускаємо Tor у фоні
+  
   createWindow();
   
-  // Відновлюємо сесію (вкладки) після завантаження вікна
+  // Відновлюємо сесію з розумною логікою
   mainWindow.webContents.once('did-finish-load', () => {
     setTimeout(() => {
-      restoreSession();
-    }, 500); // Невелика затримка для стабільності
+      restoreSessionSmart();
+    }, 500);
   });
 
   app.on('activate', () => {
@@ -1098,7 +1116,8 @@ ipcMain.handle('create-tab', async (event, url = null) => {
   const newBrowserView = new BrowserView({
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
   
@@ -1138,6 +1157,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       injectLinkXRay(newBrowserView);
       injectT9(newBrowserView);
       injectAIT9(newBrowserView); // AI-автозаповнення
+      injectSmartCompose(newBrowserView); // Smart Compose
     }
     
     // Оновлюємо заголовок вкладки
@@ -1350,10 +1370,10 @@ ipcMain.on('close-tab', (event, tabId) => {
   
   const tab = tabs[tabIndex];
   
-  // Якщо це остання вкладка, закриваємо браузер
+  // Якщо це остання вкладка, створюємо нову newtab замість закриття браузера
   if (tabs.length <= 1) {
-    console.log(' Закриття останньої вкладки - закриваємо браузер');
-    mainWindow.close();
+    console.log(' Закриття останньої вкладки - створюємо нову');
+    event.sender.send('create-new-tab-requested');
     return;
   }
   
@@ -1456,13 +1476,16 @@ async function xrayLink(url) {
     
     // Використовуємо вбудований fetch (Node.js 18+)
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000); // 3 сек таймаут
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5 сек таймаут
     
     const response = await fetch(url, { 
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'uk,en;q=0.9'
+      },
+      redirect: 'follow'
     });
     const html = await response.text();
     clearTimeout(timeout);
@@ -1748,11 +1771,29 @@ function injectAIT9(targetBrowserView = browserView) {
   }
 }
 
+// Функція для інжектування Smart Compose (розумний помічник тексту згідно з інструкціями)
+function injectSmartCompose(targetBrowserView = browserView) {
+  const fs = require('fs');
+  try {
+    const smartComposeScript = fs.readFileSync(path.join(__dirname, 'modules', 'smart-compose.js'), 'utf8');
+    
+    targetBrowserView.webContents.executeJavaScript(smartComposeScript)
+      .then(() => {
+        console.log(' Smart Compose активовано на сторінці');
+      })
+      .catch(err => {
+        console.error('Помилка інжекту Smart Compose:', err);
+      });
+  } catch (error) {
+    console.error('Не вдалося прочитати smart-compose.js:', error);
+  }
+}
+
 // Функція для отримання пояснення від Groq AI
 async function getAIExplanation(text) {
   const apiKey = config.GROQ_API_KEY;
   
-  if (apiKey === 'YOUR_GROQ_API_KEY_HERE' || !apiKey) {
+  if (!apiKey || apiKey === 'YOUR_GROQ_API_KEY_HERE' || apiKey === 'REPLACE_WITH_YOUR_GROQ_KEY') {
     return ' API ключ не налаштовано!\n\n1. Відкрийте https://console.groq.com/keys\n2. Натисніть "Create API Key"\n3. Скопіюйте ключ у файл config.js';
   }
 
@@ -1835,10 +1876,13 @@ ipcMain.handle('is-bookmarked', (event, url) => {
 
 // Сесія (вкладки)
 ipcMain.on('save-session', () => {
-  const sessionTabs = tabs.map(tab => ({
-    url: tab.browserView?.webContents?.getURL() || '',
-    title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
-  }));
+  const sessionTabs = tabs
+    .map(tab => ({
+      url: tab.browserView?.webContents?.getURL() || '',
+      title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
+    }))
+    .filter(tab => !tab.url.includes('newtab.html')); // НЕ зберігаємо newtab
+  
   storage.saveSession(sessionTabs);
   console.log(' Сесію збережено:', sessionTabs.length, 'вкладок');
 });
@@ -1875,14 +1919,11 @@ ipcMain.on('clear-notes', () => {
   storage.clearNotes();
 });
 
-// Зберігаємо сесію перед закриттям
+// Зберігаємо сесію перед закриттям (ВИМКНЕНО - завжди показуємо newtab)
 app.on('before-quit', () => {
-  const sessionTabs = tabs.map(tab => ({
-    url: tab.browserView?.webContents?.getURL() || '',
-    title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
-  }));
-  storage.saveSession(sessionTabs);
-  console.log(' Сесію автоматично збережено при закритті');
+  // storage.saveSession(sessionTabs);
+  // console.log(' Сесію автоматично збережено при закритті');
+  console.log(' Сесію НЕ зберігаємо - завжди показуємо newtab при запуску');
 });
 
 // ==================== TOR INTEGRATION ====================
@@ -1964,4 +2005,36 @@ ipcMain.handle('predict-text', async (event, currentText) => {
     console.error('AI-T9 Error:', error.message);
     return null;
   }
+});
+
+// T9 AI-автозаповнення згідно з інструкціями
+ipcMain.handle('predict-completion', async (event, currentText) => {
+    // Не витрачаємо ресурси, якщо тексту мало
+    if (!currentText || currentText.length < 5) return null;
+
+    try {
+        const completion = await groqClient.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    // ЦЕ НАЙВАЖЛИВІШЕ: Інструкція для ШІ
+                    content: "You are a precise autocomplete engine. Receive a text fragment and output ONLY the completion for the last sentence. Do not repeat the input. Do not start with a space. Keep it short (max 5-7 words). If unsure, return empty string."
+                },
+                {
+                    role: "user",
+                    content: currentText
+                }
+            ],
+            // Використовуємо Llama 3 (вона дуже швидка)
+            model: "llama3-8b-8192",
+            temperature: 0.1, // Мінімальна фантазія, максимальна точність
+            max_tokens: 15,   // Обмежуємо довжину відповіді
+        });
+
+        const result = completion.choices[0]?.message?.content || "";
+        return result.trim(); // Прибираємо зайві пробіли
+    } catch (error) {
+        console.error("Groq Error:", error);
+        return null;
+    }
 });

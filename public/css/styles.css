@@ -53,18 +53,23 @@
       flex-direction: column;
       overflow-y: auto;
       overflow-x: visible;
-      transition: width 0.3s ease, padding 0.3s ease;
-      position: relative;
+      transition: right 0.3s ease;
+      position: fixed; /* Змінюємо на fixed щоб був поверх BrowserView */
+      right: 0;
+      top: 100px; /* 40px tabs + 60px toolbar */
+      bottom: 0;
+      z-index: 2147483647; /* Максимальний z-index */
       box-shadow: -2px 0 8px rgba(59, 130, 246, 0.05);
     }
 
     /* ╨Ч╨░ ╨╖╨░╨╝╨╛╨▓╤З╤Г╨▓╨░╨╜╨╜╤П╨╝ ╨┐╨░╨╜╨╡╨╗╤М ╨╖╨│╨╛╤А╨╜╤Г╤В╨░ */
     #notes-sidebar.collapsed,
     #notes-sidebar:not(.expanded) {
-      width: 0;
-      padding: 0;
-      border-left: none;
-      overflow: hidden;
+      right: -320px;
+    }
+    
+    #notes-sidebar.expanded {
+      right: 0;
     }
 
     #notes-sidebar h3 {
