@@ -301,20 +301,21 @@
 
   <div class="container">
     <div class="main-content"></div>
+  </div>
+  
+  <!-- Sidebar винесено поза container щоб був поверх BrowserView -->
+  <div id="notes-sidebar" class="collapsed">
+    <h3>
+      <span>Мій Конспект</span>
+      <button id="toggle-sidebar" title="Показати панель">▶</button>
+    </h3>
     
-    <div id="notes-sidebar" class="collapsed" style="width: 0; padding: 0; overflow: hidden; border-left: none;">
-      <h3>
-        <span>Мій Конспект</span>
-        <button id="toggle-sidebar" title="Показати панель"></button>
-      </h3>
-      
-      <div id="notes-list">
-        <div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>
-      </div>
-
-      <button id="summarize-btn">Узагальнити через AI</button>
-      <button id="clear-btn">Очистити все</button>
+    <div id="notes-list">
+      <div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>
     </div>
+
+    <button id="summarize-btn">Узагальнити через AI</button>
+    <button id="clear-btn">Очистити все</button>
   </div>
 
   <script>
@@ -517,8 +518,39 @@
       
       // Якщо всі вкладки закрито, створити нову
       ipcRenderer.on('create-default-tab', () => {
-      createTab();
-    });
+        createTab();
+      });
+      
+      // Коли закривається остання вкладка, створюємо нову замість закриття браузера
+      ipcRenderer.on('create-new-tab-requested', () => {
+        createTab();
+      });
+      
+      // Обробка відновлених вкладок з сесії
+      ipcRenderer.on('tab-restored', (event, data) => {
+        console.log('[SESSION] Відновлено вкладку:', data.tabId, data.title);
+        
+        // Створюємо візуальний елемент вкладки (BrowserView вже створено в main.js)
+        const tabElement = document.createElement('div');
+        tabElement.className = 'tab';
+        tabElement.dataset.tabId = data.tabId;
+        
+        // Отримуємо favicon з URL
+        let faviconUrl = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>';
+        try {
+          const urlObj = new URL(data.url);
+          faviconUrl = urlObj.origin + '/favicon.ico';
+        } catch (e) {}
+        
+        tabElement.innerHTML = `
+          <img class="tab-favicon" src="${faviconUrl}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🌐</text></svg>'">
+          <span class="tab-title">${data.title || 'Завантаження...'}</span>
+          <span class="tab-close">✕</span>
+        `;
+        
+        // Додаємо перед кнопкою "+"
+        tabsContainer.insertBefore(tabElement, newTabBtn);
+      });
     
     // Обробники подій для вкладок
     if (tabsBar) {
@@ -1002,6 +1034,7 @@
       notesSidebar.style.padding = '';
       notesSidebar.style.overflow = '';
       notesSidebar.style.borderLeft = '';
+      notesSidebar.style.right = '';
       
       if (isSidebarCollapsed) {
         notesSidebar.classList.remove('expanded');
