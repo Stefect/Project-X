@@ -296,7 +296,7 @@ body {
   background: #1a1b26;
   transition: background-color 0.3s ease;
 }
-.container {
+body:not(.newtab-page) .container {
   display: flex;
   height: calc(100vh - 100px);
 }
@@ -1283,6 +1283,8 @@ body[class*="mode"] .container {
   justify-content: center;
   min-height: 100vh;
   padding: 40px 20px;
+  width: 100%;
+  max-width: none;
 }
 body[class*="mode"] .logo {
   font-size: 72px;
