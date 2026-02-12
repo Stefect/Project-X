@@ -1,26 +1,79 @@
-# Інструкція для встановлення Tor
+# Інструкція для встановлення Tor (Cross-Platform)
 
-## Крок 1: Завантаження Tor Expert Bundle
+## Windows
+
+### Крок 1: Завантаження Tor Expert Bundle
 
 1. Відкрийте офіційний сайт Tor Project: https://www.torproject.org/download/tor/
-2. Завантажте **Tor Expert Bundle** для Windows (не Tor Browser, а саме Expert Bundle)
+2. Завантажте **Tor Expert Bundle** для Windows
 3. Це буде файл на кшталт: `tor-win64-0.x.x.x.zip`
 
-## Крок 2: Витягнення файлів
+### Крок 2: Витягнення файлів
 
 1. Розпакуйте завантажений ZIP архів
 2. Знайдіть файл `tor.exe` всередині папки `Tor/`
-3. Скопіюйте `tor.exe` в цю папку (`bin/`)
+3. Скопіюйте `tor.exe` в папку `bin/tor/`
 
-## Крок 3: Перевірка
+## macOS
 
-Після того як ви помістили `tor.exe` в папку `bin/`, структура повинна виглядати так:
+### Встановлення через Homebrew (рекомендовано)
+
+```bash
+brew install tor
+# Скопіюйте бінарник
+cp /opt/homebrew/bin/tor bin/tor/tor
+# або для Intel Mac
+cp /usr/local/bin/tor bin/tor/tor
+```
+
+### Ручне встановлення
+
+1. Завантажте Tor Expert Bundle для macOS: https://www.torproject.org/download/tor/
+2. Розпакуйте архів і знайдіть бінарник `tor` (без розширення)
+3. Скопіюйте його в `bin/tor/tor`
+4. Встановіть права на виконання: `chmod +x bin/tor/tor`
+
+## Linux
+
+### Ubuntu/Debian
+
+```bash
+sudo apt-get install tor
+cp /usr/bin/tor bin/tor/tor
+chmod +x bin/tor/tor
+```
+
+### Arch Linux
+
+```bash
+sudo pacman -S tor
+cp /usr/bin/tor bin/tor/tor
+chmod +x bin/tor/tor
+```
+
+### Fedora/RHEL
+
+```bash
+sudo dnf install tor
+cp /usr/bin/tor bin/tor/tor
+chmod +x bin/tor/tor
+```
+
+## Перевірка структури
+
+Після встановлення структура повинна виглядати так:
 
 ```
 проект/
 ├── bin/
-│   ├── tor.exe          ← Основний файл Tor
-│   └── README.md        ← Цей файл
+│   ├── tor/
+│   │   ├── tor.exe       ← Windows
+│   │   ├── tor           ← macOS/Linux
+│   │   └── ...
+│   ├── data/
+│   │   ├── geoip
+│   │   └── geoip6
+│   └── README.md
 ├── src/
 ├── public/
 └── ...
