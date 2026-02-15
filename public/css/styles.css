@@ -205,36 +205,56 @@
       border-bottom: none;
     }
 
-    .note-item .delete-btn {
+    .note-actions {
       position: absolute;
       right: 8px;
       top: 50%;
       transform: translateY(-50%);
-      background: rgba(220, 38, 38, 0.1);
-      border: 1px solid rgba(220, 38, 38, 0.3);
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .note-item:hover .note-actions {
+      opacity: 1;
+    }
+
+    .note-item .edit-btn,
+    .note-item .delete-btn {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.3);
       border-radius: 50%;
       width: 24px;
       height: 24px;
       cursor: pointer;
-      color: #dc2626;
-      font-size: 18px;
+      color: #9d7cd8;
+      font-size: 16px;
       font-weight: bold;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0;
       transition: all 0.2s;
     }
 
-    .note-item:hover .delete-btn {
-      opacity: 1;
+    .note-item .edit-btn:hover {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.5);
+      transform: scale(1.1);
+    }
+
+    .note-item .delete-btn {
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      color: #dc2626;
+      font-size: 18px;
     }
 
     .note-item .delete-btn:hover {
       background: rgba(220, 38, 38, 0.2);
       border-color: rgba(220, 38, 38, 0.5);
-      transform: translateY(-50%) scale(1.1);
+      transform: scale(1.1);
     }
 
     #summarize-btn, #clear-btn, #add-note-btn {

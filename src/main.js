@@ -1853,6 +1853,11 @@ ipcMain.on('delete-note', (event, id) => {
   storage.deleteNote(id);
 });
 
+ipcMain.on('update-note', (event, { id, text }) => {
+  storage.updateNote(id, text);
+  console.log('📝 Нотатку оновлено:', id);
+});
+
 ipcMain.on('clear-notes', () => {
   storage.clearNotes();
 });

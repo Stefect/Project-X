@@ -230,6 +230,16 @@ function deleteNote(id) {
   setData('notes', notes.filter(n => n.id !== id));
 }
 
+function updateNote(id, newText) {
+  const data = getData();
+  const notes = data.notes || [];
+  const noteIndex = notes.findIndex(n => n.id === id);
+  if (noteIndex !== -1) {
+    notes[noteIndex].text = newText;
+    setData('notes', notes);
+  }
+}
+
 function clearNotes() {
   setData('notes', []);
 }
@@ -264,6 +274,7 @@ module.exports = {
   addNote,
   getNotes,
   deleteNote,
+  updateNote,
   clearNotes,
   
   // Прямий доступ
