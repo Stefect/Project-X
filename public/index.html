@@ -401,6 +401,7 @@
       });
       
       let collectedNotes = [];
+      let editingNoteId = null; // ID нотатки що редагується
       
       // ВИДАЛЯЄМО старе значення з localStorage, щоб панель завжди була згорнута при запуску
       localStorage.removeItem('sidebarCollapsed');
@@ -425,7 +426,10 @@
               noteItem.dataset.noteId = note.id;
               noteItem.innerHTML = `
                 <span>• ${note.text}</span>
-                <button class="delete-btn" onclick="deleteNote('${note.id}')">×</button>
+                <div class="note-actions">
+                  <button class="edit-btn" onclick="editNote('${note.id}', this)" title="Редагувати">✎</button>
+                  <button class="delete-btn" onclick="deleteNote('${note.id}')" title="Видалити">×</button>
+                </div>
               `;
               notesList.appendChild(noteItem);
             });
@@ -1180,7 +1184,10 @@
       noteItem.dataset.noteId = noteId;
       noteItem.innerHTML = `
         <span>• ${text}</span>
-        <button class="delete-btn" onclick="deleteNote('${noteId}')">×</button>
+        <div class="note-actions">
+          <button class="edit-btn" onclick="editNote('${noteId}', this)" title="Редагувати">✎</button>
+          <button class="delete-btn" onclick="deleteNote('${noteId}')" title="Видалити">×</button>
+        </div>
       `;
       
       notesList.appendChild(noteItem);
@@ -1306,8 +1313,10 @@
     });
 
     // Відкрити inline редактор
-    function openNoteEditor() {
-      console.log('📝 Відкриваю inline редактор');
+    function openNoteEditor(noteId = null, noteText = '') {
+      console.log('📝 Відкриваю inline редактор', noteId ? 'для редагування' : 'для нової нотатки');
+      
+      editingNoteId = noteId;
       
       // Якщо sidebar згорнутий, відкриваємо його
       if (isSidebarCollapsed) {
@@ -1318,29 +1327,76 @@
       // Показуємо редактор, ховаємо кнопку
       noteEditor.style.display = 'block';
       addNoteBtn.style.display = 'none';
-      noteInput.value = '';
+      noteInput.value = noteText;
       noteInput.focus();
+      
+      // Переміщуємо курсор в кінець тексту
+      noteInput.setSelectionRange(noteText.length, noteText.length);
     }
 
     // Закрити редактор
     function closeNoteEditor() {
       console.log('✕ Закриваю редактор');
+      editingNoteId = null;
       noteEditor.style.display = 'none';
       addNoteBtn.style.display = 'block';
       noteInput.value = '';
     }
 
-    // Зберегти нову нотатку
+    // Зберегти нову нотатку або оновити існуючу
     function saveNewNote() {
       const text = noteInput.value.trim();
       console.log('💾 Збереження нотатки:', text);
       
       if (text) {
-        addNote(text);
+        if (editingNoteId) {
+          // Оновлюємо існуючу нотатку
+          updateNote(editingNoteId, text);
+        } else {
+          // Додаємо нову нотатку
+          addNote(text);
+        }
         closeNoteEditor();
       } else {
         console.warn('⚠️ Порожній текст');
         noteInput.focus();
+      }
+    }
+
+    // Редагувати нотатку
+    window.editNote = function(noteId, button) {
+      console.log('✏️ Редагування нотатки:', noteId);
+      
+      // Знаходимо нотатку в масиві
+      const note = collectedNotes.find(n => n.id === noteId);
+      if (note) {
+        openNoteEditor(noteId, note.text);
+      } else {
+        console.error('❌ Нотатку не знайдено:', noteId);
+      }
+    };
+
+    // Оновити існуючу нотатку
+    function updateNote(noteId, newText) {
+      console.log('🔄 Оновлення нотатки:', noteId, newText);
+      
+      // Оновлюємо в масиві
+      const noteIndex = collectedNotes.findIndex(n => n.id === noteId);
+      if (noteIndex !== -1) {
+        collectedNotes[noteIndex].text = newText;
+        
+        // Оновлюємо в DOM
+        const noteElement = document.querySelector(`[data-note-id="${noteId}"]`);
+        if (noteElement) {
+          const span = noteElement.querySelector('span');
+          if (span) {
+            span.textContent = `• ${newText}`;
+          }
+        }
+        
+        // Оновлюємо в storage
+        ipcRenderer.send('update-note', { id: noteId, text: newText });
+        console.log('✅ Нотатку оновлено');
       }
     }
 
