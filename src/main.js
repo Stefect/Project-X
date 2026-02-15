@@ -8,6 +8,7 @@ console.log('[CONSOLE] Starting BrowserX...');
 
 // Модуль збереження даних (історія, закладки, сесія)
 const storage = require('./modules/storage');
+const { infiniteArticleGenerator } = require('./modules/ai-feed');
 
 // Увеличиваем лимит слушателей событий для избежания предупреждений
 EventEmitter.defaultMaxListeners = 20;
@@ -1928,7 +1929,7 @@ ipcMain.handle('predict-text', async (event, currentText) => {
           content: `Complete this text: "${currentText}"`
         }
       ],
-      model: "llama3-8b-8192", // Найшвидша модель Groq
+      model: "llama-3.1-8b-instant", // Найшвидша модель Groq
       max_tokens: 15, // Обмежуємо для швидкості
       temperature: 0.1, // Мінімальна креативність для точності
       stop: ["\n", ".", "!", "?"] // Зупиняємось на кінці речення
@@ -1962,8 +1963,8 @@ ipcMain.handle('predict-completion', async (event, currentText) => {
                     content: currentText
                 }
             ],
-            // Використовуємо Llama 3 (вона дуже швидка)
-            model: "llama3-8b-8192",
+            // Використовуємо Llama 3.1 (вона дуже швидка)
+            model: "llama-3.1-8b-instant",
             temperature: 0.1, // Мінімальна фантазія, максимальна точність
             max_tokens: 15,   // Обмежуємо довжину відповіді
         });
@@ -1973,4 +1974,104 @@ ipcMain.handle('predict-completion', async (event, currentText) => {
     } catch (error) {
         console.error("Groq Error:", error);
         return null;
-    }});
+    }
+});
+
+// ---------------------------------------------------------
+// 🌊 AI INFINITE FEED - Нескінченна стрічка новин з ШІ
+// ---------------------------------------------------------
+
+// Функція для створення AI самарі статті
+async function summarizeArticle(title) {
+    if (!groqClient) {
+        // Якщо немає Groq, повертаємо просте самарі
+        return `Стаття про: ${title.substring(0, 50)}...`;
+    }
+    
+    try {
+        const completion = await groqClient.chat.completions.create({
+            messages: [
+                { 
+                    role: "system", 
+                    content: "You are a news summarizer. Create ONE short sentence (max 15 words) summarizing the article title. Be concise and engaging. Answer in Ukrainian." 
+                },
+                { 
+                    role: "user", 
+                    content: `Summarize: ${title}` 
+                }
+            ],
+            model: "llama-3.1-8b-instant",
+            temperature: 0.3,
+            max_tokens: 50
+        });
+        return completion.choices[0]?.message?.content || `Аналіз: ${title.substring(0, 30)}...`;
+    } catch (error) {
+        console.error('❌ Помилка AI самарі:', error.message);
+        return `${title.substring(0, 60)}...`;
+    }
+}
+
+let isFeedRunning = false;
+let currentFeedGenerator = null;
+
+// Обробник запуску нескінченної стрічки
+ipcMain.handle('start-infinite-feed', async (event) => {
+    if (isFeedRunning) {
+        console.log('⚠️ Стрічка вже запущена');
+        return { success: false, message: 'Стрічка вже активна' };
+    }
+    
+    isFeedRunning = true;
+    currentFeedGenerator = infiniteArticleGenerator();
+    console.log('🌊 Запускаємо нескінченну стрічку новин...');
+
+    // Асинхронний цикл обробки статей
+    (async () => {
+        for await (const article of currentFeedGenerator) {
+            if (!isFeedRunning) {
+                console.log('🛑 Стрічка зупинена користувачем');
+                break;
+            }
+
+            console.log(`📰 [Стрічка] Отримано: ${article.title.substring(0, 50)}...`);
+
+            try {
+                // 🎯 ЗАВДАННЯ 1.2: Timeout Iterator Consumer
+                // Використовуємо Promise.race для таймауту 3 секунди
+                const summary = await Promise.race([
+                    summarizeArticle(article.title),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('AI_TIMEOUT')), 3000)
+                    )
+                ]);
+
+                // Якщо ШІ встиг - відправляємо в UI
+                console.log(`✅ AI обробив: ${summary.substring(0, 30)}...`);
+                event.sender.send('new-feed-item', { ...article, summary });
+
+            } catch (error) {
+                if (error.message === 'AI_TIMEOUT') {
+                    console.log(`⏱️ AI завис (>3 сек). Пропускаємо з ${article.source}`);
+                    event.sender.send('feed-timeout-skip', article.source);
+                } else {
+                    console.error('❌ Помилка обробки:', error.message);
+                }
+            }
+        }
+    })();
+    
+    return { success: true, message: 'Стрічка запущена' };
+});
+
+// Обробник зупинки стрічки
+ipcMain.handle('stop-infinite-feed', () => {
+    if (!isFeedRunning) {
+        return { success: false, message: 'Стрічка не активна' };
+    }
+    
+    isFeedRunning = false;
+    currentFeedGenerator = null;
+    console.log('🛑 Стрічку зупинено');
+    
+    return { success: true, message: 'Стрічка зупинена' };
+});

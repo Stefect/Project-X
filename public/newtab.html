@@ -142,5 +142,200 @@
       }
     });
   </script>
+
+  <!-- ============================================
+       NEWS FEED SIDEBAR - Стрічка новин
+       ============================================ -->
+  
+  <!-- News Feed Sidebar -->
+  <div id="news-sidebar" class="news-sidebar collapsed">
+    <div class="news-header">
+      <div class="news-title">News</div>
+      <div class="news-subtitle">
+        AI Feed <span class="news-badge" id="news-stats">0 articles</span>
+      </div>
+      <button id="toggle-news-sidebar" title="Сховати панель">◀</button>
+    </div>
+    
+    <div id="news-feed-container" class="news-feed-container">
+      <div class="news-empty-state">
+        <div class="news-empty-icon">📰</div>
+        <div class="news-empty-text">
+          Натисни кнопку внизу<br>щоб запустити стрічку
+        </div>
+      </div>
+    </div>
+    
+    <div class="news-controls">
+      <button id="news-start-btn" class="news-control-btn news-btn-start">
+        ▶ Start
+      </button>
+      <button id="news-stop-btn" class="news-control-btn news-btn-stop" style="display: none;">
+        ⏸ Stop
+      </button>
+    </div>
+  </div>
+
+  <!-- Floating Action Button (FAB) для відкриття стрічки новин -->
+  <button id="news-fab" class="news-fab" title="Відкрити стрічку новин">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+    </svg>
+  </button>
+
+  <script>
+    // ============================================
+    // NEWS FEED LOGIC - Логіка стрічки новин
+    // ============================================
+    
+    const newsSidebar = document.getElementById('news-sidebar');
+    const newsFab = document.getElementById('news-fab');
+    const toggleNewsSidebarBtn = document.getElementById('toggle-news-sidebar');
+    const newsStartBtn = document.getElementById('news-start-btn');
+    const newsStopBtn = document.getElementById('news-stop-btn');
+    const newsFeedContainer = document.getElementById('news-feed-container');
+    const newsStats = document.getElementById('news-stats');
+    
+    let isNewsSidebarOpen = false;
+    let isFeedActive = false;
+    let articlesLoaded = 0;
+
+    // Відкриття/закриття news sidebar
+    function toggleNewsSidebar() {
+      isNewsSidebarOpen = !isNewsSidebarOpen;
+      
+      if (isNewsSidebarOpen) {
+        newsSidebar.classList.add('expanded');
+        newsSidebar.classList.remove('collapsed');
+      } else {
+        newsSidebar.classList.remove('expanded');
+        newsSidebar.classList.add('collapsed');
+      }
+      
+      console.log('📰 News sidebar:', isNewsSidebarOpen ? 'opened' : 'closed');
+    }
+
+    // FAB кнопка відкриває sidebar
+    if (newsFab) {
+      newsFab.addEventListener('click', () => {
+        toggleNewsSidebar();
+      });
+    }
+
+    // Кнопка закриття в header sidebar
+    if (toggleNewsSidebarBtn) {
+      toggleNewsSidebarBtn.addEventListener('click', () => {
+        toggleNewsSidebar();
+      });
+    }
+
+    // Оновлення статистики
+    function updateNewsStats() {
+      if (newsStats) {
+        newsStats.textContent = `${articlesLoaded} articles`;
+      }
+    }
+
+    // Перевіряємо чи є доступ до window.api
+    if (typeof window.api !== 'undefined') {
+      // Запуск стрічки
+      if (newsStartBtn) {
+        newsStartBtn.addEventListener('click', async () => {
+          try {
+            const result = await window.api.startFeed();
+            console.log('🌊 Feed started:', result);
+            
+            newsStartBtn.style.display = 'none';
+            newsStopBtn.style.display = 'flex';
+            isFeedActive = true;
+
+            // Очищуємо контейнер при першому запуску
+            if (articlesLoaded === 0) {
+              newsFeedContainer.innerHTML = '<div class="news-loading">🔄 Loading news...</div>';
+            }
+          } catch (error) {
+            console.error('❌ Error starting feed:', error);
+          }
+        });
+      }
+
+      // Зупинка стрічки
+      if (newsStopBtn) {
+        newsStopBtn.addEventListener('click', async () => {
+          try {
+            const result = await window.api.stopFeed();
+            console.log('🛑 Feed stopped:', result);
+            
+            newsStopBtn.style.display = 'none';
+            newsStartBtn.style.display = 'flex';
+            isFeedActive = false;
+          } catch (error) {
+            console.error('❌ Error stopping feed:', error);
+          }
+        });
+      }
+
+      // Отримання нових статей
+      window.api.onNewFeedItem((article) => {
+        console.log('📰 New article received:', article);
+        
+        // Видаляємо empty state та loading
+        const emptyState = newsFeedContainer.querySelector('.news-empty-state');
+        const loading = newsFeedContainer.querySelector('.news-loading');
+        if (emptyState) emptyState.remove();
+        if (loading) loading.remove();
+
+        articlesLoaded++;
+        updateNewsStats();
+
+        // Створюємо картку новини
+        const newsItem = document.createElement('div');
+        newsItem.className = 'news-item';
+        
+        newsItem.innerHTML = `
+          <div class="news-source">📰 ${escapeHtml(article.source)}</div>
+          <div class="news-item-title">${escapeHtml(article.title)}</div>
+          <div class="news-summary">${escapeHtml(article.summary)}</div>
+        `;
+        
+        // Клік по картці відкриває статтю
+        newsItem.addEventListener('click', () => {
+          window.open(article.url, '_blank');
+        });
+        
+        // Додаємо на початок (найновіше зверху)
+        newsFeedContainer.prepend(newsItem);
+      });
+
+      // Повідомлення про пропуск (timeout)
+      window.api.onFeedSkip((source) => {
+        console.log('⏱️ Article skipped from:', source);
+        
+        const notice = document.createElement('div');
+        notice.className = 'news-skip';
+        notice.textContent = `⏱️ Skipped from ${source}`;
+        
+        newsFeedContainer.prepend(notice);
+
+        // Автоматично видаляємо через 3 секунди
+        setTimeout(() => {
+          notice.style.transition = 'opacity 0.3s ease';
+          notice.style.opacity = '0';
+          setTimeout(() => notice.remove(), 300);
+        }, 3000);
+      });
+
+      console.log('✅ News Feed initialized on newtab');
+    } else {
+      console.warn('⚠️ window.api not available. News feed will not work.');
+    }
+
+    // Функція для безпечного відображення HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
 </body>
 </html>
