@@ -311,9 +311,19 @@
     </h3>
     
     <div id="notes-list">
-      <div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>
+      <div class="empty-state">📝 Натисніть кнопку "+" нижче<br>або використайте <kbd>Ctrl+Shift+N</kbd><br><br>Також можна виділити текст<br>та натиснути праву кнопку миші</div>
     </div>
 
+    <!-- Inline редактор нотатки -->
+    <div id="note-editor" class="note-editor" style="display: none;">
+      <textarea id="note-input" placeholder="Введіть текст нотатки..." rows="3"></textarea>
+      <div class="note-editor-buttons">
+        <button id="save-note-btn" title="Зберегти нотатку">✓ Зберегти</button>
+        <button id="cancel-note-btn" title="Скасувати">✕ Скасувати</button>
+      </div>
+    </div>
+
+    <button id="add-note-btn" title="Додати нотатку (Ctrl+Shift+N)">➕ Нова нотатка</button>
     <button id="summarize-btn">Узагальнити через AI</button>
     <button id="clear-btn">Очистити все</button>
   </div>
@@ -356,8 +366,22 @@
       const reloadBtn = document.getElementById('reload');
       const urlInput = document.getElementById('url');
       const notesList = document.getElementById('notes-list');
+      const addNoteBtn = document.getElementById('add-note-btn');
       const summarizeBtn = document.getElementById('summarize-btn');
       const clearBtn = document.getElementById('clear-btn');
+      const noteEditor = document.getElementById('note-editor');
+      const noteInput = document.getElementById('note-input');
+      const saveNoteBtn = document.getElementById('save-note-btn');
+      const cancelNoteBtn = document.getElementById('cancel-note-btn');
+      
+      console.log('🔍 Кнопки:', {
+        notesList: !!notesList,
+        addNoteBtn: !!addNoteBtn,
+        summarizeBtn: !!summarizeBtn,
+        clearBtn: !!clearBtn,
+        noteEditor: !!noteEditor,
+        noteInput: !!noteInput
+      });
       
       // Toggle бокової панелі
       const notesSidebar = document.getElementById('notes-sidebar');
@@ -401,7 +425,7 @@
               noteItem.dataset.noteId = note.id;
               noteItem.innerHTML = `
                 <span>• ${note.text}</span>
-                <button class="delete-btn" onclick="deleteNote('${note.id}')"></button>
+                <button class="delete-btn" onclick="deleteNote('${note.id}')">×</button>
               `;
               notesList.appendChild(noteItem);
             });
@@ -1156,7 +1180,7 @@
       noteItem.dataset.noteId = noteId;
       noteItem.innerHTML = `
         <span>• ${text}</span>
-        <button class="delete-btn" onclick="deleteNote('${noteId}')"></button>
+        <button class="delete-btn" onclick="deleteNote('${noteId}')">×</button>
       `;
       
       notesList.appendChild(noteItem);
@@ -1226,10 +1250,98 @@
         
         if (confirm('Очистити всі нотатки?')) {
           collectedNotes = [];
-          notesList.innerHTML = '<div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>';
+          notesList.innerHTML = '<div class="empty-state">📝 Натисніть кнопку "+" нижче<br>або використайте <kbd>Ctrl+Shift+N</kbd><br><br>Також можна виділити текст<br>та натиснути праву кнопку миші</div>';
           ipcRenderer.send('clear-notes');
         }
       });
+    }
+
+    // Додати нотатку вручну через кнопку
+    if (addNoteBtn) {
+      console.log('✅ Кнопка додавання нотатки знайдена');
+      addNoteBtn.addEventListener('click', () => {
+        console.log('🖱️ Клік на кнопку додавання нотатки');
+        openNoteEditor();
+      });
+    } else {
+      console.error('❌ Кнопка додавання нотатки НЕ знайдена!');
+    }
+
+    // Кнопка збереження нотатки
+    if (saveNoteBtn) {
+      saveNoteBtn.addEventListener('click', () => {
+        console.log('💾 Клік на кнопку збереження');
+        saveNewNote();
+      });
+    }
+
+    // Кнопка скасування
+    if (cancelNoteBtn) {
+      cancelNoteBtn.addEventListener('click', () => {
+        console.log('✕ Клік на кнопку скасування');
+        closeNoteEditor();
+      });
+    }
+
+    // Enter для збереження, Escape для скасування
+    if (noteInput) {
+      noteInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          e.preventDefault();
+          saveNewNote();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          closeNoteEditor();
+        }
+      });
+    }
+
+    // Глобальна гаряча клавіша Ctrl+Shift+N для додавання нотатки
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'N') {
+        e.preventDefault();
+        console.log('⌨️ Гаряча клавіша Ctrl+Shift+N натиснута');
+        openNoteEditor();
+      }
+    });
+
+    // Відкрити inline редактор
+    function openNoteEditor() {
+      console.log('📝 Відкриваю inline редактор');
+      
+      // Якщо sidebar згорнутий, відкриваємо його
+      if (isSidebarCollapsed) {
+        console.log('📂 Відкриваю sidebar');
+        toggleSidebar();
+      }
+      
+      // Показуємо редактор, ховаємо кнопку
+      noteEditor.style.display = 'block';
+      addNoteBtn.style.display = 'none';
+      noteInput.value = '';
+      noteInput.focus();
+    }
+
+    // Закрити редактор
+    function closeNoteEditor() {
+      console.log('✕ Закриваю редактор');
+      noteEditor.style.display = 'none';
+      addNoteBtn.style.display = 'block';
+      noteInput.value = '';
+    }
+
+    // Зберегти нову нотатку
+    function saveNewNote() {
+      const text = noteInput.value.trim();
+      console.log('💾 Збереження нотатки:', text);
+      
+      if (text) {
+        addNote(text);
+        closeNoteEditor();
+      } else {
+        console.warn('⚠️ Порожній текст');
+        noteInput.focus();
+      }
     }
 
     // Обробка зміни мови перекладу
