@@ -1,4 +1,4 @@
-const { app, BrowserWindow, BrowserView, ipcMain, Menu, MenuItem, session } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain, Menu, MenuItem, session, shell } = require('electron');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
 const Groq = require('groq-sdk');
@@ -2020,15 +2020,20 @@ let isFeedRunning = false;
 let currentFeedGenerator = null;
 
 // Обробник запуску нескінченної стрічки
-ipcMain.handle('start-infinite-feed', async (event) => {
+ipcMain.handle('start-infinite-feed', async (event, categories = ['all']) => {
     if (isFeedRunning) {
         console.log('⚠️ Стрічка вже запущена');
         return { success: false, message: 'Стрічка вже активна' };
     }
     
+    // Конвертуємо в масив, якщо передано одну категорію
+    if (!Array.isArray(categories)) {
+        categories = [categories];
+    }
+    
     isFeedRunning = true;
-    currentFeedGenerator = infiniteArticleGenerator();
-    console.log('🌊 Запускаємо нескінченну стрічку новин...');
+    currentFeedGenerator = infiniteArticleGenerator(categories);
+    console.log(`🌊 Запускаємо нескінченну стрічку новин для категорій: ${categories.join(', ')}...`);
 
     // Асинхронний цикл обробки статей
     (async () => {
@@ -2079,4 +2084,15 @@ ipcMain.handle('stop-infinite-feed', () => {
     console.log('🛑 Стрічку зупинено');
     
     return { success: true, message: 'Стрічка зупинена' };
+});
+
+// Обробник відкриття посилання у зовнішньому браузері
+ipcMain.handle('open-external', async (event, url) => {
+    try {
+        await shell.openExternal(url);
+        return { success: true };
+    } catch (error) {
+        console.error('❌ Помилка відкриття посилання:', error);
+        return { success: false, error: error.message };
+    }
 });
