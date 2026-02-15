@@ -183,6 +183,11 @@
     </svg>
   </button>
 
+  <!-- Feed Overlay (iframe) -->
+  <div id="feed-overlay" class="feed-overlay" style="display: none;">
+    <iframe id="feed-iframe" src="feed.html" frameborder="0"></iframe>
+  </div>
+
   <script>
     // ============================================
     // NEWS FEED LOGIC - Логіка стрічки новин
@@ -215,10 +220,13 @@
       console.log('📰 News sidebar:', isNewsSidebarOpen ? 'opened' : 'closed');
     }
 
-    // FAB кнопка відкриває sidebar
+    // FAB кнопка відкриває feed.html як overlay
     if (newsFab) {
       newsFab.addEventListener('click', () => {
-        toggleNewsSidebar();
+        const feedOverlay = document.getElementById('feed-overlay');
+        if (feedOverlay) {
+          feedOverlay.style.display = 'flex';
+        }
       });
     }
 
@@ -242,7 +250,7 @@
       if (newsStartBtn) {
         newsStartBtn.addEventListener('click', async () => {
           try {
-            const result = await window.api.startFeed();
+            const result = await window.api.startFeed(['all']);
             console.log('🌊 Feed started:', result);
             
             newsStartBtn.style.display = 'none';
@@ -298,9 +306,13 @@
           <div class="news-summary">${escapeHtml(article.summary)}</div>
         `;
         
-        // Клік по картці відкриває статтю
-        newsItem.addEventListener('click', () => {
-          window.open(article.url, '_blank');
+        // Клік по картці відкриває статтю у зовнішньому браузері
+        newsItem.addEventListener('click', async () => {
+          if (window.api && window.api.openExternal) {
+            await window.api.openExternal(article.url);
+          } else {
+            window.open(article.url, '_blank');
+          }
         });
         
         // Додаємо на початок (найновіше зверху)
