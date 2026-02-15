@@ -3,13 +3,43 @@
 
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
-// Список безкоштовних джерел (API, які повертають JSON)
+// Список безкоштовних джерел (API, які повертають JSON) с категоріями
 const NEWS_SOURCES = [
-    { name: 'Reddit Tech', url: 'https://www.reddit.com/r/technology/new.json?limit=10', type: 'reddit' },
-    { name: 'Reddit Programming', url: 'https://www.reddit.com/r/programming/new.json?limit=10', type: 'reddit' },
-    { name: 'Dev.to', url: 'https://dev.to/api/articles?per_page=10', type: 'devto' },
-    { name: 'Hacker News', url: 'https://hacker-news.firebaseio.com/v0/newstories.json?limitToFirst=10', type: 'hackernews' }
+    { name: 'Reddit Tech', url: 'https://www.reddit.com/r/technology/new.json?limit=10', type: 'reddit', categories: ['tech', 'all'] },
+    { name: 'Reddit Programming', url: 'https://www.reddit.com/r/programming/new.json?limit=10', type: 'reddit', categories: ['tech', 'programming', 'all'] },
+    { name: 'Dev.to', url: 'https://dev.to/api/articles?per_page=10', type: 'devto', categories: ['tech', 'programming', 'all'] },
+    { name: 'Hacker News', url: 'https://hacker-news.firebaseio.com/v0/newstories.json?limitToFirst=10', type: 'hackernews', categories: ['tech', 'all'] },
+    { name: 'Reddit Science', url: 'https://www.reddit.com/r/science/new.json?limit=10', type: 'reddit', categories: ['science', 'all'] },
+    { name: 'Reddit Space', url: 'https://www.reddit.com/r/space/new.json?limit=10', type: 'reddit', categories: ['science', 'all'] },
+    { name: 'Reddit World News', url: 'https://www.reddit.com/r/worldnews/new.json?limit=10', type: 'reddit', categories: ['news', 'all'] },
+    { name: 'Reddit Gaming', url: 'https://www.reddit.com/r/gaming/new.json?limit=10', type: 'reddit', categories: ['gaming', 'all'] }
 ];
+
+// Функція для фільтрації джерел за категорією
+function getSourcesByCategory(category) {
+    if (!category || category === 'all') {
+        return NEWS_SOURCES;
+    }
+    return NEWS_SOURCES.filter(source => source.categories.includes(category));
+}
+
+// Функція для фільтрації джерел за множинними категоріями
+function getSourcesByCategories(categories) {
+    // Якщо categories - не масив, конвертуємо в масив
+    if (!Array.isArray(categories)) {
+        categories = [categories];
+    }
+    
+    // Якщо порожній масив або містить 'all', повертаємо всі джерела
+    if (categories.length === 0 || categories.includes('all')) {
+        return NEWS_SOURCES;
+    }
+    
+    // Фільтруємо джерела, які мають хоча б одну з обраних категорій
+    return NEWS_SOURCES.filter(source => 
+        source.categories.some(cat => categories.includes(cat))
+    );
+}
 
 // ---------------------------------------------------------
 // 1. ЗАВДАННЯ 1.1: Round Robin Generator
@@ -73,8 +103,16 @@ async function fetchOneArticle(source) {
 // ---------------------------------------------------------
 // Асинхронний генератор нескінченного потоку статей
 // ---------------------------------------------------------
-async function* infiniteArticleGenerator() {
-    const sourceGen = roundRobinSourceGenerator(NEWS_SOURCES);
+async function* infiniteArticleGenerator(categories = ['all']) {
+    // Конвертуємо в масив, якщо передано одну категорію
+    if (!Array.isArray(categories)) {
+        categories = [categories];
+    }
+    
+    const sources = getSourcesByCategories(categories);
+    const sourceGen = roundRobinSourceGenerator(sources);
+    
+    console.log(`📰 Генератор запущено для категорій: ${categories.join(', ')}, джерел: ${sources.length}`);
     
     while (true) {
         const currentSource = sourceGen.next().value; // Беремо наступне джерело (Round Robin)
@@ -89,4 +127,4 @@ async function* infiniteArticleGenerator() {
     }
 }
 
-module.exports = { infiniteArticleGenerator };
+module.exports = { infiniteArticleGenerator, getSourcesByCategory, getSourcesByCategories };

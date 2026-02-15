@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #1a1b26;
+            background: transparent;
             color: white;
             overflow: hidden;
             height: 100vh;
@@ -26,18 +26,43 @@
             top: 0;
             width: 350px;
             height: 100vh;
-            background: rgba(30, 31, 42, 0.95);
+            background: rgba(30, 31, 42, 0.85);
             backdrop-filter: blur(10px);
             border-left: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
-            z-index: 1000;
+            z-index: 100;
         }
 
         /* Заголовок News */
         .sidebar-header {
             padding: 25px 20px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-close-feed {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .btn-close-feed:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
         }
 
         .sidebar-title {
@@ -264,17 +289,200 @@
             font-size: 11px;
             font-weight: 600;
         }
+
+        /* Панель категорій */
+        .categories-panel {
+            position: fixed;
+            right: 350px;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: rgba(20, 21, 32, 0.75);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+        }
+
+        .categories-panel.active {
+            transform: translateX(0);
+        }
+
+        .categories-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .categories-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .categories-subtitle {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .categories-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .category-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-item:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.4);
+            transform: translateX(5px);
+        }
+
+        .category-item.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            border-color: rgba(102, 126, 234, 0.6);
+        }
+
+        .category-emoji {
+            font-size: 18px;
+        }
+
+        .category-name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .category-check {
+            font-size: 16px;
+            color: #667eea;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .category-item.active .category-check {
+            opacity: 1;
+        }
+
+        .categories-footer {
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(20, 21, 32, 0.5);
+        }
+
+        .categories-save-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .categories-save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .categories-save-btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-categories {
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid rgba(255, 152, 0, 0.3);
+            color: #ff9800;
+        }
+
+        .btn-categories:hover {
+            background: rgba(255, 152, 0, 0.2);
+            border-color: rgba(255, 152, 0, 0.5);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
+    <!-- Панель категорій (окремо від sidebar) -->
+    <div class="categories-panel" id="categories-panel">
+        <div class="categories-header">
+            <div class="categories-title">Категорії</div>
+            <div class="categories-subtitle">Обери теми (можна декілька)</div>
+        </div>
+        <div class="categories-list">
+            <div class="category-item active" data-category="all">
+                <span class="category-emoji">🌐</span>
+                <span class="category-name">Всі</span>
+                <span class="category-check">✓</span>
+            </div>
+            <div class="category-item" data-category="tech">
+                <span class="category-emoji">💻</span>
+                <span class="category-name">Технології</span>
+                <span class="category-check">✓</span>
+            </div>
+            <div class="category-item" data-category="programming">
+                <span class="category-emoji">👨‍💻</span>
+                <span class="category-name">Програмування</span>
+                <span class="category-check">✓</span>
+            </div>
+            <div class="category-item" data-category="science">
+                <span class="category-emoji">🔬</span>
+                <span class="category-name">Наука</span>
+                <span class="category-check">✓</span>
+            </div>
+            <div class="category-item" data-category="news">
+                <span class="category-emoji">📰</span>
+                <span class="category-name">Новини світу</span>
+                <span class="category-check">✓</span>
+            </div>
+            <div class="category-item" data-category="gaming">
+                <span class="category-emoji">🎮</span>
+                <span class="category-name">Ігри</span>
+                <span class="category-check">✓</span>
+            </div>
+        </div>
+        <div class="categories-footer">
+            <button id="categories-save-btn" class="categories-save-btn">
+                ✓ Зберегти
+            </button>
+        </div>
+    </div>
+
     <!-- Вертикальний сайдбар справа -->
     <div class="news-sidebar">
+
         <!-- Заголовок -->
         <div class="sidebar-header">
-            <div class="sidebar-title">News</div>
-            <div class="sidebar-subtitle">
-                AI Feed <span class="stats-badge" id="stats">0 articles</span>
+            <div>
+                <div class="sidebar-title">News</div>
+                <div class="sidebar-subtitle">
+                    AI Feed <span class="stats-badge" id="stats">0 articles</span>
+                </div>
             </div>
+            <button id="btn-close-feed" class="btn-close-feed" title="Закрити панель">×</button>
         </div>
 
         <!-- Стрічка новин -->
@@ -289,6 +497,9 @@
 
         <!-- Кнопки управління -->
         <div class="sidebar-controls">
+            <button id="btn-categories" class="control-btn btn-categories">
+                📂 Категорії
+            </button>
             <button id="btn-start" class="control-btn btn-start">
                 ▶ Start
             </button>
@@ -299,22 +510,134 @@
     </div>
 
     <script>
+        // Визначаємо API - якщо в iframe, використовуємо parent API
+        const api = (window.parent && window.parent !== window && window.parent.api) ? window.parent.api : window.api;
+        
         const btnStart = document.getElementById('btn-start');
         const btnStop = document.getElementById('btn-stop');
+        const btnCategories = document.getElementById('btn-categories');
+        const btnCloseFeed = document.getElementById('btn-close-feed');
+        const categoriesPanel = document.getElementById('categories-panel');
         const container = document.getElementById('feed-container');
         const stats = document.getElementById('stats');
         let feedActive = false;
         let articlesLoaded = 0;
+        let selectedCategories = ['all']; // Масив обраних категорій
+
+        // Обробник кнопки закриття панелі
+        if (btnCloseFeed) {
+            btnCloseFeed.addEventListener('click', () => {
+                // Якщо в iframe, закриваємо overlay в parent
+                if (window.parent && window.parent !== window) {
+                    const feedOverlay = window.parent.document.getElementById('feed-overlay');
+                    if (feedOverlay) {
+                        feedOverlay.style.display = 'none';
+                    }
+                } else {
+                    // Якщо автономно, повертаємося на newtab
+                    window.location.href = 'newtab.html';
+                }
+            });
+        }
 
         // Функція для оновлення статистики
         function updateStats() {
             stats.textContent = `${articlesLoaded} articles`;
         }
 
+        // Функція для отримання обраних категорій
+        function getSelectedCategories() {
+            const activeItems = document.querySelectorAll('.category-item.active');
+            const categories = Array.from(activeItems).map(item => item.getAttribute('data-category'));
+            
+            // Якщо обрано "Всі", повертаємо тільки 'all'
+            if (categories.includes('all')) {
+                return ['all'];
+            }
+            
+            // Якщо нічого не обрано, повертаємо 'all'
+            if (categories.length === 0) {
+                return ['all'];
+            }
+            
+            return categories;
+        }
+
+        // Обробник кнопки категорій
+        btnCategories.addEventListener('click', () => {
+            categoriesPanel.classList.toggle('active');
+        });
+
+        // Закриття панелі категорій при натисканні ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && categoriesPanel.classList.contains('active')) {
+                categoriesPanel.classList.remove('active');
+            }
+        });
+
+        // Обробник вибору категорій (множинний вибір)
+        document.querySelectorAll('.category-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const category = item.getAttribute('data-category');
+                
+                if (category === 'all') {
+                    // Якщо натиснули "Всі" - знімаємо всі інші та активуємо тільки "Всі"
+                    document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                } else {
+                    // Знімаємо "Всі" якщо воно було активне
+                    const allItem = document.querySelector('.category-item[data-category="all"]');
+                    if (allItem) {
+                        allItem.classList.remove('active');
+                    }
+                    
+                    // Перемикаємо активний стан для обраної категорії
+                    item.classList.toggle('active');
+                    
+                    // Якщо нічого не обрано, автоматично активуємо "Всі"
+                    const activeCount = document.querySelectorAll('.category-item.active').length;
+                    if (activeCount === 0 && allItem) {
+                        allItem.classList.add('active');
+                    }
+                }
+                
+                console.log('📂 Вибрано категорії (не збережено)');
+            });
+        });
+
+        // Обробник кнопки "Зберегти" в панелі категорій
+        const categoriesSaveBtn = document.getElementById('categories-save-btn');
+        if (categoriesSaveBtn) {
+            categoriesSaveBtn.addEventListener('click', async () => {
+                selectedCategories = getSelectedCategories();
+                console.log('💾 Збережено категорії:', selectedCategories);
+                
+                // Закриваємо панель категорій
+                categoriesPanel.classList.remove('active');
+                
+                // Якщо стрічка активна, перезапускаємо її з новими категоріями
+                if (feedActive && api) {
+                    await api.stopFeed();
+                    container.innerHTML = '<div class="loading">🔄 Оновлюю категорії...</div>';
+                    articlesLoaded = 0;
+                    updateStats();
+                    
+                    setTimeout(async () => {
+                        await api.startFeed(selectedCategories);
+                        feedActive = true;
+                    }, 500);
+                }
+            });
+        }
+
         // Обробник кнопки Start
         btnStart.addEventListener('click', async () => {
-            const result = await window.api.startFeed();
-            console.log('Feed started:', result);
+            if (!api) {
+                console.error('API not available');
+                return;
+            }
+            const result = await api.startFeed(selectedCategories);
+            console.log('Feed started:', result, 'Categories:', selectedCategories);
             
             btnStart.style.display = 'none';
             btnStop.style.display = 'flex';
@@ -328,7 +651,11 @@
 
         // Обробник кнопки Stop
         btnStop.addEventListener('click', async () => {
-            const result = await window.api.stopFeed();
+            if (!api) {
+                console.error('API not available');
+                return;
+            }
+            const result = await api.stopFeed();
             console.log('Feed stopped:', result);
             
             btnStop.style.display = 'none';
@@ -337,7 +664,8 @@
         });
 
         // Коли приходить нова оброблена стаття
-        window.api.onNewFeedItem((article) => {
+        if (api && api.onNewFeedItem) {
+            api.onNewFeedItem((article) => {
             console.log('New article received:', article);
             
             // Видаляємо повідомлення про порожній стан
@@ -359,18 +687,22 @@
             `;
             
             // Обробник кліку на картку
-            card.addEventListener('click', (e) => {
+            card.addEventListener('click', async (e) => {
                 e.preventDefault();
-                // Відкриваємо в новій вкладці браузера
-                window.open(article.url, '_blank');
+                // Відкриваємо в новій вкладці зовнішнього браузера
+                if (api && api.openExternal) {
+                    await api.openExternal(article.url);
+                }
             });
             
             // Додаємо на початок стрічки (найновіше зверху)
             container.prepend(card);
         });
+        }
 
         // Коли ШІ не встиг і ми пропустили статтю
-        window.api.onFeedSkip((source) => {
+        if (api && api.onFeedSkip) {
+            api.onFeedSkip((source) => {
             console.log('Article skipped from:', source);
             
             const notice = document.createElement('div');
@@ -386,6 +718,7 @@
                 setTimeout(() => notice.remove(), 300);
             }, 3000);
         });
+        }
 
         // Функція для екранування HTML (безпека)
         function escapeHtml(text) {
