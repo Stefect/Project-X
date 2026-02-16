@@ -580,8 +580,13 @@
     <!-- Панель джерел (фільтр джерел новин) -->
     <div class="sources-panel" id="sources-panel">
         <div class="categories-header">
-            <div class="categories-title">Джерела</div>
-            <div class="categories-subtitle">Фільтруй звідки брати новини</div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div class="categories-title">Джерела</div>
+                    <div class="categories-subtitle">Фільтруй звідки брати новини</div>
+                </div>
+                <button id="btn-close-sources" style="background: transparent; border: none; color: rgba(255, 255, 255, 0.6); font-size: 28px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Закрити">×</button>
+            </div>
         </div>
         <input type="text" id="sources-search" class="sources-search" placeholder="Пошук джерел...">
         <div class="categories-list" id="sources-list">
@@ -895,6 +900,44 @@
         }
 
         // === КІНЕЦЬ ДЖЕРЕЛ ===
+
+        // Кнопка закриття панелі джерел
+        const btnCloseSources = document.getElementById('btn-close-sources');
+        if (btnCloseSources) {
+            btnCloseSources.addEventListener('click', () => {
+                sourcesPanel.classList.remove('active');
+            });
+            btnCloseSources.addEventListener('mouseenter', (e) => {
+                e.target.style.color = '#fff';
+                e.target.style.transform = 'rotate(90deg)';
+            });
+            btnCloseSources.addEventListener('mouseleave', (e) => {
+                e.target.style.color = 'rgba(255, 255, 255, 0.6)';
+                e.target.style.transform = 'rotate(0deg)';
+            });
+        }
+
+        // Закриття панелей на ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (categoriesPanel) categoriesPanel.classList.remove('active');
+                if (sourcesPanel) sourcesPanel.classList.remove('active');
+            }
+        });
+
+        // Закриття панелей при кліку поза ними
+        document.addEventListener('click', (e) => {
+            if (categoriesPanel && categoriesPanel.classList.contains('active')) {
+                if (!categoriesPanel.contains(e.target) && !btnCategories.contains(e.target)) {
+                    categoriesPanel.classList.remove('active');
+                }
+            }
+            if (sourcesPanel && sourcesPanel.classList.contains('active')) {
+                if (!sourcesPanel.contains(e.target) && !btnSources.contains(e.target)) {
+                    sourcesPanel.classList.remove('active');
+                }
+            }
+        });
 
         // Обробник кнопки Start
         btnStart.addEventListener('click', async () => {
