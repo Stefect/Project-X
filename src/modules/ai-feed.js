@@ -123,11 +123,11 @@ function* roundRobinSourceGenerator(sources) {
 // Функція для "витягування" однієї випадкової статті з джерела
 async function fetchOneArticle(source) {
     try {
-        console.log(`🔍 Завантажую з ${source.name} (${source.type})...`);
+        console.log(`[ЗАВАНТАЖЕННЯ] ${source.name} (${source.type})...`);
         const response = await fetch(source.url);
         
         if (!response.ok) {
-            console.error(`❌ HTTP помилка ${response.status} для ${source.name}`);
+            console.error(`[HELP] HTTP помилка ${response.status} для ${source.name}`);
             return null;
         }
         
@@ -137,7 +137,7 @@ async function fetchOneArticle(source) {
             const posts = data.data?.children;
             if (posts && posts.length > 0) {
                 const randomPost = posts[Math.floor(Math.random() * posts.length)].data;
-                console.log(`✅ Reddit: ${randomPost.title.substring(0, 50)}...`);
+                console.log(`[OK] Reddit: ${randomPost.title.substring(0, 50)}...`);
                 return { 
                     title: randomPost.title, 
                     url: randomPost.url, 
@@ -145,12 +145,12 @@ async function fetchOneArticle(source) {
                     id: randomPost.id
                 };
             } else {
-                console.warn(`⚠️ Reddit ${source.name}: немає постів`);
+                console.warn(`[WARNING] Reddit ${source.name}: немає постів`);
             }
         } else if (source.type === 'devto') {
             if (data && data.length > 0) {
                 const randomPost = data[Math.floor(Math.random() * data.length)];
-                console.log(`✅ Dev.to: ${randomPost.title.substring(0, 50)}...`);
+                console.log(`[OK] Dev.to: ${randomPost.title.substring(0, 50)}...`);
                 return { 
                     title: randomPost.title, 
                     url: randomPost.url, 
@@ -164,7 +164,7 @@ async function fetchOneArticle(source) {
                 const itemResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${randomId}.json`);
                 const item = await itemResponse.json();
                 if (item && item.title) {
-                    console.log(`✅ HackerNews: ${item.title.substring(0, 50)}...`);
+                    console.log(`[OK] HackerNews: ${item.title.substring(0, 50)}...`);
                     return {
                         title: item.title,
                         url: item.url || `https://news.ycombinator.com/item?id=${randomId}`,
@@ -175,10 +175,10 @@ async function fetchOneArticle(source) {
             }
         } else if (source.type === 'rss2json') {
             // Українські джерела через RSS2JSON API
-            console.log(`🇺🇦 RSS2JSON відповідь:`, data.status);
+            console.log(`[RSS2JSON] Відповідь:`, data.status);
             if (data && data.status === 'ok' && data.items && data.items.length > 0) {
                 const randomItem = data.items[Math.floor(Math.random() * data.items.length)];
-                console.log(`✅ ${source.name}: ${randomItem.title.substring(0, 50)}...`);
+                console.log(`[OK] ${source.name}: ${randomItem.title.substring(0, 50)}...`);
                 return {
                     title: randomItem.title,
                     url: randomItem.link,
@@ -186,12 +186,12 @@ async function fetchOneArticle(source) {
                     id: randomItem.guid || randomItem.link
                 };
             } else {
-                console.warn(`⚠️ ${source.name}: немає статей або помилка RSS`, data.message);
+                console.warn(`[WARNING] ${source.name}: немає статей або помилка RSS`, data.message);
             }
         }
         return null;
     } catch (error) {
-        console.error(`❌ Помилка завантаження з ${source.name}:`, error.message);
+        console.error(`[ERROR] Помилка завантаження з ${source.name}:`, error.message);
         return null;
     }
 }
@@ -212,13 +212,13 @@ async function* infiniteArticleGenerator(categories = ['all'], sourceNames = [])
     sources = filterSourcesByNames(sources, sourceNames);
     
     if (sources.length === 0) {
-        console.log('⚠️ Немає доступних джерел з обраними фільтрами!');
+        console.log('[WARNING] Немає доступних джерел з обраними фільтрами!');
         return;
     }
     
     const sourceGen = roundRobinSourceGenerator(sources);
     
-    console.log(`📰 Генератор запущено для категорій: ${categories.join(', ')}, джерел: ${sources.length}`);
+    console.log(`[ГЕНЕРАТОР] Запущено для категорій: ${categories.join(', ')}, джерел: ${sources.length}`);
     
     while (true) {
         const currentSource = sourceGen.next().value; // Беремо наступне джерело (Round Robin)
