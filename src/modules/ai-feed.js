@@ -205,11 +205,17 @@ async function* infiniteArticleGenerator(categories = ['all'], sourceNames = [])
         categories = [categories];
     }
     
+    console.log('[ФІЛЬТР] Отримано категорії:', categories);
+    console.log('[ФІЛЬТР] Отримано джерела для фільтрації:', sourceNames);
+    
     // Спочатку фільтруємо за категоріями
     let sources = getSourcesByCategories(categories);
+    console.log('[ФІЛЬТР] Після фільтрації за категоріями:', sources.length, 'джерел');
     
     // Потім фільтруємо за обраними джерелами (якщо вказано)
     sources = filterSourcesByNames(sources, sourceNames);
+    console.log('[ФІЛЬТР] Після фільтрації за назвами:', sources.length, 'джерел');
+    console.log('[ФІЛЬТР] Фінальний список джерел:', sources.map(s => s.name).join(', '));
     
     if (sources.length === 0) {
         console.log('[WARNING] Немає доступних джерел з обраними фільтрами!');

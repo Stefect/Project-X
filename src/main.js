@@ -2036,6 +2036,9 @@ ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], source
     console.log(`[FEED START] Запускаємо нескінченну стрічку новин для категорій: ${categories.join(', ')}...`);
     if (sourceNames && sourceNames.length > 0) {
         console.log(`[SOURCES] Обрано джерел: ${sourceNames.length}`);
+        console.log(`[SOURCES] Список джерел:`, sourceNames);
+    } else {
+        console.log(`[SOURCES] Використовуються всі доступні джерела`);
     }
 
     // Асинхронний цикл обробки статей
