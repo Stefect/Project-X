@@ -779,41 +779,62 @@
         
         // Список всіх доступних джерел (синхронізовано з ai-feed.js)
         const ALL_SOURCES = [
-            { name: 'Reddit Tech', type: 'reddit' },
-            { name: 'Reddit Programming', type: 'reddit' },
-            { name: 'Dev.to', type: 'devto' },
-            { name: 'Hacker News', type: 'hackernews' },
-            { name: 'Reddit Science', type: 'reddit' },
-            { name: 'Reddit Space', type: 'reddit' },
-            { name: 'Reddit Physics', type: 'reddit' },
-            { name: 'Reddit World News', type: 'reddit' },
-            { name: 'Reddit News', type: 'reddit' },
-            { name: 'Reddit Gaming', type: 'reddit' },
-            { name: 'Reddit PC Gaming', type: 'reddit' },
-            { name: 'Reddit Games', type: 'reddit' },
-            { name: 'Reddit Machine Learning', type: 'reddit' },
-            { name: 'Reddit Artificial', type: 'reddit' },
-            { name: 'Reddit Local LLaMA', type: 'reddit' },
-            { name: 'Reddit Crypto', type: 'reddit' },
-            { name: 'Reddit Bitcoin', type: 'reddit' },
-            { name: 'Reddit Ethereum', type: 'reddit' },
-            { name: 'Reddit Business', type: 'reddit' },
-            { name: 'Reddit Economics', type: 'reddit' },
-            { name: 'Reddit Entrepreneur', type: 'reddit' },
-            { name: 'Reddit Ukraine', type: 'reddit' },
-            { name: 'Reddit Ukraine Conflict', type: 'reddit' },
-            { name: 'Suspilne News', type: 'rss2json' },
-            { name: 'Ukrainska Pravda', type: 'rss2json' },
-            { name: 'Kyiv Independent', type: 'rss2json' },
-            { name: 'Reddit Movies', type: 'reddit' },
-            { name: 'Reddit Music', type: 'reddit' },
-            { name: 'Reddit Television', type: 'reddit' },
-            { name: 'Reddit Sports', type: 'reddit' },
-            { name: 'Reddit Soccer', type: 'reddit' },
-            { name: 'Reddit NBA', type: 'reddit' },
-            { name: 'Reddit Health', type: 'reddit' },
-            { name: 'Reddit Fitness', type: 'reddit' },
-            { name: 'Reddit Nutrition', type: 'reddit' }
+            // Українські новинні агентства (вгорі для зручності)
+            { name: 'Suspilne News', type: 'rss2json', tag: 'UA' },
+            { name: 'Ukrainska Pravda', type: 'rss2json', tag: 'UA' },
+            { name: 'Kyiv Independent', type: 'rss2json', tag: 'UA' },
+            
+            // Міжнародні платформи
+            { name: 'Dev.to', type: 'devto', tag: 'DEV' },
+            { name: 'Hacker News', type: 'hackernews', tag: 'TECH' },
+            
+            // Reddit - Технології та програмування
+            { name: 'Reddit Tech', type: 'reddit', tag: 'TECH' },
+            { name: 'Reddit Programming', type: 'reddit', tag: 'CODE' },
+            { name: 'Reddit Machine Learning', type: 'reddit', tag: 'AI' },
+            { name: 'Reddit Artificial', type: 'reddit', tag: 'AI' },
+            { name: 'Reddit Local LLaMA', type: 'reddit', tag: 'AI' },
+            
+            // Reddit - Наука
+            { name: 'Reddit Science', type: 'reddit', tag: 'SCI' },
+            { name: 'Reddit Space', type: 'reddit', tag: 'SPACE' },
+            { name: 'Reddit Physics', type: 'reddit', tag: 'SCI' },
+            
+            // Reddit - Новини
+            { name: 'Reddit World News', type: 'reddit', tag: 'NEWS' },
+            { name: 'Reddit News', type: 'reddit', tag: 'NEWS' },
+            { name: 'Reddit Ukraine', type: 'reddit', tag: 'UA' },
+            { name: 'Reddit Ukraine Conflict', type: 'reddit', tag: 'UA' },
+            
+            // Reddit - Ігри
+            { name: 'Reddit Gaming', type: 'reddit', tag: 'GAME' },
+            { name: 'Reddit PC Gaming', type: 'reddit', tag: 'GAME' },
+            { name: 'Reddit Games', type: 'reddit', tag: 'GAME' },
+            
+            // Reddit - Криптовалюта
+            { name: 'Reddit Crypto', type: 'reddit', tag: 'CRYPTO' },
+            { name: 'Reddit Bitcoin', type: 'reddit', tag: 'CRYPTO' },
+            { name: 'Reddit Ethereum', type: 'reddit', tag: 'CRYPTO' },
+            
+            // Reddit - Бізнес
+            { name: 'Reddit Business', type: 'reddit', tag: 'BIZ' },
+            { name: 'Reddit Economics', type: 'reddit', tag: 'BIZ' },
+            { name: 'Reddit Entrepreneur', type: 'reddit', tag: 'BIZ' },
+            
+            // Reddit - Розваги
+            { name: 'Reddit Movies', type: 'reddit', tag: 'ENT' },
+            { name: 'Reddit Music', type: 'reddit', tag: 'ENT' },
+            { name: 'Reddit Television', type: 'reddit', tag: 'ENT' },
+            
+            // Reddit - Спорт
+            { name: 'Reddit Sports', type: 'reddit', tag: 'SPORT' },
+            { name: 'Reddit Soccer', type: 'reddit', tag: 'SPORT' },
+            { name: 'Reddit NBA', type: 'reddit', tag: 'SPORT' },
+            
+            // Reddit - Здоров'я
+            { name: 'Reddit Health', type: 'reddit', tag: 'HEALTH' },
+            { name: 'Reddit Fitness', type: 'reddit', tag: 'HEALTH' },
+            { name: 'Reddit Nutrition', type: 'reddit', tag: 'HEALTH' }
         ];
 
         // Функція для рендерингу списку джерел
@@ -831,19 +852,36 @@
                 }
                 item.setAttribute('data-source', source.name);
                 
-                const typeLabel = source.type === 'reddit' ? '[R]' : 
-                                 source.type === 'devto' ? '[D]' : 
-                                 source.type === 'hackernews' ? '[HN]' : 
-                                 source.type === 'rss2json' ? '[UA]' : '[?]';
+                // Виділяємо українські джерела синім кольором
+                const isUkrainian = source.type === 'rss2json';
+                if (isUkrainian) {
+                    item.style.background = 'rgba(33, 150, 243, 0.15)';
+                    item.style.borderColor = 'rgba(33, 150, 243, 0.4)';
+                }
+                
+                const typeLabel = source.tag || 
+                                 (source.type === 'reddit' ? '[R]' : 
+                                  source.type === 'devto' ? '[D]' : 
+                                  source.type === 'hackernews' ? '[HN]' : 
+                                  source.type === 'rss2json' ? '[UA]' : '[?]');
                 
                 item.innerHTML = `
-                    <span style="font-size: 11px; color: rgba(255,255,255,0.5);">${typeLabel}</span>
+                    <span style="font-size: 11px; color: ${isUkrainian ? '#2196f3' : 'rgba(255,255,255,0.5)'}; font-weight: 600;">${typeLabel}</span>
                     <span class="category-name" style="flex: 1; font-size: 12px;">${source.name}</span>
                     <span class="category-check">✓</span>
                 `;
                 
                 item.addEventListener('click', () => {
                     item.classList.toggle('active');
+                    if (isUkrainian) {
+                        if (item.classList.contains('active')) {
+                            item.style.background = 'rgba(33, 150, 243, 0.3)';
+                            item.style.borderColor = 'rgba(33, 150, 243, 0.6)';
+                        } else {
+                            item.style.background = 'rgba(33, 150, 243, 0.15)';
+                            item.style.borderColor = 'rgba(33, 150, 243, 0.4)';
+                        }
+                    }
                     console.log('Вибрано джерело (не збережено)');
                 });
                 
