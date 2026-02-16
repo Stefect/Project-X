@@ -879,7 +879,8 @@
                 const activeSourceItems = document.querySelectorAll('.source-item.active');
                 selectedSources = Array.from(activeSourceItems).map(item => item.getAttribute('data-source'));
                 
-                console.log('Збережено джерела:', selectedSources.length > 0 ? selectedSources : 'Всі');
+                console.log('Збережено джерела (кількість):', selectedSources.length);
+                console.log('Збережено джерела (список):', selectedSources);
                 
                 // Закриваємо панель джерел
                 sourcesPanel.classList.remove('active');
