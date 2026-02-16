@@ -423,6 +423,94 @@
             border-color: rgba(255, 152, 0, 0.5);
             transform: translateY(-2px);
         }
+
+        /* Панель джерел (sources filter) */
+        .sources-panel {
+            position: fixed;
+            right: 600px;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: rgba(20, 21, 32, 0.75);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 49;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+        }
+
+        .sources-panel.active {
+            transform: translateX(0);
+        }
+
+        .source-item {
+            padding: 10px 15px;
+            margin-bottom: 6px;
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .source-item:hover {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: rgba(76, 175, 80, 0.4);
+            transform: translateX(5px);
+        }
+
+        .source-item.active {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.3) 0%, rgba(56, 142, 60, 0.3) 100%);
+            border-color: rgba(76, 175, 80, 0.6);
+        }
+
+        .source-badge {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        .btn-sources {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            color: #4caf50;
+        }
+
+        .btn-sources:hover {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: rgba(76, 175, 80, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .sources-search {
+            padding: 10px 15px;
+            margin: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .sources-search:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .sources-search::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -448,6 +536,11 @@
                 <span class="category-name">Програмування</span>
                 <span class="category-check">✓</span>
             </div>
+            <div class="category-item" data-category="ai">
+                <span class="category-emoji">🤖</span>
+                <span class="category-name">Штучний інтелект</span>
+                <span class="category-check">✓</span>
+            </div>
             <div class="category-item" data-category="science">
                 <span class="category-emoji">🔬</span>
                 <span class="category-name">Наука</span>
@@ -458,14 +551,61 @@
                 <span class="category-name">Новини світу</span>
                 <span class="category-check">✓</span>
             </div>
+            <div class="category-item" data-category="ukraine">
+                <span class="category-emoji">🇺🇦</span>
+                <span class="category-name">Україна</span>
+                <span class="category-check">✓</span>
+            </div>
             <div class="category-item" data-category="gaming">
                 <span class="category-emoji">🎮</span>
                 <span class="category-name">Ігри</span>
                 <span class="category-check">✓</span>
             </div>
+            <div class="category-item" data-category="crypto">
+                <span class="category-emoji">💰</span>
+                <span class="category-name">Криптовалюта</span>
+                <span class="category-check">✓</span>
+            </div>
+            <div class="category-item" data-category="business">
+                <span class="category-emoji">💼</span>
+                <span class="category-name">Бізнес</span>
+                <span class="category-check">✓</span>
+            </div>
+            <div class="category-item" data-category="entertainment">
+                <span class="category-emoji">🎬</span>
+                <span class="category-name">Розваги</span>
+                <span class="category-check">✓</span>
+            </div>
+            <div class="category-item" data-category="sports">
+                <span class="category-emoji">⚽</span>
+                <span class="category-name">Спорт</span>
+                <span class="category-check">✓</span>
+            </div>
+            <div class="category-item" data-category="health">
+                <span class="category-emoji">💚</span>
+                <span class="category-name">Здоров'я</span>
+                <span class="category-check">✓</span>
+            </div>
         </div>
         <div class="categories-footer">
             <button id="categories-save-btn" class="categories-save-btn">
+                ✓ Зберегти
+            </button>
+        </div>
+    </div>
+
+    <!-- Панель джерел (фільтр джерел новин) -->
+    <div class="sources-panel" id="sources-panel">
+        <div class="categories-header">
+            <div class="categories-title">Джерела</div>
+            <div class="categories-subtitle">Фільтруй звідки брати новини</div>
+        </div>
+        <input type="text" id="sources-search" class="sources-search" placeholder="🔍 Пошук джерел...">
+        <div class="categories-list" id="sources-list">
+            <!-- Джерела будуть додані динамічно через JS -->
+        </div>
+        <div class="categories-footer">
+            <button id="sources-save-btn" class="categories-save-btn">
                 ✓ Зберегти
             </button>
         </div>
@@ -497,6 +637,9 @@
 
         <!-- Кнопки управління -->
         <div class="sidebar-controls">
+            <button id="btn-sources" class="control-btn btn-sources">
+                📡 Джерела
+            </button>
             <button id="btn-categories" class="control-btn btn-categories">
                 📂 Категорії
             </button>
@@ -516,13 +659,18 @@
         const btnStart = document.getElementById('btn-start');
         const btnStop = document.getElementById('btn-stop');
         const btnCategories = document.getElementById('btn-categories');
+        const btnSources = document.getElementById('btn-sources');
         const btnCloseFeed = document.getElementById('btn-close-feed');
         const categoriesPanel = document.getElementById('categories-panel');
+        const sourcesPanel = document.getElementById('sources-panel');
+        const sourcesList = document.getElementById('sources-list');
+        const sourcesSearch = document.getElementById('sources-search');
         const container = document.getElementById('feed-container');
         const stats = document.getElementById('stats');
         let feedActive = false;
         let articlesLoaded = 0;
         let selectedCategories = ['all']; // Масив обраних категорій
+        let selectedSources = []; // Масив обраних джерел (якщо порожній - всі)
 
         // Обробник кнопки закриття панелі
         if (btnCloseFeed) {
@@ -566,12 +714,21 @@
         // Обробник кнопки категорій
         btnCategories.addEventListener('click', () => {
             categoriesPanel.classList.toggle('active');
+            // Закриваємо панель джерел якщо вона відкрита
+            if (sourcesPanel) {
+                sourcesPanel.classList.remove('active');
+            }
         });
 
-        // Закриття панелі категорій при натисканні ESC
+        // Закриття панелей при натисканні ESC
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && categoriesPanel.classList.contains('active')) {
-                categoriesPanel.classList.remove('active');
+            if (e.key === 'Escape') {
+                if (categoriesPanel && categoriesPanel.classList.contains('active')) {
+                    categoriesPanel.classList.remove('active');
+                }
+                if (sourcesPanel && sourcesPanel.classList.contains('active')) {
+                    sourcesPanel.classList.remove('active');
+                }
             }
         });
 
@@ -623,12 +780,140 @@
                     updateStats();
                     
                     setTimeout(async () => {
-                        await api.startFeed(selectedCategories);
+                        await api.startFeed(selectedCategories, selectedSources);
                         feedActive = true;
                     }, 500);
                 }
             });
         }
+
+        // === ДЖЕРЕЛА (SOURCES) ===
+        
+        // Список всіх доступних джерел (синхронізовано з ai-feed.js)
+        const ALL_SOURCES = [
+            { name: 'Reddit Tech', type: 'reddit' },
+            { name: 'Reddit Programming', type: 'reddit' },
+            { name: 'Dev.to', type: 'devto' },
+            { name: 'Hacker News', type: 'hackernews' },
+            { name: 'Reddit Science', type: 'reddit' },
+            { name: 'Reddit Space', type: 'reddit' },
+            { name: 'Reddit Physics', type: 'reddit' },
+            { name: 'Reddit World News', type: 'reddit' },
+            { name: 'Reddit News', type: 'reddit' },
+            { name: 'Reddit Gaming', type: 'reddit' },
+            { name: 'Reddit PC Gaming', type: 'reddit' },
+            { name: 'Reddit Games', type: 'reddit' },
+            { name: 'Reddit Machine Learning', type: 'reddit' },
+            { name: 'Reddit Artificial', type: 'reddit' },
+            { name: 'Reddit Local LLaMA', type: 'reddit' },
+            { name: 'Reddit Crypto', type: 'reddit' },
+            { name: 'Reddit Bitcoin', type: 'reddit' },
+            { name: 'Reddit Ethereum', type: 'reddit' },
+            { name: 'Reddit Business', type: 'reddit' },
+            { name: 'Reddit Economics', type: 'reddit' },
+            { name: 'Reddit Entrepreneur', type: 'reddit' },
+            { name: 'Reddit Ukraine', type: 'reddit' },
+            { name: 'Reddit Ukraine Conflict', type: 'reddit' },
+            { name: 'Suspilne News', type: 'suspilne' },
+            { name: 'Ukrainska Pravda', type: 'pravda' },
+            { name: 'Kyiv Independent', type: 'kyivindependent' },
+            { name: 'Reddit Movies', type: 'reddit' },
+            { name: 'Reddit Music', type: 'reddit' },
+            { name: 'Reddit Television', type: 'reddit' },
+            { name: 'Reddit Sports', type: 'reddit' },
+            { name: 'Reddit Soccer', type: 'reddit' },
+            { name: 'Reddit NBA', type: 'reddit' },
+            { name: 'Reddit Health', type: 'reddit' },
+            { name: 'Reddit Fitness', type: 'reddit' },
+            { name: 'Reddit Nutrition', type: 'reddit' }
+        ];
+
+        // Функція для рендерингу списку джерел
+        function renderSources(filter = '') {
+            sourcesList.innerHTML = '';
+            const filteredSources = ALL_SOURCES.filter(source => 
+                source.name.toLowerCase().includes(filter.toLowerCase())
+            );
+            
+            filteredSources.forEach(source => {
+                const item = document.createElement('div');
+                item.className = 'source-item';
+                if (selectedSources.length === 0 || selectedSources.includes(source.name)) {
+                    item.classList.add('active');
+                }
+                item.setAttribute('data-source', source.name);
+                
+                const typeEmoji = source.type === 'reddit' ? '🔴' : 
+                                 source.type === 'devto' ? '💻' : 
+                                 source.type === 'hackernews' ? '🍊' : 
+                                 source.type === 'suspilne' ? '🇺🇦' :
+                                 source.type === 'pravda' ? '🇺🇦' :
+                                 source.type === 'kyivindependent' ? '🇺🇦' : '📡';
+                
+                item.innerHTML = `
+                    <span>${typeEmoji}</span>
+                    <span class="category-name" style="flex: 1; font-size: 12px;">${source.name}</span>
+                    <span class="category-check">✓</span>
+                `;
+                
+                item.addEventListener('click', () => {
+                    item.classList.toggle('active');
+                    console.log('📡 Вибрано джерело (не збережено)');
+                });
+                
+                sourcesList.appendChild(item);
+            });
+        }
+
+        // Початковий рендеринг джерел
+        renderSources();
+
+        // Пошук джерел
+        if (sourcesSearch) {
+            sourcesSearch.addEventListener('input', (e) => {
+                renderSources(e.target.value);
+            });
+        }
+
+        // Обробник кнопки джерел
+        if (btnSources) {
+            btnSources.addEventListener('click', () => {
+                sourcesPanel.classList.toggle('active');
+                // Закриваємо панель категорій якщо вона відкрита
+                if (categoriesPanel) {
+                    categoriesPanel.classList.remove('active');
+                }
+            });
+        }
+
+        // Обробник кнопки "Зберегти" в панелі джерел
+        const sourcesSaveBtn = document.getElementById('sources-save-btn');
+        if (sourcesSaveBtn) {
+            sourcesSaveBtn.addEventListener('click', async () => {
+                const activeSourceItems = document.querySelectorAll('.source-item.active');
+                selectedSources = Array.from(activeSourceItems).map(item => item.getAttribute('data-source'));
+                
+                console.log('💾 Збережено джерела:', selectedSources.length > 0 ? selectedSources : 'Всі');
+                
+                // Закриваємо панель джерел
+                sourcesPanel.classList.remove('active');
+                
+                // Якщо стрічка активна, перезапускаємо її з новими джерелами
+                if (feedActive && api) {
+                    await api.stopFeed();
+                    container.innerHTML = '<div class="loading">🔄 Оновлюю джерела...</div>';
+                    articlesLoaded = 0;
+                    updateStats();
+                    
+                    setTimeout(async () => {
+                        await api.startFeed(selectedCategories, selectedSources);
+                        feedActive = true;
+                    }, 500);
+                }
+            });
+        }
+
+        // === КІНЕЦЬ ДЖЕРЕЛ ===
 
         // Обробник кнопки Start
         btnStart.addEventListener('click', async () => {
@@ -636,8 +921,8 @@
                 console.error('API not available');
                 return;
             }
-            const result = await api.startFeed(selectedCategories);
-            console.log('Feed started:', result, 'Categories:', selectedCategories);
+            const result = await api.startFeed(selectedCategories, selectedSources);
+            console.log('Feed started:', result, 'Categories:', selectedCategories, 'Sources:', selectedSources.length > 0 ? selectedSources : 'All');
             
             btnStart.style.display = 'none';
             btnStop.style.display = 'flex';
@@ -689,9 +974,9 @@
             // Обробник кліку на картку
             card.addEventListener('click', async (e) => {
                 e.preventDefault();
-                // Відкриваємо в новій вкладці зовнішнього браузера
-                if (api && api.openExternal) {
-                    await api.openExternal(article.url);
+                // Відкриваємо у власному браузері
+                if (api && api.openInBrowser) {
+                    await api.openInBrowser(article.url);
                 }
             });
             

@@ -2020,7 +2020,7 @@ let isFeedRunning = false;
 let currentFeedGenerator = null;
 
 // Обробник запуску нескінченної стрічки
-ipcMain.handle('start-infinite-feed', async (event, categories = ['all']) => {
+ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], sourceNames = []) => {
     if (isFeedRunning) {
         console.log('⚠️ Стрічка вже запущена');
         return { success: false, message: 'Стрічка вже активна' };
@@ -2032,8 +2032,11 @@ ipcMain.handle('start-infinite-feed', async (event, categories = ['all']) => {
     }
     
     isFeedRunning = true;
-    currentFeedGenerator = infiniteArticleGenerator(categories);
+    currentFeedGenerator = infiniteArticleGenerator(categories, sourceNames);
     console.log(`🌊 Запускаємо нескінченну стрічку новин для категорій: ${categories.join(', ')}...`);
+    if (sourceNames && sourceNames.length > 0) {
+        console.log(`📡 Обрано джерел: ${sourceNames.length}`);
+    }
 
     // Асинхронний цикл обробки статей
     (async () => {
@@ -2093,6 +2096,25 @@ ipcMain.handle('open-external', async (event, url) => {
         return { success: true };
     } catch (error) {
         console.error('❌ Помилка відкриття посилання:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+// Обробник відкриття посилання у власному браузері (для новин)
+ipcMain.handle('open-in-browser', async (event, url) => {
+    try {
+        console.log('[BROWSER] Відкриваємо URL у браузері:', url);
+        const activeTab = tabs.find(t => t.id === activeTabId);
+        if (activeTab && activeTab.browserView) {
+            await activeTab.browserView.webContents.loadURL(url);
+            console.log('[BROWSER] URL відкрито:', url);
+            return { success: true };
+        } else {
+            console.error('[BROWSER] Активна вкладка не знайдена');
+            return { success: false, error: 'Active tab not found' };
+        }
+    } catch (error) {
+        console.error('❌ Помилка відкриття у браузері:', error);
         return { success: false, error: error.message };
     }
 });

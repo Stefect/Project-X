@@ -5,14 +5,64 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 // Список безкоштовних джерел (API, які повертають JSON) с категоріями
 const NEWS_SOURCES = [
+    // Технології
     { name: 'Reddit Tech', url: 'https://www.reddit.com/r/technology/new.json?limit=10', type: 'reddit', categories: ['tech', 'all'] },
     { name: 'Reddit Programming', url: 'https://www.reddit.com/r/programming/new.json?limit=10', type: 'reddit', categories: ['tech', 'programming', 'all'] },
     { name: 'Dev.to', url: 'https://dev.to/api/articles?per_page=10', type: 'devto', categories: ['tech', 'programming', 'all'] },
     { name: 'Hacker News', url: 'https://hacker-news.firebaseio.com/v0/newstories.json?limitToFirst=10', type: 'hackernews', categories: ['tech', 'all'] },
+    
+    // Наука
     { name: 'Reddit Science', url: 'https://www.reddit.com/r/science/new.json?limit=10', type: 'reddit', categories: ['science', 'all'] },
     { name: 'Reddit Space', url: 'https://www.reddit.com/r/space/new.json?limit=10', type: 'reddit', categories: ['science', 'all'] },
+    { name: 'Reddit Physics', url: 'https://www.reddit.com/r/Physics/new.json?limit=10', type: 'reddit', categories: ['science', 'all'] },
+    
+    // Новини світу
     { name: 'Reddit World News', url: 'https://www.reddit.com/r/worldnews/new.json?limit=10', type: 'reddit', categories: ['news', 'all'] },
-    { name: 'Reddit Gaming', url: 'https://www.reddit.com/r/gaming/new.json?limit=10', type: 'reddit', categories: ['gaming', 'all'] }
+    { name: 'Reddit News', url: 'https://www.reddit.com/r/news/new.json?limit=10', type: 'reddit', categories: ['news', 'all'] },
+    
+    // Ігри
+    { name: 'Reddit Gaming', url: 'https://www.reddit.com/r/gaming/new.json?limit=10', type: 'reddit', categories: ['gaming', 'all'] },
+    { name: 'Reddit PC Gaming', url: 'https://www.reddit.com/r/pcgaming/new.json?limit=10', type: 'reddit', categories: ['gaming', 'all'] },
+    { name: 'Reddit Games', url: 'https://www.reddit.com/r/Games/new.json?limit=10', type: 'reddit', categories: ['gaming', 'all'] },
+    
+    // Штучний інтелект
+    { name: 'Reddit Machine Learning', url: 'https://www.reddit.com/r/MachineLearning/new.json?limit=10', type: 'reddit', categories: ['ai', 'tech', 'all'] },
+    { name: 'Reddit Artificial', url: 'https://www.reddit.com/r/artificial/new.json?limit=10', type: 'reddit', categories: ['ai', 'tech', 'all'] },
+    { name: 'Reddit Local LLaMA', url: 'https://www.reddit.com/r/LocalLLaMA/new.json?limit=10', type: 'reddit', categories: ['ai', 'tech', 'all'] },
+    
+    // Криптовалюта
+    { name: 'Reddit Crypto', url: 'https://www.reddit.com/r/CryptoCurrency/new.json?limit=10', type: 'reddit', categories: ['crypto', 'all'] },
+    { name: 'Reddit Bitcoin', url: 'https://www.reddit.com/r/Bitcoin/new.json?limit=10', type: 'reddit', categories: ['crypto', 'all'] },
+    { name: 'Reddit Ethereum', url: 'https://www.reddit.com/r/ethereum/new.json?limit=10', type: 'reddit', categories: ['crypto', 'all'] },
+    
+    // Бізнес та економіка
+    { name: 'Reddit Business', url: 'https://www.reddit.com/r/business/new.json?limit=10', type: 'reddit', categories: ['business', 'all'] },
+    { name: 'Reddit Economics', url: 'https://www.reddit.com/r/Economics/new.json?limit=10', type: 'reddit', categories: ['business', 'all'] },
+    { name: 'Reddit Entrepreneur', url: 'https://www.reddit.com/r/Entrepreneur/new.json?limit=10', type: 'reddit', categories: ['business', 'all'] },
+    
+    // Україна
+    { name: 'Reddit Ukraine', url: 'https://www.reddit.com/r/ukraine/new.json?limit=10', type: 'reddit', categories: ['ukraine', 'news', 'all'] },
+    { name: 'Reddit Ukraine Conflict', url: 'https://www.reddit.com/r/UkrainianConflict/new.json?limit=10', type: 'reddit', categories: ['ukraine', 'news', 'all'] },
+    
+    // Українські новинні агентства (через rss2json API)
+    { name: 'Suspilne News', url: 'https://api.rss2json.com/v1/api.json?rss_url=https://suspilne.media/rss/', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
+    { name: 'Ukrainska Pravda', url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.pravda.com.ua/rss/', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
+    { name: 'Kyiv Independent', url: 'https://api.rss2json.com/v1/api.json?rss_url=https://kyivindependent.com/feed/', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
+    
+    // Розваги
+    { name: 'Reddit Movies', url: 'https://www.reddit.com/r/movies/new.json?limit=10', type: 'reddit', categories: ['entertainment', 'all'] },
+    { name: 'Reddit Music', url: 'https://www.reddit.com/r/Music/new.json?limit=10', type: 'reddit', categories: ['entertainment', 'all'] },
+    { name: 'Reddit Television', url: 'https://www.reddit.com/r/television/new.json?limit=10', type: 'reddit', categories: ['entertainment', 'all'] },
+    
+    // Спорт
+    { name: 'Reddit Sports', url: 'https://www.reddit.com/r/sports/new.json?limit=10', type: 'reddit', categories: ['sports', 'all'] },
+    { name: 'Reddit Soccer', url: 'https://www.reddit.com/r/soccer/new.json?limit=10', type: 'reddit', categories: ['sports', 'all'] },
+    { name: 'Reddit NBA', url: 'https://www.reddit.com/r/nba/new.json?limit=10', type: 'reddit', categories: ['sports', 'all'] },
+    
+    // Здоров'я
+    { name: 'Reddit Health', url: 'https://www.reddit.com/r/Health/new.json?limit=10', type: 'reddit', categories: ['health', 'all'] },
+    { name: 'Reddit Fitness', url: 'https://www.reddit.com/r/Fitness/new.json?limit=10', type: 'reddit', categories: ['health', 'all'] },
+    { name: 'Reddit Nutrition', url: 'https://www.reddit.com/r/nutrition/new.json?limit=10', type: 'reddit', categories: ['health', 'all'] }
 ];
 
 // Функція для фільтрації джерел за категорією
@@ -39,6 +89,23 @@ function getSourcesByCategories(categories) {
     return NEWS_SOURCES.filter(source => 
         source.categories.some(cat => categories.includes(cat))
     );
+}
+
+// Функція для отримання списку всіх джерел
+function getAllSources() {
+    return NEWS_SOURCES.map(source => ({
+        name: source.name,
+        type: source.type,
+        categories: source.categories
+    }));
+}
+
+// Функція для фільтрації джерел за назвами
+function filterSourcesByNames(sources, selectedNames) {
+    if (!selectedNames || selectedNames.length === 0) {
+        return sources; // Якщо нічого не обрано, повертаємо всі
+    }
+    return sources.filter(source => selectedNames.includes(source.name));
 }
 
 // ---------------------------------------------------------
@@ -92,6 +159,17 @@ async function fetchOneArticle(source) {
                     id: randomId
                 };
             }
+        } else if (source.type === 'rss2json') {
+            // Українські джерела через RSS2JSON API
+            if (data && data.items && data.items.length > 0) {
+                const randomItem = data.items[Math.floor(Math.random() * data.items.length)];
+                return {
+                    title: randomItem.title,
+                    url: randomItem.link,
+                    source: source.name,
+                    id: randomItem.guid || randomItem.link
+                };
+            }
         }
         return null;
     } catch (error) {
@@ -103,13 +181,23 @@ async function fetchOneArticle(source) {
 // ---------------------------------------------------------
 // Асинхронний генератор нескінченного потоку статей
 // ---------------------------------------------------------
-async function* infiniteArticleGenerator(categories = ['all']) {
+async function* infiniteArticleGenerator(categories = ['all'], sourceNames = []) {
     // Конвертуємо в масив, якщо передано одну категорію
     if (!Array.isArray(categories)) {
         categories = [categories];
     }
     
-    const sources = getSourcesByCategories(categories);
+    // Спочатку фільтруємо за категоріями
+    let sources = getSourcesByCategories(categories);
+    
+    // Потім фільтруємо за обраними джерелами (якщо вказано)
+    sources = filterSourcesByNames(sources, sourceNames);
+    
+    if (sources.length === 0) {
+        console.log('⚠️ Немає доступних джерел з обраними фільтрами!');
+        return;
+    }
+    
     const sourceGen = roundRobinSourceGenerator(sources);
     
     console.log(`📰 Генератор запущено для категорій: ${categories.join(', ')}, джерел: ${sources.length}`);
@@ -127,4 +215,4 @@ async function* infiniteArticleGenerator(categories = ['all']) {
     }
 }
 
-module.exports = { infiniteArticleGenerator, getSourcesByCategory, getSourcesByCategories };
+module.exports = { infiniteArticleGenerator, getSourcesByCategory, getSourcesByCategories, getAllSources };
