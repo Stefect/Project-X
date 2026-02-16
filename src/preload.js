@@ -45,16 +45,17 @@ contextBridge.exposeInMainWorld('aiAutocomplete', {
 // API для Smart Compose (розумного помічника тексту)
 contextBridge.exposeInMainWorld('api', {
   invoke: (channel, ...args) => {
-    const validChannels = ['predict-completion', 'predict-text', 'start-infinite-feed', 'stop-infinite-feed', 'open-external'];
+    const validChannels = ['predict-completion', 'predict-text', 'start-infinite-feed', 'stop-infinite-feed', 'open-external', 'open-in-browser'];
     if (validChannels.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);
     }
     return Promise.resolve(null);
   },
   // API для Infinite Feed (нескінченна стрічка новин)
-  startFeed: (categories) => ipcRenderer.invoke('start-infinite-feed', categories),
+  startFeed: (categories, sourceNames) => ipcRenderer.invoke('start-infinite-feed', categories, sourceNames),
   stopFeed: () => ipcRenderer.invoke('stop-infinite-feed'),
   onNewFeedItem: (callback) => ipcRenderer.on('new-feed-item', (_event, data) => callback(data)),
   onFeedSkip: (callback) => ipcRenderer.on('feed-timeout-skip', (_event, source) => callback(source)),
-  openExternal: (url) => ipcRenderer.invoke('open-external', url)
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  openInBrowser: (url) => ipcRenderer.invoke('open-in-browser', url)
 });
