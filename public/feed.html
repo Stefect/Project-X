@@ -589,6 +589,10 @@
             </div>
         </div>
         <input type="text" id="sources-search" class="sources-search" placeholder="Пошук джерел...">
+        <div style="padding: 10px 15px; display: flex; gap: 8px;">
+            <button id="sources-select-all" style="flex: 1; padding: 8px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: white; font-size: 11px; cursor: pointer;">Вибрати всі</button>
+            <button id="sources-clear-all" style="flex: 1; padding: 8px; background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 6px; color: white; font-size: 11px; cursor: pointer;">Зняти всі</button>
+        </div>
         <div class="categories-list" id="sources-list">
             <!-- Джерела будуть додані динамічно через JS -->
         </div>
@@ -659,6 +663,7 @@
         let articlesLoaded = 0;
         let selectedCategories = ['all']; // Масив обраних категорій
         let selectedSources = []; // Масив обраних джерел (якщо порожній - всі)
+        let sourcesFilterActive = false; // Чи користувач активував фільтр джерел
 
         // Обробник кнопки закриття панелі
         if (btnCloseFeed) {
@@ -847,7 +852,8 @@
             filteredSources.forEach(source => {
                 const item = document.createElement('div');
                 item.className = 'source-item';
-                if (selectedSources.length === 0 || selectedSources.includes(source.name)) {
+                // Активуємо тільки якщо джерело є в списку вибраних (коли фільтр активний)
+                if (sourcesFilterActive && selectedSources.includes(source.name)) {
                     item.classList.add('active');
                 }
                 item.setAttribute('data-source', source.name);
@@ -892,6 +898,36 @@
         // Початковий рендеринг джерел
         renderSources();
 
+        // Кнопки "Вибрати всі" та "Зняти всі"
+        const selectAllBtn = document.getElementById('sources-select-all');
+        const clearAllBtn = document.getElementById('sources-clear-all');
+        
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => {
+                document.querySelectorAll('.source-item').forEach(item => {
+                    item.classList.add('active');
+                    const isUkrainian = item.querySelector('span').textContent.includes('UA');
+                    if (isUkrainian) {
+                        item.style.background = 'rgba(33, 150, 243, 0.3)';
+                        item.style.borderColor = 'rgba(33, 150, 243, 0.6)';
+                    }
+                });
+            });
+        }
+        
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', () => {
+                document.querySelectorAll('.source-item').forEach(item => {
+                    item.classList.remove('active');
+                    const isUkrainian = item.querySelector('span').textContent.includes('UA');
+                    if (isUkrainian) {
+                        item.style.background = 'rgba(33, 150, 243, 0.15)';
+                        item.style.borderColor = 'rgba(33, 150, 243, 0.4)';
+                    }
+                });
+            });
+        }
+
         // Пошук джерел
         if (sourcesSearch) {
             sourcesSearch.addEventListener('input', (e) => {
@@ -916,9 +952,11 @@
             sourcesSaveBtn.addEventListener('click', async () => {
                 const activeSourceItems = document.querySelectorAll('.source-item.active');
                 selectedSources = Array.from(activeSourceItems).map(item => item.getAttribute('data-source'));
+                sourcesFilterActive = selectedSources.length > 0; // Фільтр активний тільки якщо щось вибрано
                 
                 console.log('Збережено джерела (кількість):', selectedSources.length);
                 console.log('Збережено джерела (список):', selectedSources);
+                console.log('Фільтр активний:', sourcesFilterActive);
                 
                 // Закриваємо панель джерел
                 sourcesPanel.classList.remove('active');
@@ -988,10 +1026,12 @@
             
             console.log('Запуск стрічки...');
             console.log('Категорії:', selectedCategories);
-            console.log('Джерела:', selectedSources.length > 0 ? `${selectedSources.length} обрано` : 'Всі (за замовчуванням)');
+            console.log('Джерела:', sourcesFilterActive && selectedSources.length > 0 ? `${selectedSources.length} обрано: ${selectedSources.join(', ')}` : 'Всі (фільтр не активний)');
             
             try {
-                const result = await api.startFeed(selectedCategories, selectedSources);
+                // Передаємо джерела тільки якщо фільтр активний
+                const sourcesToUse = sourcesFilterActive ? selectedSources : [];
+                const result = await api.startFeed(selectedCategories, sourcesToUse);
                 console.log('✅ Feed started:', result);
                 
                 btnStart.style.display = 'none';
