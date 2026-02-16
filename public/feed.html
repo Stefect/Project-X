@@ -301,10 +301,10 @@
             backdrop-filter: blur(10px);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 50;
+            z-index: 51;
             display: flex;
             flex-direction: column;
-            transform: translateX(100%);
+            transform: translateX(calc(100% + 350px));
         }
 
         .categories-panel.active {
@@ -423,7 +423,7 @@
         /* Панель джерел (sources filter) */
         .sources-panel {
             position: fixed;
-            right: 600px;
+            right: 350px;
             top: 0;
             width: 250px;
             height: 100vh;
@@ -431,10 +431,10 @@
             backdrop-filter: blur(10px);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 49;
+            z-index: 50;
             display: flex;
             flex-direction: column;
-            transform: translateX(100%);
+            transform: translateX(calc(100% + 350px));
         }
 
         .sources-panel.active {
