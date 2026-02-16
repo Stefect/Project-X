@@ -123,23 +123,34 @@ function* roundRobinSourceGenerator(sources) {
 // Функція для "витягування" однієї випадкової статті з джерела
 async function fetchOneArticle(source) {
     try {
+        console.log(`🔍 Завантажую з ${source.name} (${source.type})...`);
         const response = await fetch(source.url);
+        
+        if (!response.ok) {
+            console.error(`❌ HTTP помилка ${response.status} для ${source.name}`);
+            return null;
+        }
+        
         const data = await response.json();
         
         if (source.type === 'reddit') {
-            const posts = data.data.children;
+            const posts = data.data?.children;
             if (posts && posts.length > 0) {
                 const randomPost = posts[Math.floor(Math.random() * posts.length)].data;
+                console.log(`✅ Reddit: ${randomPost.title.substring(0, 50)}...`);
                 return { 
                     title: randomPost.title, 
                     url: randomPost.url, 
                     source: source.name,
                     id: randomPost.id
                 };
+            } else {
+                console.warn(`⚠️ Reddit ${source.name}: немає постів`);
             }
         } else if (source.type === 'devto') {
             if (data && data.length > 0) {
                 const randomPost = data[Math.floor(Math.random() * data.length)];
+                console.log(`✅ Dev.to: ${randomPost.title.substring(0, 50)}...`);
                 return { 
                     title: randomPost.title, 
                     url: randomPost.url, 
@@ -152,23 +163,30 @@ async function fetchOneArticle(source) {
                 const randomId = data[Math.floor(Math.random() * data.length)];
                 const itemResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${randomId}.json`);
                 const item = await itemResponse.json();
-                return {
-                    title: item.title,
-                    url: item.url || `https://news.ycombinator.com/item?id=${randomId}`,
-                    source: source.name,
-                    id: randomId
-                };
+                if (item && item.title) {
+                    console.log(`✅ HackerNews: ${item.title.substring(0, 50)}...`);
+                    return {
+                        title: item.title,
+                        url: item.url || `https://news.ycombinator.com/item?id=${randomId}`,
+                        source: source.name,
+                        id: randomId
+                    };
+                }
             }
         } else if (source.type === 'rss2json') {
             // Українські джерела через RSS2JSON API
-            if (data && data.items && data.items.length > 0) {
+            console.log(`🇺🇦 RSS2JSON відповідь:`, data.status);
+            if (data && data.status === 'ok' && data.items && data.items.length > 0) {
                 const randomItem = data.items[Math.floor(Math.random() * data.items.length)];
+                console.log(`✅ ${source.name}: ${randomItem.title.substring(0, 50)}...`);
                 return {
                     title: randomItem.title,
                     url: randomItem.link,
                     source: source.name,
                     id: randomItem.guid || randomItem.link
                 };
+            } else {
+                console.warn(`⚠️ ${source.name}: немає статей або помилка RSS`, data.message);
             }
         }
         return null;
