@@ -2022,7 +2022,7 @@ let currentFeedGenerator = null;
 // Обробник запуску нескінченної стрічки
 ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], sourceNames = []) => {
     if (isFeedRunning) {
-        console.log('⚠️ Стрічка вже запущена');
+        console.log('[WARNING] Стрічка вже запущена');
         return { success: false, message: 'Стрічка вже активна' };
     }
     
@@ -2033,23 +2033,23 @@ ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], source
     
     isFeedRunning = true;
     currentFeedGenerator = infiniteArticleGenerator(categories, sourceNames);
-    console.log(`🌊 Запускаємо нескінченну стрічку новин для категорій: ${categories.join(', ')}...`);
+    console.log(`[FEED START] Запускаємо нескінченну стрічку новин для категорій: ${categories.join(', ')}...`);
     if (sourceNames && sourceNames.length > 0) {
-        console.log(`📡 Обрано джерел: ${sourceNames.length}`);
+        console.log(`[SOURCES] Обрано джерел: ${sourceNames.length}`);
     }
 
     // Асинхронний цикл обробки статей
     (async () => {
         for await (const article of currentFeedGenerator) {
             if (!isFeedRunning) {
-                console.log('🛑 Стрічка зупинена користувачем');
+                console.log('[STOP] Стрічка зупинена користувачем');
                 break;
             }
 
-            console.log(`📰 [Стрічка] Отримано: ${article.title.substring(0, 50)}...`);
+            console.log(`[FEED] Отримано: ${article.title.substring(0, 50)}...`);
 
             try {
-                // 🎯 ЗАВДАННЯ 1.2: Timeout Iterator Consumer
+                // ЗАВДАННЯ 1.2: Timeout Iterator Consumer
                 // Використовуємо Promise.race для таймауту 3 секунди
                 const summary = await Promise.race([
                     summarizeArticle(article.title),
@@ -2059,15 +2059,15 @@ ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], source
                 ]);
 
                 // Якщо ШІ встиг - відправляємо в UI
-                console.log(`✅ AI обробив: ${summary.substring(0, 30)}...`);
+                console.log(`[OK] AI обробив: ${summary.substring(0, 30)}...`);
                 event.sender.send('new-feed-item', { ...article, summary });
 
             } catch (error) {
                 if (error.message === 'AI_TIMEOUT') {
-                    console.log(`⏱️ AI завис (>3 сек). Пропускаємо з ${article.source}`);
+                    console.log(`[TIMEOUT] AI завис (>3 сек). Пропускаємо з ${article.source}`);
                     event.sender.send('feed-timeout-skip', article.source);
                 } else {
-                    console.error('❌ Помилка обробки:', error.message);
+                    console.error('[ERROR] Помилка обробки:', error.message);
                 }
             }
         }
