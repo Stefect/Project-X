@@ -358,10 +358,6 @@
             border-color: rgba(102, 126, 234, 0.6);
         }
 
-        .category-emoji {
-            font-size: 18px;
-        }
-
         .category-name {
             flex: 1;
             font-size: 14px;
@@ -522,74 +518,61 @@
         </div>
         <div class="categories-list">
             <div class="category-item active" data-category="all">
-                <span class="category-emoji">🌐</span>
                 <span class="category-name">Всі</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="tech">
-                <span class="category-emoji">💻</span>
                 <span class="category-name">Технології</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="programming">
-                <span class="category-emoji">👨‍💻</span>
                 <span class="category-name">Програмування</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="ai">
-                <span class="category-emoji">🤖</span>
                 <span class="category-name">Штучний інтелект</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="science">
-                <span class="category-emoji">🔬</span>
                 <span class="category-name">Наука</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="news">
-                <span class="category-emoji">📰</span>
                 <span class="category-name">Новини світу</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="ukraine">
-                <span class="category-emoji">🇺🇦</span>
                 <span class="category-name">Україна</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="gaming">
-                <span class="category-emoji">🎮</span>
                 <span class="category-name">Ігри</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="crypto">
-                <span class="category-emoji">💰</span>
                 <span class="category-name">Криптовалюта</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="business">
-                <span class="category-emoji">💼</span>
                 <span class="category-name">Бізнес</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="entertainment">
-                <span class="category-emoji">🎬</span>
                 <span class="category-name">Розваги</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="sports">
-                <span class="category-emoji">⚽</span>
                 <span class="category-name">Спорт</span>
                 <span class="category-check">✓</span>
             </div>
             <div class="category-item" data-category="health">
-                <span class="category-emoji">💚</span>
                 <span class="category-name">Здоров'я</span>
                 <span class="category-check">✓</span>
             </div>
         </div>
         <div class="categories-footer">
             <button id="categories-save-btn" class="categories-save-btn">
-                ✓ Зберегти
+                Зберегти
             </button>
         </div>
     </div>
@@ -600,13 +583,13 @@
             <div class="categories-title">Джерела</div>
             <div class="categories-subtitle">Фільтруй звідки брати новини</div>
         </div>
-        <input type="text" id="sources-search" class="sources-search" placeholder="🔍 Пошук джерел...">
+        <input type="text" id="sources-search" class="sources-search" placeholder="Пошук джерел...">
         <div class="categories-list" id="sources-list">
             <!-- Джерела будуть додані динамічно через JS -->
         </div>
         <div class="categories-footer">
             <button id="sources-save-btn" class="categories-save-btn">
-                ✓ Зберегти
+                Зберегти
             </button>
         </div>
     </div>
@@ -628,7 +611,7 @@
         <!-- Стрічка новин -->
         <div id="feed-container">
             <div class="empty-state">
-                <div class="empty-state-icon">📰</div>
+                <div class="empty-state-icon">Новини</div>
                 <div class="empty-state-text">
                     Натисни кнопку внизу<br>щоб запустити стрічку
                 </div>
@@ -638,16 +621,16 @@
         <!-- Кнопки управління -->
         <div class="sidebar-controls">
             <button id="btn-sources" class="control-btn btn-sources">
-                📡 Джерела
+                Джерела
             </button>
             <button id="btn-categories" class="control-btn btn-categories">
-                📂 Категорії
+                Категорії
             </button>
             <button id="btn-start" class="control-btn btn-start">
-                ▶ Start
+                Start
             </button>
             <button id="btn-stop" class="control-btn btn-stop" style="display: none;">
-                ⏸ Stop
+                Stop
             </button>
         </div>
     </div>
@@ -758,7 +741,7 @@
                     }
                 }
                 
-                console.log('📂 Вибрано категорії (не збережено)');
+                console.log('Вибрано категорії (не збережено)');
             });
         });
 
@@ -767,7 +750,7 @@
         if (categoriesSaveBtn) {
             categoriesSaveBtn.addEventListener('click', async () => {
                 selectedCategories = getSelectedCategories();
-                console.log('💾 Збережено категорії:', selectedCategories);
+                console.log('Збережено категорії:', selectedCategories);
                 
                 // Закриваємо панель категорій
                 categoriesPanel.classList.remove('active');
@@ -775,7 +758,7 @@
                 // Якщо стрічка активна, перезапускаємо її з новими категоріями
                 if (feedActive && api) {
                     await api.stopFeed();
-                    container.innerHTML = '<div class="loading">🔄 Оновлюю категорії...</div>';
+                    container.innerHTML = '<div class="loading">Завантаження новин...</div>';
                     articlesLoaded = 0;
                     updateStats();
                     
@@ -843,20 +826,20 @@
                 }
                 item.setAttribute('data-source', source.name);
                 
-                const typeEmoji = source.type === 'reddit' ? '🔴' : 
-                                 source.type === 'devto' ? '💻' : 
-                                 source.type === 'hackernews' ? '🍊' : 
-                                 source.type === 'rss2json' ? '🇺🇦' : '📡';
+                const typeLabel = source.type === 'reddit' ? '[R]' : 
+                                 source.type === 'devto' ? '[D]' : 
+                                 source.type === 'hackernews' ? '[HN]' : 
+                                 source.type === 'rss2json' ? '[UA]' : '[?]';
                 
                 item.innerHTML = `
-                    <span>${typeEmoji}</span>
+                    <span style="font-size: 11px; color: rgba(255,255,255,0.5);">${typeLabel}</span>
                     <span class="category-name" style="flex: 1; font-size: 12px;">${source.name}</span>
                     <span class="category-check">✓</span>
                 `;
                 
                 item.addEventListener('click', () => {
                     item.classList.toggle('active');
-                    console.log('📡 Вибрано джерело (не збережено)');
+                    console.log('Вибрано джерело (не збережено)');
                 });
                 
                 sourcesList.appendChild(item);
@@ -891,7 +874,7 @@
                 const activeSourceItems = document.querySelectorAll('.source-item.active');
                 selectedSources = Array.from(activeSourceItems).map(item => item.getAttribute('data-source'));
                 
-                console.log('💾 Збережено джерела:', selectedSources.length > 0 ? selectedSources : 'Всі');
+                console.log('Збережено джерела:', selectedSources.length > 0 ? selectedSources : 'Всі');
                 
                 // Закриваємо панель джерел
                 sourcesPanel.classList.remove('active');
@@ -899,7 +882,7 @@
                 // Якщо стрічка активна, перезапускаємо її з новими джерелами
                 if (feedActive && api) {
                     await api.stopFeed();
-                    container.innerHTML = '<div class="loading">🔄 Оновлюю джерела...</div>';
+                    container.innerHTML = '<div class="loading">Завантаження новин...</div>';
                     articlesLoaded = 0;
                     updateStats();
                     
@@ -921,9 +904,9 @@
                 return;
             }
             
-            console.log('🚀 Запуск стрічки...');
-            console.log('📂 Категорії:', selectedCategories);
-            console.log('📡 Джерела:', selectedSources.length > 0 ? `${selectedSources.length} обрано` : 'Всі (за замовчуванням)');
+            console.log('Запуск стрічки...');
+            console.log('Категорії:', selectedCategories);
+            console.log('Джерела:', selectedSources.length > 0 ? `${selectedSources.length} обрано` : 'Всі (за замовчуванням)');
             
             try {
                 const result = await api.startFeed(selectedCategories, selectedSources);
@@ -935,7 +918,7 @@
 
                 // Очищуємо контейнер при першому запуску
                 if (articlesLoaded === 0) {
-                    container.innerHTML = '<div class="loading">🔄 Loading news...</div>';
+                    container.innerHTML = '<div class="loading">Завантаження новин...</div>';
                 }
             } catch (error) {
                 console.error('❌ Помилка запуску:', error);
@@ -975,7 +958,7 @@
             card.className = 'feed-item';
             
             card.innerHTML = `
-                <div class="feed-source">📰 ${escapeHtml(article.source)}</div>
+                <div class="feed-source">[${escapeHtml(article.source)}]</div>
                 <div class="feed-title">${escapeHtml(article.title)}</div>
                 <div class="feed-summary">${escapeHtml(article.summary)}</div>
             `;
@@ -1001,7 +984,7 @@
             
             const notice = document.createElement('div');
             notice.className = 'feed-skip';
-            notice.textContent = `⏱️ Skipped from ${source}`;
+            notice.textContent = `[TIMEOUT] Skipped from ${source}`;
             
             container.prepend(notice);
 
