@@ -814,9 +814,9 @@
             { name: 'Reddit Entrepreneur', type: 'reddit' },
             { name: 'Reddit Ukraine', type: 'reddit' },
             { name: 'Reddit Ukraine Conflict', type: 'reddit' },
-            { name: 'Suspilne News', type: 'suspilne' },
-            { name: 'Ukrainska Pravda', type: 'pravda' },
-            { name: 'Kyiv Independent', type: 'kyivindependent' },
+            { name: 'Suspilne News', type: 'rss2json' },
+            { name: 'Ukrainska Pravda', type: 'rss2json' },
+            { name: 'Kyiv Independent', type: 'rss2json' },
             { name: 'Reddit Movies', type: 'reddit' },
             { name: 'Reddit Music', type: 'reddit' },
             { name: 'Reddit Television', type: 'reddit' },
@@ -846,9 +846,7 @@
                 const typeEmoji = source.type === 'reddit' ? '🔴' : 
                                  source.type === 'devto' ? '💻' : 
                                  source.type === 'hackernews' ? '🍊' : 
-                                 source.type === 'suspilne' ? '🇺🇦' :
-                                 source.type === 'pravda' ? '🇺🇦' :
-                                 source.type === 'kyivindependent' ? '🇺🇦' : '📡';
+                                 source.type === 'rss2json' ? '🇺🇦' : '📡';
                 
                 item.innerHTML = `
                     <span>${typeEmoji}</span>
@@ -919,18 +917,29 @@
         btnStart.addEventListener('click', async () => {
             if (!api) {
                 console.error('API not available');
+                alert('❌ API не доступне! Перезавантажте сторінку.');
                 return;
             }
-            const result = await api.startFeed(selectedCategories, selectedSources);
-            console.log('Feed started:', result, 'Categories:', selectedCategories, 'Sources:', selectedSources.length > 0 ? selectedSources : 'All');
             
-            btnStart.style.display = 'none';
-            btnStop.style.display = 'flex';
-            feedActive = true;
+            console.log('🚀 Запуск стрічки...');
+            console.log('📂 Категорії:', selectedCategories);
+            console.log('📡 Джерела:', selectedSources.length > 0 ? `${selectedSources.length} обрано` : 'Всі (за замовчуванням)');
+            
+            try {
+                const result = await api.startFeed(selectedCategories, selectedSources);
+                console.log('✅ Feed started:', result);
+                
+                btnStart.style.display = 'none';
+                btnStop.style.display = 'flex';
+                feedActive = true;
 
-            // Очищуємо контейнер при першому запуску
-            if (articlesLoaded === 0) {
-                container.innerHTML = '<div class="loading">🔄 Loading news...</div>';
+                // Очищуємо контейнер при першому запуску
+                if (articlesLoaded === 0) {
+                    container.innerHTML = '<div class="loading">🔄 Loading news...</div>';
+                }
+            } catch (error) {
+                console.error('❌ Помилка запуску:', error);
+                alert('❌ Помилка запуску стрічки: ' + error.message);
             }
         });
 
