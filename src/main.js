@@ -170,6 +170,19 @@ let themeSettings = {
   wallpaper: 'none'
 };
 
+function requestOpenInNewTab(url) {
+  if (!url || !mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send('open-in-new-tab', url);
+}
+
+function registerWindowOpenHandler(targetView) {
+  if (!targetView || !targetView.webContents || targetView.webContents.isDestroyed()) return;
+  targetView.webContents.setWindowOpenHandler(({ url }) => {
+    requestOpenInNewTab(url);
+    return { action: 'deny' };
+  });
+}
+
 // Функція запуску Tor
 function startTor() {
   // Визначаємо платформу для вибору правильного бінарника
@@ -307,6 +320,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js')
     }
   });
+  registerWindowOpenHandler(browserView);
   mainWindow.setBrowserView(browserView);
   
   // Встановлюємо білий фон для BrowserView
@@ -664,6 +678,7 @@ function restoreSessionSmart() {
             preload: path.join(__dirname, 'preload.js')
           }
         });
+        registerWindowOpenHandler(tabView);
         
         const tabData = {
           id: nextTabId,
@@ -1179,6 +1194,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       preload: path.join(__dirname, 'preload.js')
     }
   });
+  registerWindowOpenHandler(newBrowserView);
   
   newBrowserView.setBackgroundColor('#ffffff');
   newBrowserView.setBounds({ 
@@ -2332,15 +2348,8 @@ ipcMain.handle('open-external', async (event, url) => {
 ipcMain.handle('open-in-browser', async (event, url) => {
     try {
         console.log('[BROWSER] Відкриваємо URL у браузері:', url);
-        const activeTab = tabs.find(t => t.id === activeTabId);
-        if (activeTab && activeTab.browserView) {
-            await activeTab.browserView.webContents.loadURL(url);
-            console.log('[BROWSER] URL відкрито:', url);
-            return { success: true };
-        } else {
-            console.error('[BROWSER] Активна вкладка не знайдена');
-            return { success: false, error: 'Active tab not found' };
-        }
+    requestOpenInNewTab(url);
+    return { success: true };
     } catch (error) {
         console.error('❌ Помилка відкриття у браузері:', error);
         return { success: false, error: error.message };

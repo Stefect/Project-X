@@ -730,6 +730,13 @@
         // Додаємо перед кнопкою "+"
         tabsContainer.insertBefore(tabElement, newTabBtn);
       });
+
+      // Відкрити URL в новій вкладці (з main процесу)
+      ipcRenderer.on('open-in-new-tab', (event, url) => {
+        if (url) {
+          createTab(url);
+        }
+      });
     
     // Обробники подій для вкладок
     if (tabsBar) {
