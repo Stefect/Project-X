@@ -13,6 +13,139 @@ const { infiniteArticleGenerator } = require('./modules/ai-feed');
 // Увеличиваем лимит слушателей событий для избежания предупреждений
 EventEmitter.defaultMaxListeners = 20;
 
+// ==================== REACTIVE EVENTS (LIVE DASHBOARD) ====================
+const REACTIVE_EVENT_LIMIT = 50;
+const reactiveEventBus = new EventEmitter();
+const reactiveEventBuffer = [];
+
+const trackerHostMarkers = [
+  'doubleclick.net',
+  'google-analytics.com',
+  'googletagmanager.com',
+  'adservice.google.com',
+  'adsystem.com',
+  'facebook.net',
+  'connect.facebook.net',
+  'pixel.facebook.com',
+  'stats.g.doubleclick.net',
+  'analytics.twitter.com',
+  'static.ads-twitter.com',
+  'snap.licdn.com'
+];
+
+const trackerPathMarkers = ['/collect', '/g/collect', '/tr', '/pixel', '/adsct'];
+const trackerEmitCooldownMs = 5000;
+const trackerLastEmitted = new Map();
+
+function getHostFromUrl(url) {
+  try {
+    return new URL(url).hostname;
+  } catch (error) {
+    return '';
+  }
+}
+
+function isLikelyTrackerUrl(url) {
+  const host = getHostFromUrl(url);
+  if (!host) return false;
+
+  const matchesHost = trackerHostMarkers.some(marker => host === marker || host.endsWith(`.${marker}`));
+  if (matchesHost) return true;
+
+  const lowerUrl = url.toLowerCase();
+  return trackerPathMarkers.some(marker => lowerUrl.includes(marker));
+}
+
+function shouldEmitTrackerEvent(host) {
+  if (!host) return false;
+  const lastTime = trackerLastEmitted.get(host) || 0;
+  const now = Date.now();
+  if (now - lastTime < trackerEmitCooldownMs) return false;
+  trackerLastEmitted.set(host, now);
+  return true;
+}
+
+function formatUrlLabel(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname;
+  } catch (error) {
+    return url;
+  }
+}
+
+function emitReactiveEvent(payload) {
+  const event = {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    time: Date.now(),
+    ...payload
+  };
+
+  reactiveEventBuffer.unshift(event);
+  if (reactiveEventBuffer.length > REACTIVE_EVENT_LIMIT) {
+    reactiveEventBuffer.length = REACTIVE_EVENT_LIMIT;
+  }
+
+  reactiveEventBus.emit('event', event);
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('reactive-event', event);
+  }
+
+  return event;
+}
+
+function setupReactiveNetworkEvents() {
+  if (!session || !session.defaultSession) return;
+
+  session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
+    const url = details.url || '';
+    const isMainFrame = details.resourceType === 'mainFrame';
+    const isLocal = url.startsWith('file://') || url.startsWith('devtools://');
+
+    if (!isLocal && !isMainFrame && isLikelyTrackerUrl(url)) {
+      const host = getHostFromUrl(url);
+      if (shouldEmitTrackerEvent(host)) {
+        emitReactiveEvent({
+          type: 'tracker-blocked',
+          title: 'Заблоковано трекер',
+          detail: host || 'Невідомий домен'
+        });
+      }
+      callback({ cancel: true });
+      return;
+    }
+
+    callback({});
+  });
+
+  session.defaultSession.on('will-download', (event, item) => {
+    const filename = item.getFilename();
+
+    emitReactiveEvent({
+      type: 'download-start',
+      title: 'Завантаження розпочато',
+      detail: filename
+    });
+
+    item.once('done', (_event, state) => {
+      if (state === 'completed') {
+        emitReactiveEvent({
+          type: 'download-complete',
+          title: 'Завантаження завершено',
+          detail: filename
+        });
+      } else {
+        emitReactiveEvent({
+          type: 'download-failed',
+          title: 'Завантаження перервано',
+          detail: filename
+        });
+      }
+    });
+  });
+}
+
 // Очищаємо кеш config при кожному запуску
 delete require.cache[require.resolve('../config')];
 const config = require('../config');
@@ -209,6 +342,14 @@ function createWindow() {
   // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator + T9 + AI-T9
   browserView.webContents.on('did-finish-load', () => {
     const currentUrl = browserView.webContents.getURL();
+
+    if (!currentUrl.includes('newtab.html')) {
+      emitReactiveEvent({
+        type: 'page-load',
+        title: 'Завантаження завершено',
+        detail: formatUrlLabel(currentUrl)
+      });
+    }
     
     // Якщо це newtab - інжектуємо налаштування теми
     if (currentUrl.includes('newtab.html')) {
@@ -351,6 +492,11 @@ function createWindow() {
     if (message.startsWith('AI_CODE_REQUEST:')) {
       try {
         const data = JSON.parse(message.replace('AI_CODE_REQUEST:', ''));
+        emitReactiveEvent({
+          type: 'ai-start',
+          title: 'AI аналіз коду',
+          detail: 'Запит на пояснення'
+        });
         const explanation = await getAIExplanation(data.prompt);
         
         // Відправляємо пояснення назад у браузер
@@ -359,8 +505,19 @@ function createWindow() {
             window.showCodeExplanation(${JSON.stringify(explanation)});
           }
         `).catch(err => console.error('Помилка показу пояснення коду:', err));
+
+        emitReactiveEvent({
+          type: 'ai-complete',
+          title: 'AI завершив аналіз',
+          detail: 'Пояснення готове'
+        });
       } catch (error) {
         console.error('[CODE MATE] Error processing code analysis request:', error);
+        emitReactiveEvent({
+          type: 'ai-failed',
+          title: 'AI помилка',
+          detail: 'Не вдалося проаналізувати код'
+        });
       }
     }
     
@@ -368,14 +525,30 @@ function createWindow() {
     if (message.startsWith('XRAY_REQUEST:')) {
       const url = message.replace('XRAY_REQUEST:', '').trim();
       try {
+        emitReactiveEvent({
+          type: 'ai-start',
+          title: 'AI аналіз посилання',
+          detail: formatUrlLabel(url)
+        });
         const result = await xrayLink(url);
         browserView.webContents.executeJavaScript(`
           if (typeof window._showXRayResult === 'function') {
             window._showXRayResult(${JSON.stringify(result)});
           }
         `).catch(err => console.error('Помилка показу X-Ray:', err));
+
+        emitReactiveEvent({
+          type: 'ai-complete',
+          title: 'AI завершив аналіз',
+          detail: formatUrlLabel(url)
+        });
       } catch (error) {
         console.error('Помилка X-Ray:', error);
+        emitReactiveEvent({
+          type: 'ai-failed',
+          title: 'AI помилка',
+          detail: formatUrlLabel(url)
+        });
       }
     }
     
@@ -510,6 +683,13 @@ function restoreSessionSmart() {
         tabView.webContents.on('did-finish-load', () => {
           const currentUrl = tabView.webContents.getURL();
           if (!currentUrl.includes('newtab.html')) {
+            emitReactiveEvent({
+              type: 'page-load',
+              title: 'Завантаження завершено',
+              detail: formatUrlLabel(currentUrl)
+            });
+          }
+          if (!currentUrl.includes('newtab.html')) {
             injectSelectionListener(tabView);
             injectCodeMate(tabView);
             injectLinkXRay(tabView);
@@ -562,6 +742,7 @@ function restoreSessionSmart() {
 
 app.whenReady().then(() => {
   startTor(); // Запускаємо Tor у фоні
+  setupReactiveNetworkEvents();
   
   createWindow();
   
@@ -622,6 +803,10 @@ ipcMain.on('apply-theme', (event, theme) => {
   
   // Відправляємо тему на головне вікно
   mainWindow.webContents.send('theme-changed', theme);
+});
+
+ipcMain.handle('get-reactive-events', () => {
+  return reactiveEventBuffer.slice(0, 20);
 });
 
 // Функція для показу popup з перекладом
@@ -1020,6 +1205,14 @@ ipcMain.handle('create-tab', async (event, url = null) => {
   // Інжектуємо скрипти після завантаження
   newBrowserView.webContents.on('did-finish-load', () => {
     const currentUrl = newBrowserView.webContents.getURL();
+
+    if (!currentUrl.includes('newtab.html')) {
+      emitReactiveEvent({
+        type: 'page-load',
+        title: 'Завантаження завершено',
+        detail: formatUrlLabel(currentUrl)
+      });
+    }
     
     // Якщо це newtab - інжектуємо налаштування теми
     if (currentUrl.includes('newtab.html')) {
@@ -1163,6 +1356,11 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     if (message.startsWith('AI_CODE_REQUEST:')) {
       try {
         const data = JSON.parse(message.replace('AI_CODE_REQUEST:', ''));
+        emitReactiveEvent({
+          type: 'ai-start',
+          title: 'AI аналіз коду',
+          detail: 'Запит на пояснення'
+        });
         const explanation = await getAIExplanation(data.prompt);
         
         newBrowserView.webContents.executeJavaScript(`
@@ -1170,8 +1368,19 @@ ipcMain.handle('create-tab', async (event, url = null) => {
             window.showCodeExplanation(${JSON.stringify(explanation)});
           }
         `).catch(err => console.error('Помилка показу пояснення коду:', err));
+
+        emitReactiveEvent({
+          type: 'ai-complete',
+          title: 'AI завершив аналіз',
+          detail: 'Пояснення готове'
+        });
       } catch (err) {
         console.error('Помилка обробки AI запиту:', err);
+        emitReactiveEvent({
+          type: 'ai-failed',
+          title: 'AI помилка',
+          detail: 'Не вдалося проаналізувати код'
+        });
       }
     }
     
@@ -1179,14 +1388,30 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     if (message.startsWith('XRAY_REQUEST:')) {
       const url = message.replace('XRAY_REQUEST:', '').trim();
       try {
+        emitReactiveEvent({
+          type: 'ai-start',
+          title: 'AI аналіз посилання',
+          detail: formatUrlLabel(url)
+        });
         const result = await xrayLink(url);
         newBrowserView.webContents.executeJavaScript(`
           if (typeof window._showXRayResult === 'function') {
             window._showXRayResult(${JSON.stringify(result)});
           }
         `).catch(err => console.error('Помилка показу X-Ray:', err));
+
+        emitReactiveEvent({
+          type: 'ai-complete',
+          title: 'AI завершив аналіз',
+          detail: formatUrlLabel(url)
+        });
       } catch (error) {
         console.error('Помилка X-Ray:', error);
+        emitReactiveEvent({
+          type: 'ai-failed',
+          title: 'AI помилка',
+          detail: formatUrlLabel(url)
+        });
       }
     }
     

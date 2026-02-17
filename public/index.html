@@ -309,6 +309,16 @@
       <span>Мій Конспект</span>
       <button id="toggle-sidebar" title="Показати панель">▶</button>
     </h3>
+
+    <div id="reactive-dashboard" class="reactive-dashboard">
+      <div class="reactive-header">
+        <span>Живий Центр Подій</span>
+        <button id="reactive-clear-btn" title="Очистити">Очистити</button>
+      </div>
+      <div id="reactive-list" class="reactive-list">
+        <div id="reactive-empty" class="reactive-empty">Немає подій</div>
+      </div>
+    </div>
     
     <div id="notes-list">
       <div class="empty-state">📝 Натисніть кнопку "+" нижче<br>або використайте <kbd>Ctrl+Shift+N</kbd><br><br>Також можна виділити текст<br>та натиснути праву кнопку миші</div>
@@ -373,6 +383,9 @@
       const noteInput = document.getElementById('note-input');
       const saveNoteBtn = document.getElementById('save-note-btn');
       const cancelNoteBtn = document.getElementById('cancel-note-btn');
+      const reactiveList = document.getElementById('reactive-list');
+      const reactiveEmpty = document.getElementById('reactive-empty');
+      const reactiveClearBtn = document.getElementById('reactive-clear-btn');
       
       console.log('🔍 Кнопки:', {
         notesList: !!notesList,
@@ -380,8 +393,121 @@
         summarizeBtn: !!summarizeBtn,
         clearBtn: !!clearBtn,
         noteEditor: !!noteEditor,
-        noteInput: !!noteInput
+        noteInput: !!noteInput,
+        reactiveList: !!reactiveList
       });
+
+      const reactiveMaxItems = 6;
+
+      function formatReactiveTime(timestamp) {
+        const date = new Date(timestamp || Date.now());
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+      }
+
+      function getReactiveIcon(type) {
+        switch (type) {
+          case 'tracker-blocked':
+            return '🛡️';
+          case 'ai-start':
+            return '🧠';
+          case 'ai-complete':
+            return '✅';
+          case 'ai-failed':
+            return '⚠️';
+          case 'download-start':
+            return '⬇️';
+          case 'download-complete':
+            return '📥';
+          case 'download-failed':
+            return '❌';
+          case 'page-load':
+            return '🌐';
+          default:
+            return '📍';
+        }
+      }
+
+      function toggleReactiveEmptyState() {
+        if (!reactiveList || !reactiveEmpty) return;
+        const hasItems = reactiveList.querySelectorAll('.reactive-item').length > 0;
+        reactiveEmpty.style.display = hasItems ? 'none' : 'block';
+      }
+
+      function addReactiveEvent(event, options = {}) {
+        if (!reactiveList || !event) return;
+        const { prepend = true } = options;
+
+        const item = document.createElement('div');
+        item.className = `reactive-item type-${event.type || 'generic'}`;
+
+        const icon = document.createElement('div');
+        icon.className = 'reactive-icon';
+        icon.textContent = getReactiveIcon(event.type);
+
+        const content = document.createElement('div');
+        content.className = 'reactive-content';
+
+        const title = document.createElement('div');
+        title.className = 'reactive-title';
+        title.textContent = event.title || 'Подія';
+
+        const detailText = (event.detail || '').trim();
+        if (detailText) {
+          const detail = document.createElement('div');
+          detail.className = 'reactive-detail';
+          detail.textContent = detailText;
+          content.appendChild(detail);
+        }
+
+        const time = document.createElement('div');
+        time.className = 'reactive-time';
+        time.textContent = formatReactiveTime(event.time);
+
+        content.prepend(title);
+        content.appendChild(time);
+
+        item.appendChild(icon);
+        item.appendChild(content);
+
+        if (prepend) {
+          reactiveList.prepend(item);
+        } else {
+          reactiveList.appendChild(item);
+        }
+
+        const items = reactiveList.querySelectorAll('.reactive-item');
+        if (items.length > reactiveMaxItems) {
+          for (let i = reactiveMaxItems; i < items.length; i += 1) {
+            items[i].remove();
+          }
+        }
+
+        toggleReactiveEmptyState();
+      }
+
+      if (reactiveClearBtn) {
+        reactiveClearBtn.addEventListener('click', () => {
+          if (!reactiveList) return;
+          reactiveList.querySelectorAll('.reactive-item').forEach(item => item.remove());
+          toggleReactiveEmptyState();
+        });
+      }
+
+      if (reactiveList) {
+        ipcRenderer.invoke('get-reactive-events')
+          .then(events => {
+            if (Array.isArray(events)) {
+              events.slice().reverse().forEach(event => addReactiveEvent(event, { prepend: false }));
+            }
+          })
+          .catch(error => console.error('Помилка завантаження подій:', error));
+
+        ipcRenderer.on('reactive-event', (_event, payload) => {
+          addReactiveEvent(payload, { prepend: true });
+        });
+      }
       
       // Toggle бокової панелі
       const notesSidebar = document.getElementById('notes-sidebar');
