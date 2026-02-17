@@ -376,6 +376,108 @@ body:not(.newtab-page) .container {
   border-radius: 10px;
   font-weight: normal;
 }
+.reactive-dashboard {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1f2435 0%, #2a3148 100%);
+  border: 1px solid #414868;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.reactive-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #c0caf5;
+  margin-bottom: 8px;
+}
+#reactive-clear-btn {
+  border: none;
+  background: #2f3549;
+  color: #c0caf5;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+#reactive-clear-btn:hover {
+  background: #39425f;
+  transform: translateY(-1px);
+}
+.reactive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.reactive-empty {
+  color: #8b93b9;
+  font-size: 11px;
+  text-align: center;
+  padding: 8px 0;
+}
+.reactive-item {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: #2f3549;
+  border: 1px solid #414868;
+  border-radius: 10px;
+  align-items: flex-start;
+}
+.reactive-item.type-tracker-blocked {
+  border-left: 3px solid #f7768e;
+}
+.reactive-item.type-ai-start,
+    .reactive-item.type-ai-complete,
+    .reactive-item.type-ai-failed {
+  border-left: 3px solid #7aa2f7;
+}
+.reactive-item.type-download-start,
+    .reactive-item.type-download-complete,
+    .reactive-item.type-download-failed {
+  border-left: 3px solid #9ece6a;
+}
+.reactive-item.type-page-load {
+  border-left: 3px solid #ff9e64;
+}
+.reactive-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #1a1b26;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.reactive-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.reactive-title {
+  font-size: 12px;
+  color: #c0caf5;
+  font-weight: 600;
+}
+.reactive-detail {
+  font-size: 11px;
+  color: #a9b1d6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+.reactive-time {
+  font-size: 10px;
+  color: #7aa2f7;
+}
 .translator-section {
   margin-bottom: 15px;
   padding: 12px;
