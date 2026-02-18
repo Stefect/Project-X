@@ -353,7 +353,7 @@ function createWindow() {
     title: 'Нова вкладка'
   });
 
-  // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator + T9 + AI-T9
+  // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator + Unified T9
   browserView.webContents.on('did-finish-load', () => {
     const currentUrl = browserView.webContents.getURL();
 
@@ -373,9 +373,7 @@ function createWindow() {
       injectSelectionListener(browserView);
       injectCodeMate(browserView);
       injectLinkXRay(browserView);
-      injectT9(browserView);
-      injectAIT9(browserView); // AI-автозаповнення з Groq
-      injectSmartCompose(browserView); // Новий Smart Compose згідно з інструкціями
+      injectUnifiedT9(browserView); // Єдина оптимізована T9 система
     }
   });
 
@@ -469,8 +467,7 @@ function createWindow() {
     injectSelectionListener(browserView);
     injectCodeMate(browserView);
     injectLinkXRay(browserView);
-    injectT9(browserView);
-    injectSmartCompose(browserView); // Додаємо і тут
+    injectUnifiedT9(browserView); // Єдина оптимізована T9 система
   });
 
   // Оновлюємо назву вкладки при зміні
@@ -708,9 +705,7 @@ function restoreSessionSmart() {
             injectSelectionListener(tabView);
             injectCodeMate(tabView);
             injectLinkXRay(tabView);
-            injectT9(tabView);
-            injectAIT9(tabView); // AI-автозаповнення
-            injectSmartCompose(tabView); // Smart Compose 
+            injectUnifiedT9(tabView); // Єдина оптимізована T9 система
           }
         });
         
@@ -1238,9 +1233,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       injectSelectionListener(newBrowserView);
       injectCodeMate(newBrowserView);
       injectLinkXRay(newBrowserView);
-      injectT9(newBrowserView);
-      injectAIT9(newBrowserView); // AI-автозаповнення
-      injectSmartCompose(newBrowserView); // Smart Compose
+      injectUnifiedT9(newBrowserView); // Єдина оптимізована T9 система
     }
     
     // Оновлюємо заголовок вкладки
@@ -1872,63 +1865,21 @@ function injectLinkXRay(targetView = null) {
   }
 }
 
-// Функція для інжектування T9 (предиктивний ввод тексту)
-function injectT9(targetBrowserView = browserView) {
+// Unified T9 Autocomplete (VS Code IntelliSense style)
+function injectUnifiedT9(targetBrowserView = browserView) {
   const fs = require('fs');
   try {
-    // Загружаємо движок T9
-    const t9EngineScript = fs.readFileSync(path.join(__dirname, 'modules', 't9-engine.js'), 'utf8');
-    const t9UIScript = fs.readFileSync(path.join(__dirname, 'modules', 't9-ui.js'), 'utf8');
+    const unifiedT9Script = fs.readFileSync(path.join(__dirname, 'modules', 'unified-t9.js'), 'utf8');
     
-    // Інжектуємо обидва скрипти послідовно
-    targetBrowserView.webContents.executeJavaScript(t9EngineScript)
+    targetBrowserView.webContents.executeJavaScript(unifiedT9Script)
       .then(() => {
-        return targetBrowserView.webContents.executeJavaScript(t9UIScript);
-      })
-      .then(() => {
-        console.log(' T9 предиктивний ввод активовано на сторінці');
+        console.log('[T9] Система автодоповнення готова (VS Code стиль)');
       })
       .catch(err => {
-        console.error('Помилка інжекту T9:', err);
+        console.error('[T9] Помилка інжекту:', err);
       });
   } catch (error) {
-    console.error('Не вдалося прочитати T9 скрипти:', error);
-  }
-}
-
-// Функція для інжектування AI-T9 Autocomplete (Groq-powered автозаповнення)
-function injectAIT9(targetBrowserView = browserView) {
-  const fs = require('fs');
-  try {
-    const aiT9Script = fs.readFileSync(path.join(__dirname, 'modules', 'ai-t9.js'), 'utf8');
-    
-    targetBrowserView.webContents.executeJavaScript(aiT9Script)
-      .then(() => {
-        console.log(' AI-T9 автозаповнення активовано на сторінці');
-      })
-      .catch(err => {
-        console.error('Помилка інжекту AI-T9:', err);
-      });
-  } catch (error) {
-    console.error('Не вдалося прочитати ai-t9.js:', error);
-  }
-}
-
-// Функція для інжектування Smart Compose (розумний помічник тексту згідно з інструкціями)
-function injectSmartCompose(targetBrowserView = browserView) {
-  const fs = require('fs');
-  try {
-    const smartComposeScript = fs.readFileSync(path.join(__dirname, 'modules', 'smart-compose.js'), 'utf8');
-    
-    targetBrowserView.webContents.executeJavaScript(smartComposeScript)
-      .then(() => {
-        console.log(' Smart Compose активовано на сторінці');
-      })
-      .catch(err => {
-        console.error('Помилка інжекту Smart Compose:', err);
-      });
-  } catch (error) {
-    console.error('Не вдалося прочитати smart-compose.js:', error);
+    console.error('[T9] Не вдалося прочитати unified-t9.js:', error);
   }
 }
 
