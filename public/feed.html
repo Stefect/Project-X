@@ -784,10 +784,14 @@
         
         // Список всіх доступних джерел (синхронізовано з ai-feed.js)
         const ALL_SOURCES = [
-            // Українські новинні агентства (вгорі для зручності)
-            { name: 'Suspilne News', type: 'rss2json', tag: 'UA' },
-            { name: 'Ukrainska Pravda', type: 'rss2json', tag: 'UA' },
-            { name: 'Kyiv Independent', type: 'rss2json', tag: 'UA' },
+            // Українські новинні агентства - ТИМЧАСОВО ВІДКЛЮЧЕНІ (проблеми з RSS2JSON API)
+            // { name: 'Suspilne News', type: 'rss2json', tag: 'UA' },
+            // { name: 'Ukrainska Pravda', type: 'rss2json', tag: 'UA' },
+            // { name: 'Kyiv Independent', type: 'rss2json', tag: 'UA' },
+            
+            // Українські Reddit канали (альтернатива)
+            { name: 'Reddit Ukraine', type: 'reddit', tag: 'UA' },
+            { name: 'Reddit Ukraine Conflict', type: 'reddit', tag: 'UA' },
             
             // Міжнародні платформи
             { name: 'Dev.to', type: 'devto', tag: 'DEV' },
@@ -808,8 +812,7 @@
             // Reddit - Новини
             { name: 'Reddit World News', type: 'reddit', tag: 'NEWS' },
             { name: 'Reddit News', type: 'reddit', tag: 'NEWS' },
-            { name: 'Reddit Ukraine', type: 'reddit', tag: 'UA' },
-            { name: 'Reddit Ukraine Conflict', type: 'reddit', tag: 'UA' },
+            // Reddit Ukraine вже в топі списку
             
             // Reddit - Ігри
             { name: 'Reddit Gaming', type: 'reddit', tag: 'GAME' },
@@ -858,8 +861,8 @@
                 }
                 item.setAttribute('data-source', source.name);
                 
-                // Виділяємо українські джерела синім кольором
-                const isUkrainian = source.type === 'rss2json';
+                // Виділяємо українські джерела синім кольором (tag UA)
+                const isUkrainian = source.tag === 'UA';
                 if (isUkrainian) {
                     item.style.background = 'rgba(33, 150, 243, 0.15)';
                     item.style.borderColor = 'rgba(33, 150, 243, 0.4)';
@@ -954,9 +957,9 @@
                 selectedSources = Array.from(activeSourceItems).map(item => item.getAttribute('data-source'));
                 sourcesFilterActive = selectedSources.length > 0; // Фільтр активний тільки якщо щось вибрано
                 
-                console.log('Збережено джерела (кількість):', selectedSources.length);
-                console.log('Збережено джерела (список):', selectedSources);
-                console.log('Фільтр активний:', sourcesFilterActive);
+                console.log('[SAVE SOURCES] Збережено джерела (кількість):', selectedSources.length);
+                console.log('[SAVE SOURCES] Збережено джерела (список):', JSON.stringify(selectedSources));
+                console.log('[SAVE SOURCES] Фільтр активний:', sourcesFilterActive);
                 
                 // Закриваємо панель джерел
                 sourcesPanel.classList.remove('active');
@@ -1024,13 +1027,16 @@
                 return;
             }
             
-            console.log('Запуск стрічки...');
-            console.log('Категорії:', selectedCategories);
-            console.log('Джерела:', sourcesFilterActive && selectedSources.length > 0 ? `${selectedSources.length} обрано: ${selectedSources.join(', ')}` : 'Всі (фільтр не активний)');
+            console.log('[START FEED] Запуск стрічки...');
+            console.log('[START FEED] Категорії:', selectedCategories);
+            console.log('[START FEED] sourcesFilterActive:', sourcesFilterActive);
+            console.log('[START FEED] selectedSources:', JSON.stringify(selectedSources));
+            console.log('[START FEED] Джерела:', sourcesFilterActive && selectedSources.length > 0 ? `${selectedSources.length} обрано: ${selectedSources.join(', ')}` : 'Всі (фільтр не активний)');
             
             try {
                 // Передаємо джерела тільки якщо фільтр активний
                 const sourcesToUse = sourcesFilterActive ? selectedSources : [];
+                console.log('[START FEED] Передаємо sourcesToUse:', JSON.stringify(sourcesToUse));
                 const result = await api.startFeed(selectedCategories, sourcesToUse);
                 console.log('✅ Feed started:', result);
                 
