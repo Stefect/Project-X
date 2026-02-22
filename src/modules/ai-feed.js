@@ -44,10 +44,10 @@ const NEWS_SOURCES = [
     { name: 'Reddit Ukraine', url: 'https://www.reddit.com/r/ukraine/new.json?limit=10', type: 'reddit', categories: ['ukraine', 'news', 'all'] },
     { name: 'Reddit Ukraine Conflict', url: 'https://www.reddit.com/r/UkrainianConflict/new.json?limit=10', type: 'reddit', categories: ['ukraine', 'news', 'all'] },
     
-    // Українські новинні агентства (через rss2json API)
-    { name: 'Suspilne News', url: 'https://api.rss2json.com/v1/api.json?rss_url=https://suspilne.media/rss/', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
-    { name: 'Ukrainska Pravda', url: 'https://api.rss2json.com/v1/api.json?rss_url=https://www.pravda.com.ua/rss/', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
-    { name: 'Kyiv Independent', url: 'https://api.rss2json.com/v1/api.json?rss_url=https://kyivindependent.com/feed/', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
+    // Українські новинні агентства - ТИМЧАСОВО ВІДКЛЮЧЕНІ через проблеми з RSS2JSON API
+    // { name: 'Suspilne News', url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fsuspilne.media%2Frss%2F', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
+    // { name: 'Ukrainska Pravda', url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.pravda.com.ua%2Frss%2F', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
+    // { name: 'Kyiv Independent', url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fkyivindependent.com%2Ffeed%2F', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
     
     // Розваги
     { name: 'Reddit Movies', url: 'https://www.reddit.com/r/movies/new.json?limit=10', type: 'reddit', categories: ['entertainment', 'all'] },
@@ -102,10 +102,22 @@ function getAllSources() {
 
 // Функція для фільтрації джерел за назвами
 function filterSourcesByNames(sources, selectedNames) {
+    console.log('[FILTER DEBUG] selectedNames:', JSON.stringify(selectedNames));
+    console.log('[FILTER DEBUG] sources before filter:', sources.map(s => s.name));
+    
     if (!selectedNames || selectedNames.length === 0) {
+        console.log('[FILTER DEBUG] Порожній масив - повертаємо всі джерела');
         return sources; // Якщо нічого не обрано, повертаємо всі
     }
-    return sources.filter(source => selectedNames.includes(source.name));
+    
+    const filtered = sources.filter(source => {
+        const match = selectedNames.includes(source.name);
+        console.log(`[FILTER DEBUG] Перевірка "${source.name}": ${match}`);
+        return match;
+    });
+    
+    console.log('[FILTER DEBUG] Відфільтровано джерел:', filtered.map(s => s.name));
+    return filtered;
 }
 
 // ---------------------------------------------------------
