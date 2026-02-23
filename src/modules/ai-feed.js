@@ -210,7 +210,9 @@ async function fetchOneArticle(source) {
             }
         } else if (source.type === 'hackernews') {
             if (data && data.length > 0) {
-                const randomId = data[Math.floor(Math.random() * data.length)];
+                // Limit to first 30 stories to avoid huge response
+                const limitedData = data.slice(0, 30);
+                const randomId = limitedData[Math.floor(Math.random() * limitedData.length)];
                 const itemResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${randomId}.json`);
                 const item = await itemResponse.json();
                 if (item && item.title) {
@@ -247,24 +249,44 @@ async function fetchOneArticle(source) {
 }
 
 // ---------------------------------------------------------
-// Асинхронний генератор нескінченного потоку статей
+// Infinite article stream generator
 // ---------------------------------------------------------
-async function* infiniteArticleGenerator(categories = ['all'], sourceNames = []) {
-    // Конвертуємо в масив, якщо передано одну категорію
+async function* infiniteArticleGenerator(categories = ['all'], customSources = []) {
+    // Convert to array if single category passed
     if (!Array.isArray(categories)) {
         categories = [categories];
     }
     
     console.log('[FILTER] Received categories:', categories);
-    console.log('[FILTER] Received sources for filtering:', sourceNames);
+    console.log('[FILTER] Received custom sources length:', customSources.length);
+    console.log('[FILTER] Custom sources data:', JSON.stringify(customSources));
     
-    // First filter by categories
-    let sources = getSourcesByCategories(categories);
-    console.log('[FILTER] After category filtering:', sources.length, 'sources');
+    let sources;
     
-    // Then filter by selected sources (if specified)
-    sources = filterSourcesByNames(sources, sourceNames);
-    console.log('[FILTER] After name filtering:', sources.length, 'sources');
+    // If custom sources provided (from feed.html with full URL objects), use them
+    if (customSources && customSources.length > 0) {
+        // Check if it's an object with url property
+        if (customSources[0] && typeof customSources[0] === 'object' && customSources[0].url) {
+            sources = customSources;
+            console.log('[FILTER] Using custom sources (objects):', sources.map(s => s.name).join(', '));
+        }
+        // Check if it's just strings (legacy)
+        else if (typeof customSources[0] === 'string') {
+            sources = getSourcesByCategories(categories);
+            sources = filterSourcesByNames(sources, customSources);
+            console.log('[FILTER] Using filtered built-in sources:', sources.map(s => s.name).join(', '));
+        }
+        // Unknown format
+        else {
+            console.error('[FILTER ERROR] Unknown sources format:', customSources[0]);
+            sources = getSourcesByCategories(categories);
+        }
+    } else {
+        // No custom sources - use built-in
+        sources = getSourcesByCategories(categories);
+        console.log('[FILTER] Using built-in sources:', sources.length, 'sources');
+    }
+    
     console.log('[FILTER] Final sources list:', sources.map(s => s.name).join(', '));
     
     if (sources.length === 0) {
@@ -274,14 +296,43 @@ async function* infiniteArticleGenerator(categories = ['all'], sourceNames = [])
     
     const sourceGen = roundRobinSourceGenerator(sources);
     
+    // Track consecutive errors per source to skip broken sources
+    const sourceErrors = new Map();
+    const MAX_CONSECUTIVE_ERRORS = 3;
+    const skippedSources = new Set();
+    
     console.log(`[GENERATOR] Started for categories: ${categories.join(', ')}, sources: ${sources.length}`);
     
     while (true) {
         const currentSource = sourceGen.next().value; // Get next source (Round Robin)
+        
+        // Skip if source has too many errors
+        if (skippedSources.has(currentSource.name)) {
+            continue;
+        }
+        
         const article = await fetchOneArticle(currentSource);
         
         if (article) {
+            // Reset error counter on success
+            sourceErrors.set(currentSource.name, 0);
             yield article; // Return article
+        } else {
+            // Increment error counter
+            const errorCount = (sourceErrors.get(currentSource.name) || 0) + 1;
+            sourceErrors.set(currentSource.name, errorCount);
+            
+            // Skip source if too many consecutive errors
+            if (errorCount >= MAX_CONSECUTIVE_ERRORS) {
+                console.error(`[SKIP] Source "${currentSource.name}" has ${errorCount} consecutive errors, skipping...`);
+                skippedSources.add(currentSource.name);
+                
+                // If all sources are skipped, stop generator
+                if (skippedSources.size >= sources.length) {
+                    console.error('[FATAL] All sources have failed, stopping feed...');
+                    return;
+                }
+            }
         }
         
         // Маленька пауза, щоб не заспамити API
