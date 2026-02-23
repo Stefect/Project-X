@@ -339,11 +339,11 @@
   </div>
 
   <script>
-    console.log(' JavaScript починає виконання');
+    console.log('⚡ JavaScript execution starts');
     
     try {
       const { ipcRenderer } = require('electron');
-      console.log(' IPC Renderer завантажено в main window');
+      console.log('✅ IPC Renderer loaded in main window');
       
       // ========== Кнопки керування вікном ==========
       const minimizeBtn = document.getElementById('minimize-btn');
@@ -352,21 +352,21 @@
       
       if (minimizeBtn) {
         minimizeBtn.addEventListener('click', () => {
-          console.log(' Згортання вікна');
+          console.log('🔽 Minimizing window');
           ipcRenderer.send('window-minimize');
         });
       }
       
       if (maximizeBtn) {
         maximizeBtn.addEventListener('click', () => {
-          console.log(' Розгортання вікна');
+          console.log('🔼 Maximizing window');
           ipcRenderer.send('window-maximize');
         });
       }
       
       if (closeBtn) {
         closeBtn.addEventListener('click', () => {
-          console.log(' Закриття вікна');
+          console.log('❌ Closing window');
           ipcRenderer.send('window-close');
         });
       }
@@ -387,7 +387,7 @@
       const reactiveEmpty = document.getElementById('reactive-empty');
       const reactiveClearBtn = document.getElementById('reactive-clear-btn');
       
-      console.log('🔍 Кнопки:', {
+      console.log('🔍 Buttons:', {
         notesList: !!notesList,
         addNoteBtn: !!addNoteBtn,
         summarizeBtn: !!summarizeBtn,
@@ -502,7 +502,7 @@
               events.slice().reverse().forEach(event => addReactiveEvent(event, { prepend: false }));
             }
           })
-          .catch(error => console.error('Помилка завантаження подій:', error));
+          .catch(error => console.error('❌ Error loading events:', error));
 
         ipcRenderer.on('reactive-event', (_event, payload) => {
           addReactiveEvent(payload, { prepend: true });
@@ -520,7 +520,7 @@
       const tabsContainer = tabsBar.querySelector('.tabs-container');
       const newTabBtn = document.getElementById('new-tab-btn');
       
-      console.log('🔍 Ініціалізація вкладок:', {
+      console.log('🔍 Initializing tabs:', {
         tabsBar: !!tabsBar,
         tabsContainer: !!tabsContainer,
         newTabBtn: !!newTabBtn
@@ -560,10 +560,10 @@
               notesList.appendChild(noteItem);
             });
             
-            console.log('[NOTES] Завантажено нотаток:', savedNotes.length);
+            console.log('[NOTES] Notes loaded:', savedNotes.length);
           }
         } catch (error) {
-          console.error('[ERROR] Помилка завантаження нотаток:', error);
+          console.error('[ERROR] Error loading notes:', error);
         }
       })();
 
@@ -575,7 +575,7 @@
           const result = await ipcRenderer.invoke('create-tab', url);
           
           if (!result || !result.id) {
-            console.error('Помилка створення вкладки: немає результату');
+            console.error('❌ Tab creation error: no result');
             return null;
           }
           
@@ -596,10 +596,10 @@
           // Перемикаємось на нову вкладку
           switchTab(result.id);
           
-          console.log('✅ Створено вкладку:', result.id);
+          console.log('✅ Tab created:', result.id);
           return result.id;
         } catch (error) {
-          console.error('❌ Помилка створення вкладки:', error);
+          console.error('❌ Tab creation error:', error);
           return null;
         }
       }
@@ -644,17 +644,17 @@
       // Закрити вкладку
       function closeTab(tabId) {
         try {
-          console.log('🗑️ Закриваємо вкладку:', tabId);
+          console.log('🗑️ Closing tab:', tabId);
           const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
           if (tabElement) {
             tabElement.remove();
-            console.log('✅ Елемент вкладки видалено з DOM');
+            console.log('✅ Tab element removed from DOM');
           } else {
-            console.warn('⚠️ Елемент вкладки не знайдено в DOM');
+            console.warn('⚠️ Tab element not found in DOM');
           }
           ipcRenderer.send('close-tab', tabId);
         } catch (error) {
-          console.error('❌ Помилка закриття вкладки:', error);
+          console.error('❌ Tab closing error:', error);
         }
       }
       
@@ -707,7 +707,7 @@
       
       // Обробка відновлених вкладок з сесії
       ipcRenderer.on('tab-restored', (event, data) => {
-        console.log('[SESSION] Відновлено вкладку:', data.tabId, data.title);
+        console.log('[SESSION] Tab restored:', data.tabId, data.title);
         
         // Створюємо візуальний елемент вкладки (BrowserView вже створено в main.js)
         const tabElement = document.createElement('div');
@@ -740,38 +740,38 @@
     
     // Обробники подій для вкладок
     if (tabsBar) {
-      console.log('✅ Прив\'язуємо event delegation до tabsBar');
+      console.log('✅ Attaching event delegation to tabsBar');
       tabsBar.addEventListener('click', (e) => {
         const tab = e.target.closest('.tab');
         if (!tab) return;
         
         const tabId = parseInt(tab.dataset.tabId);
-        console.log('🖱️ Клік на вкладку:', tabId);
+        console.log('🖱️ Click on tab:', tabId);
         
         // Якщо клікнули на кнопку закриття
         if (e.target.classList.contains('tab-close')) {
-          console.log('❌ Клік на кнопку закриття вкладки');
+          console.log('❌ Click on tab close button');
           e.stopPropagation();
           closeTab(tabId);
         } else {
           // Перемкнутись на вкладку
-          console.log('🔄 Перемикання на вкладку');
+          console.log('🔄 Switching to tab');
           switchTab(tabId);
         }
       });
     } else {
-      console.error('❌ tabsBar не знайдено!');
+      console.error('❌ tabsBar not found!');
     }
     
     // Кнопка створення нової вкладки
     if (newTabBtn) {
-      console.log('✅ Прив\'язуємо обробник до кнопки створення вкладки');
+      console.log('✅ Attaching handler to new tab button');
       newTabBtn.addEventListener('click', () => {
-        console.log('🆕 Клік на кнопку створення вкладки');
+        console.log('🆕 Click on new tab button');
         createTab();
       });
     } else {
-      console.error('❌ Кнопка створення вкладки не знайдена!');
+      console.error('❌ New tab button not found!');
     }
     
     // Гаряча клавіша Ctrl+T для нової вкладки
@@ -818,7 +818,7 @@
         }, 2000);
 
       } catch (error) {
-        console.error('Помилка організації:', error);
+        console.error('❌ Organization error:', error);
         alert('Помилка: ' + error.message);
         organizeTabsBtn.innerHTML = ' Навести лад';
         organizeTabsBtn.disabled = false;
@@ -946,9 +946,9 @@
     const settingsBtn = document.getElementById('settings-btn');
     
     if (!settingsBtn) {
-      console.error(' Кнопка налаштувань не знайдена!');
+      console.error('⚠️ Settings button not found!');
     } else {
-      console.log(' Кнопка налаштувань знайдена');
+      console.log('✅ Settings button found');
     }
     
     // Готові теми
@@ -1075,11 +1075,11 @@
     // Показати панель налаштувань
     if (settingsBtn) {
       settingsBtn.addEventListener('click', () => {
-        console.log(' Відкриваю налаштування тем');
+        console.log('🎨 Opening theme settings');
         showSettingsPopup();
       });
     } else {
-      console.error(' Не можу додати обробник - кнопка не знайдена');
+      console.error('⚠️ Cannot add handler - button not found');
     }
 
     function showSettingsPopup() {
@@ -1267,21 +1267,21 @@
     // Навігація
     if (backBtn) {
       backBtn.addEventListener('click', () => {
-        console.log(' Кнопка Назад натиснута');
+        console.log('◀️ Back button clicked');
         ipcRenderer.send('go-back');
       });
     }
 
     if (forwardBtn) {
       forwardBtn.addEventListener('click', () => {
-        console.log(' Кнопка Вперед натиснута');
+        console.log('▶️ Forward button clicked');
         ipcRenderer.send('go-forward');
       });
     }
 
     if (reloadBtn) {
       reloadBtn.addEventListener('click', () => {
-        console.log(' Кнопка Оновити натиснута');
+        console.log('🔄 Reload button clicked');
         ipcRenderer.send('reload');
       });
     }
@@ -1289,7 +1289,7 @@
     if (urlInput) {
       urlInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-          console.log(' Навігація до:', urlInput.value);
+          console.log('🌐 Navigation to:', urlInput.value);
           ipcRenderer.send('navigate', urlInput.value);
         }
       });
@@ -1398,19 +1398,19 @@
 
     // Додати нотатку вручну через кнопку
     if (addNoteBtn) {
-      console.log('✅ Кнопка додавання нотатки знайдена');
+      console.log('✅ Add note button found');
       addNoteBtn.addEventListener('click', () => {
-        console.log('🖱️ Клік на кнопку додавання нотатки');
+        console.log('🖱️ Click on add note button');
         openNoteEditor();
       });
     } else {
-      console.error('❌ Кнопка додавання нотатки НЕ знайдена!');
+      console.error('❌ Add note button NOT found!');
     }
 
     // Кнопка збереження нотатки
     if (saveNoteBtn) {
       saveNoteBtn.addEventListener('click', () => {
-        console.log('💾 Клік на кнопку збереження');
+        console.log('💾 Click on save button');
         saveNewNote();
       });
     }
@@ -1418,7 +1418,7 @@
     // Кнопка скасування
     if (cancelNoteBtn) {
       cancelNoteBtn.addEventListener('click', () => {
-        console.log('✕ Клік на кнопку скасування');
+        console.log('✕ Click on cancel button');
         closeNoteEditor();
       });
     }
@@ -1440,20 +1440,20 @@
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'N') {
         e.preventDefault();
-        console.log('⌨️ Гаряча клавіша Ctrl+Shift+N натиснута');
+        console.log('⌨️ Hotkey Ctrl+Shift+N pressed');
         openNoteEditor();
       }
     });
 
     // Відкрити inline редактор
     function openNoteEditor(noteId = null, noteText = '') {
-      console.log('📝 Відкриваю inline редактор', noteId ? 'для редагування' : 'для нової нотатки');
+      console.log('📝 Opening inline editor', noteId ? 'for editing' : 'for new note');
       
       editingNoteId = noteId;
       
       // Якщо sidebar згорнутий, відкриваємо його
       if (isSidebarCollapsed) {
-        console.log('📂 Відкриваю sidebar');
+        console.log('📂 Opening sidebar');
         toggleSidebar();
       }
       
@@ -1469,7 +1469,7 @@
 
     // Закрити редактор
     function closeNoteEditor() {
-      console.log('✕ Закриваю редактор');
+      console.log('✕ Closing editor');
       editingNoteId = null;
       noteEditor.style.display = 'none';
       addNoteBtn.style.display = 'block';
@@ -1479,7 +1479,7 @@
     // Зберегти нову нотатку або оновити існуючу
     function saveNewNote() {
       const text = noteInput.value.trim();
-      console.log('💾 Збереження нотатки:', text);
+      console.log('💾 Saving note:', text);
       
       if (text) {
         if (editingNoteId) {
@@ -1491,27 +1491,27 @@
         }
         closeNoteEditor();
       } else {
-        console.warn('⚠️ Порожній текст');
+        console.warn('⚠️ Empty text');
         noteInput.focus();
       }
     }
 
     // Редагувати нотатку
     window.editNote = function(noteId, button) {
-      console.log('✏️ Редагування нотатки:', noteId);
+      console.log('✏️ Editing note:', noteId);
       
       // Знаходимо нотатку в масиві
       const note = collectedNotes.find(n => n.id === noteId);
       if (note) {
         openNoteEditor(noteId, note.text);
       } else {
-        console.error('❌ Нотатку не знайдено:', noteId);
+        console.error('❌ Note not found:', noteId);
       }
     };
 
     // Оновити існуючу нотатку
     function updateNote(noteId, newText) {
-      console.log('🔄 Оновлення нотатки:', noteId, newText);
+      console.log('🔄 Updating note:', noteId, newText);
       
       // Оновлюємо в масиві
       const noteIndex = collectedNotes.findIndex(n => n.id === noteId);
@@ -1529,7 +1529,7 @@
         
         // Оновлюємо в storage
         ipcRenderer.send('update-note', { id: noteId, text: newText });
-        console.log('✅ Нотатку оновлено');
+        console.log('✅ Note updated');
       }
     }
 
@@ -1538,7 +1538,7 @@
     if (translationLanguageSelect) {
       translationLanguageSelect.addEventListener('change', (e) => {
         const selectedLanguage = e.target.value;
-        console.log(' Вибрано мову перекладу:', selectedLanguage);
+        console.log('🌍 Translation language selected:', selectedLanguage);
         ipcRenderer.send('change-translation-language', selectedLanguage);
       });
     }
@@ -1651,7 +1651,7 @@
 
     // Застосування теми
     ipcRenderer.on('theme-changed', (event, theme) => {
-      console.log(' Отримано нову тему:', theme.name);
+      console.log('🎨 New theme received:', theme.name);
       applyTheme(theme);
     });
 
@@ -1704,7 +1704,7 @@
         organizeBtn.style.color = colors.primary;
       }
 
-      console.log(' Тема застосована успішно');
+      console.log('✅ Theme applied successfully');
     }
 
     // Завантаження збереженої теми при старті
@@ -1789,11 +1789,11 @@
           notesList.appendChild(noteItem);
         });
       } catch (e) {
-        console.error('Помилка завантаження нотаток:', e);
+        console.error('❌ Error loading notes:', e);
       }
     }
     
-    console.log(' Всі обробники index.html налаштовані');
+    console.log('✅ All index.html handlers configured');
 
     // ===================== НОВА ПАНЕЛЬ НАЛАШТУВАНЬ =====================
     const themePanel = document.getElementById('theme-panel');
@@ -1840,7 +1840,7 @@
 
     // 3. Застосування теми (CSS змінні - магія!)
     function applyBrowserTheme(bg, accent) {
-      console.log(' Застосовую тему:', { bg, accent });
+      console.log('🎨 Applying theme:', { bg, accent });
       
       // CSS змінні
       document.documentElement.style.setProperty('--theme-bg', bg);
@@ -1911,7 +1911,7 @@
       currentThemeBg = bg;
       currentThemeAccent = accent;
       
-      console.log(' Тема застосована успішно');
+      console.log('✅ Theme applied successfully');
     }
     
     // Конвертація HEX в RGB
@@ -1957,7 +1957,7 @@
         const newBg = btn.dataset.bg;
         const newAccent = btn.dataset.accent;
         
-        console.log(' Клік на колір:', { newBg, newAccent });
+        console.log('🎨 Click on color:', { newBg, newAccent });
 
         if (newBg === 'custom' || newAccent === 'custom') {
           // Кастомний колір
@@ -2111,7 +2111,7 @@
       // Надсилаємо налаштування в main process для newtab
       sendThemeSettings();
       
-      console.log(' Шпалери змінено:', wallpaperData);
+      console.log('🖼️ Wallpaper changed:', wallpaperData);
     }
 
     // Оновлення активної картки
@@ -2183,7 +2183,7 @@
     // Надсилаємо початкові налаштування теми в main process
     sendThemeSettings();
     
-    console.log(' Панель налаштувань готова');
+    console.log('✅ Settings panel ready');
 
     // ===================== END ПАНЕЛЬ НАЛАШТУВАНЬ =====================
 
@@ -2215,7 +2215,7 @@
           }
         }
       }).catch(err => {
-        console.error('Помилка отримання статусу Tor:', err);
+        console.error('❌ Error getting Tor status:', err);
         torBtn.textContent = 'Tor: OFF';
         torBtn.style.color = '#9ca3af';
       });
@@ -2239,7 +2239,7 @@
           // Показуємо повідомлення
           showTorNotification(result.message);
         } catch (error) {
-          console.error('Помилка перемикання Tor:', error);
+          console.error('❌ Error toggling Tor:', error);
           torBtn.textContent = 'Tor: OFF';
           torBtn.style.color = '#dc2626';
           showTorNotification('Помилка підключення Tor');
@@ -2252,7 +2252,7 @@
     // Слухаємо готовність Tor
     ipcRenderer.on('tor-ready', (event, ready) => {
       if (ready && torBtn) {
-        console.log('Tor готовий до використання');
+        console.log('✅ Tor ready to use');
       }
     });
     
@@ -2261,14 +2261,14 @@
       const urlInput = document.getElementById('url');
       if (urlInput) {
         urlInput.placeholder = `${searchEngine} пошук або введіть адресу`;
-        console.log('[SEARCH] Пошукова система змінена на:', searchEngine);
+        console.log('[SEARCH] Search engine changed to:', searchEngine);
       }
     });
     
     // ===================== END TOR INTEGRATION =====================
     
   } catch (error) {
-    console.error(' КРИТИЧНА ПОМИЛКА в index.html:', error);
+    console.error('🚨 CRITICAL ERROR in index.html:', error);
     alert('Помилка завантаження браузера: ' + error.message);
   }
   </script>
