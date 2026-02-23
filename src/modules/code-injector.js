@@ -91,7 +91,7 @@ ${codeText}
           console.log('AI_CODE_REQUEST:', JSON.stringify({ code: codeText, prompt: prompt }));
           
         } catch (err) {
-          console.error('Помилка аналізу коду:', err);
+          console.error('Code analysis error:', err);
           btn.innerText = " Помилка";
           setTimeout(() => {
             btn.innerText = originalText;

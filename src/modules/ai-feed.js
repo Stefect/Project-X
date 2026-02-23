@@ -2,6 +2,17 @@
 // Модуль для генерації нескінченної стрічки новин з AI обробкою
 
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const Parser = require('rss-parser');
+const parser = new Parser({
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+    },
+    timeout: 10000,
+    customFields: {
+        item: ['description', 'content:encoded']
+    }
+});
 
 // Список безкоштовних джерел (API, які повертають JSON) с категоріями
 const NEWS_SOURCES = [
@@ -44,10 +55,10 @@ const NEWS_SOURCES = [
     { name: 'Reddit Ukraine', url: 'https://www.reddit.com/r/ukraine/new.json?limit=10', type: 'reddit', categories: ['ukraine', 'news', 'all'] },
     { name: 'Reddit Ukraine Conflict', url: 'https://www.reddit.com/r/UkrainianConflict/new.json?limit=10', type: 'reddit', categories: ['ukraine', 'news', 'all'] },
     
-    // Українські новинні агентства - ТИМЧАСОВО ВІДКЛЮЧЕНІ через проблеми з RSS2JSON API
-    // { name: 'Suspilne News', url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fsuspilne.media%2Frss%2F', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
-    // { name: 'Ukrainska Pravda', url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.pravda.com.ua%2Frss%2F', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
-    // { name: 'Kyiv Independent', url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fkyivindependent.com%2Ffeed%2F', type: 'rss2json', categories: ['ukraine', 'news', 'all'] },
+    // Українські новинні агентства - ТИМЧАСОВО ВІДКЛЮЧЕНІ (RSS feeds return 404)
+    // { name: 'Suspilne News', url: 'https://suspilne.media/rss/', type: 'rss', categories: ['ukraine', 'news', 'all'] },
+    // { name: 'Ukrainska Pravda', url: 'https://www.pravda.com.ua/rss/', type: 'rss', categories: ['ukraine', 'news', 'all'] },
+    // { name: 'Kyiv Independent', url: 'https://kyivindependent.com/feed/', type: 'rss', categories: ['ukraine', 'news', 'all'] },
     
     // Розваги
     { name: 'Reddit Movies', url: 'https://www.reddit.com/r/movies/new.json?limit=10', type: 'reddit', categories: ['entertainment', 'all'] },
@@ -106,17 +117,17 @@ function filterSourcesByNames(sources, selectedNames) {
     console.log('[FILTER DEBUG] sources before filter:', sources.map(s => s.name));
     
     if (!selectedNames || selectedNames.length === 0) {
-        console.log('[FILTER DEBUG] Порожній масив - повертаємо всі джерела');
+        console.log('[FILTER DEBUG] Empty array - returning all sources');
         return sources; // Якщо нічого не обрано, повертаємо всі
     }
     
     const filtered = sources.filter(source => {
         const match = selectedNames.includes(source.name);
-        console.log(`[FILTER DEBUG] Перевірка "${source.name}": ${match}`);
+        console.log(`[FILTER DEBUG] Checking "${source.name}": ${match}`);
         return match;
     });
     
-    console.log('[FILTER DEBUG] Відфільтровано джерел:', filtered.map(s => s.name));
+    console.log('[FILTER DEBUG] Filtered sources:', filtered.map(s => s.name));
     return filtered;
 }
 
@@ -135,11 +146,38 @@ function* roundRobinSourceGenerator(sources) {
 // Функція для "витягування" однієї випадкової статті з джерела
 async function fetchOneArticle(source) {
     try {
-        console.log(`[ЗАВАНТАЖЕННЯ] ${source.name} (${source.type})...`);
+        console.log(`[LOADING] ${source.name} (${source.type})...`);
+        
+        // For RSS sources use rss-parser
+        if (source.type === 'rss') {
+            try {
+                console.log(`[RSS] Parsing: ${source.url}`);
+                const feed = await parser.parseURL(source.url);
+                console.log(`[RSS] Feed received:`, feed.title, `Items:`, feed.items?.length);
+                if (feed && feed.items && feed.items.length > 0) {
+                    const randomItem = feed.items[Math.floor(Math.random() * feed.items.length)];
+                    console.log(`[OK] RSS: ${randomItem.title.substring(0, 50)}...`);
+                    return {
+                        title: randomItem.title,
+                        url: randomItem.link,
+                        source: source.name,
+                        id: randomItem.guid || randomItem.link
+                    };
+                } else {
+                    console.warn(`[WARNING] ${source.name}: RSS feed is empty`);
+                    return null;
+                }
+            } catch (rssError) {
+                console.error(`[RSS ERROR] ${source.name}:`, rssError.message);
+                return null;
+            }
+        }
+        
+        // Для інших джерел використовуємо fetch
         const response = await fetch(source.url);
         
         if (!response.ok) {
-            console.error(`[HELP] HTTP помилка ${response.status} для ${source.name}`);
+            console.error(`[HTTP ERROR] Status ${response.status} for ${source.name}`);
             return null;
         }
         
@@ -157,7 +195,7 @@ async function fetchOneArticle(source) {
                     id: randomPost.id
                 };
             } else {
-                console.warn(`[WARNING] Reddit ${source.name}: немає постів`);
+                console.warn(`[WARNING] Reddit ${source.name}: no posts`);
             }
         } else if (source.type === 'devto') {
             if (data && data.length > 0) {
@@ -186,8 +224,8 @@ async function fetchOneArticle(source) {
                 }
             }
         } else if (source.type === 'rss2json') {
-            // Українські джерела через RSS2JSON API
-            console.log(`[RSS2JSON] Відповідь:`, data.status);
+            // Українські джерела через RSS2JSON API (застаріле)
+            console.log(`[RSS2JSON] Response:`, data.status);
             if (data && data.status === 'ok' && data.items && data.items.length > 0) {
                 const randomItem = data.items[Math.floor(Math.random() * data.items.length)];
                 console.log(`[OK] ${source.name}: ${randomItem.title.substring(0, 50)}...`);
@@ -198,12 +236,12 @@ async function fetchOneArticle(source) {
                     id: randomItem.guid || randomItem.link
                 };
             } else {
-                console.warn(`[WARNING] ${source.name}: немає статей або помилка RSS`, data.message);
+                console.warn(`[WARNING] ${source.name}: no articles or RSS error`, data.message);
             }
         }
         return null;
     } catch (error) {
-        console.error(`[ERROR] Помилка завантаження з ${source.name}:`, error.message);
+        console.error(`[ERROR] Failed to load from ${source.name}:`, error.message);
         return null;
     }
 }
@@ -217,33 +255,33 @@ async function* infiniteArticleGenerator(categories = ['all'], sourceNames = [])
         categories = [categories];
     }
     
-    console.log('[ФІЛЬТР] Отримано категорії:', categories);
-    console.log('[ФІЛЬТР] Отримано джерела для фільтрації:', sourceNames);
+    console.log('[FILTER] Received categories:', categories);
+    console.log('[FILTER] Received sources for filtering:', sourceNames);
     
-    // Спочатку фільтруємо за категоріями
+    // First filter by categories
     let sources = getSourcesByCategories(categories);
-    console.log('[ФІЛЬТР] Після фільтрації за категоріями:', sources.length, 'джерел');
+    console.log('[FILTER] After category filtering:', sources.length, 'sources');
     
-    // Потім фільтруємо за обраними джерелами (якщо вказано)
+    // Then filter by selected sources (if specified)
     sources = filterSourcesByNames(sources, sourceNames);
-    console.log('[ФІЛЬТР] Після фільтрації за назвами:', sources.length, 'джерел');
-    console.log('[ФІЛЬТР] Фінальний список джерел:', sources.map(s => s.name).join(', '));
+    console.log('[FILTER] After name filtering:', sources.length, 'sources');
+    console.log('[FILTER] Final sources list:', sources.map(s => s.name).join(', '));
     
     if (sources.length === 0) {
-        console.log('[WARNING] Немає доступних джерел з обраними фільтрами!');
+        console.log('[WARNING] No available sources with selected filters!');
         return;
     }
     
     const sourceGen = roundRobinSourceGenerator(sources);
     
-    console.log(`[ГЕНЕРАТОР] Запущено для категорій: ${categories.join(', ')}, джерел: ${sources.length}`);
+    console.log(`[GENERATOR] Started for categories: ${categories.join(', ')}, sources: ${sources.length}`);
     
     while (true) {
-        const currentSource = sourceGen.next().value; // Беремо наступне джерело (Round Robin)
+        const currentSource = sourceGen.next().value; // Get next source (Round Robin)
         const article = await fetchOneArticle(currentSource);
         
         if (article) {
-            yield article; // "Випльовуємо" статтю
+            yield article; // Return article
         }
         
         // Маленька пауза, щоб не заспамити API
