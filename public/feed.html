@@ -751,7 +751,7 @@
                     }
                 }
                 
-                console.log('Вибрано категорії (не збережено)');
+                console.log('Selected categories (not saved)');
             });
         });
 
@@ -760,7 +760,7 @@
         if (categoriesSaveBtn) {
             categoriesSaveBtn.addEventListener('click', async () => {
                 selectedCategories = getSelectedCategories();
-                console.log('Збережено категорії:', selectedCategories);
+                console.log('Saved categories:', selectedCategories);
                 
                 // Закриваємо панель категорій
                 categoriesPanel.classList.remove('active');
@@ -784,12 +784,12 @@
         
         // Список всіх доступних джерел (синхронізовано з ai-feed.js)
         const ALL_SOURCES = [
-            // Українські новинні агентства - ТИМЧАСОВО ВІДКЛЮЧЕНІ (проблеми з RSS2JSON API)
-            // { name: 'Suspilne News', type: 'rss2json', tag: 'UA' },
-            // { name: 'Ukrainska Pravda', type: 'rss2json', tag: 'UA' },
-            // { name: 'Kyiv Independent', type: 'rss2json', tag: 'UA' },
+            // Українські новинні агентства - ТИМЧАСОВО ВІДКЛЮЧЕНІ (RSS feeds return 404)
+            // { name: 'Suspilne News', type: 'rss', tag: 'UA' },
+            // { name: 'Ukrainska Pravda', type: 'rss', tag: 'UA' },
+            // { name: 'Kyiv Independent', type: 'rss', tag: 'UA' },
             
-            // Українські Reddit канали (альтернатива)
+            // Українські Reddit канали
             { name: 'Reddit Ukraine', type: 'reddit', tag: 'UA' },
             { name: 'Reddit Ukraine Conflict', type: 'reddit', tag: 'UA' },
             
@@ -872,6 +872,7 @@
                                  (source.type === 'reddit' ? '[R]' : 
                                   source.type === 'devto' ? '[D]' : 
                                   source.type === 'hackernews' ? '[HN]' : 
+                                  source.type === 'rss' ? '[RSS]' :
                                   source.type === 'rss2json' ? '[UA]' : '[?]');
                 
                 item.innerHTML = `
@@ -891,7 +892,7 @@
                             item.style.borderColor = 'rgba(33, 150, 243, 0.4)';
                         }
                     }
-                    console.log('Вибрано джерело (не збережено)');
+                    console.log('Selected source (not saved)');
                 });
                 
                 sourcesList.appendChild(item);
@@ -957,9 +958,9 @@
                 selectedSources = Array.from(activeSourceItems).map(item => item.getAttribute('data-source'));
                 sourcesFilterActive = selectedSources.length > 0; // Фільтр активний тільки якщо щось вибрано
                 
-                console.log('[SAVE SOURCES] Збережено джерела (кількість):', selectedSources.length);
-                console.log('[SAVE SOURCES] Збережено джерела (список):', JSON.stringify(selectedSources));
-                console.log('[SAVE SOURCES] Фільтр активний:', sourcesFilterActive);
+                console.log('[SAVE SOURCES] Saved sources (count):', selectedSources.length);
+                console.log('[SAVE SOURCES] Saved sources (list):', JSON.stringify(selectedSources));
+                console.log('[SAVE SOURCES] Filter active:', sourcesFilterActive);
                 
                 // Закриваємо панель джерел
                 sourcesPanel.classList.remove('active');
@@ -1027,16 +1028,16 @@
                 return;
             }
             
-            console.log('[START FEED] Запуск стрічки...');
-            console.log('[START FEED] Категорії:', selectedCategories);
+            console.log('[START FEED] Starting feed...');
+            console.log('[START FEED] Categories:', selectedCategories);
             console.log('[START FEED] sourcesFilterActive:', sourcesFilterActive);
             console.log('[START FEED] selectedSources:', JSON.stringify(selectedSources));
-            console.log('[START FEED] Джерела:', sourcesFilterActive && selectedSources.length > 0 ? `${selectedSources.length} обрано: ${selectedSources.join(', ')}` : 'Всі (фільтр не активний)');
+            console.log('[START FEED] Sources:', sourcesFilterActive && selectedSources.length > 0 ? `${selectedSources.length} selected: ${selectedSources.join(', ')}` : 'All (filter not active)');
             
             try {
-                // Передаємо джерела тільки якщо фільтр активний
+                // Pass sources only if filter is active
                 const sourcesToUse = sourcesFilterActive ? selectedSources : [];
-                console.log('[START FEED] Передаємо sourcesToUse:', JSON.stringify(sourcesToUse));
+                console.log('[START FEED] Passing sourcesToUse:', JSON.stringify(sourcesToUse));
                 const result = await api.startFeed(selectedCategories, sourcesToUse);
                 console.log('✅ Feed started:', result);
                 
@@ -1049,7 +1050,7 @@
                     container.innerHTML = '<div class="loading">Завантаження новин...</div>';
                 }
             } catch (error) {
-                console.error('❌ Помилка запуску:', error);
+                console.error('❌ Feed start error:', error);
                 alert('❌ Помилка запуску стрічки: ' + error.message);
             }
         });

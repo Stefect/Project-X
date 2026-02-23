@@ -124,7 +124,7 @@ function setupReactiveNetworkEvents() {
 
     emitReactiveEvent({
       type: 'download-start',
-      title: 'Завантаження розпочато',
+      title: 'Download started',
       detail: filename
     });
 
@@ -132,13 +132,13 @@ function setupReactiveNetworkEvents() {
       if (state === 'completed') {
         emitReactiveEvent({
           type: 'download-complete',
-          title: 'Завантаження завершено',
+          title: 'Download completed',
           detail: filename
         });
       } else {
         emitReactiveEvent({
           type: 'download-failed',
-          title: 'Завантаження перервано',
+          title: 'Download interrupted',
           detail: filename
         });
       }
@@ -350,7 +350,7 @@ function createWindow() {
     id: 1,
     browserView: browserView,
     url: startUrl,
-    title: 'Нова вкладка'
+    title: 'New tab'
   });
 
   // Інжектуємо скрипт для відслідковування виділення тексту + Code Mate + Link X-Ray + Translator + Unified T9
@@ -428,7 +428,7 @@ function createWindow() {
               answer: ${JSON.stringify(result)},
               originalText: ${JSON.stringify(selectedText)}
             }, '*');
-          `).catch(err => console.error('Помилка AI:', err));
+          `).catch(err => console.error('AI error:', err));
         }
       }));
       
@@ -444,7 +444,7 @@ function createWindow() {
                 translation: ${JSON.stringify(result.translation)},
                 originalText: ${JSON.stringify(selectedText)}
               }, '*');
-            `).catch(err => console.error('Помилка перекладу:', err));
+            `).catch(err => console.error('Translation error:', err));
           }
         }
       }));
@@ -515,19 +515,19 @@ function createWindow() {
           if (typeof window.showCodeExplanation === 'function') {
             window.showCodeExplanation(${JSON.stringify(explanation)});
           }
-        `).catch(err => console.error('Помилка показу пояснення коду:', err));
+        `).catch(err => console.error('Error showing code explanation:', err));
 
         emitReactiveEvent({
           type: 'ai-complete',
-          title: 'AI завершив аналіз',
-          detail: 'Пояснення готове'
+          title: 'AI completed analysis',
+          detail: 'Explanation ready'
         });
       } catch (error) {
         console.error('[CODE MATE] Error processing code analysis request:', error);
         emitReactiveEvent({
           type: 'ai-failed',
-          title: 'AI помилка',
-          detail: 'Не вдалося проаналізувати код'
+          title: 'AI error',
+          detail: 'Failed to analyze code'
         });
       }
     }
@@ -538,7 +538,7 @@ function createWindow() {
       try {
         emitReactiveEvent({
           type: 'ai-start',
-          title: 'AI аналіз посилання',
+          title: 'AI link analysis',
           detail: formatUrlLabel(url)
         });
         const result = await xrayLink(url);
@@ -546,18 +546,18 @@ function createWindow() {
           if (typeof window._showXRayResult === 'function') {
             window._showXRayResult(${JSON.stringify(result)});
           }
-        `).catch(err => console.error('Помилка показу X-Ray:', err));
+        `).catch(err => console.error('Error showing X-Ray:', err));
 
         emitReactiveEvent({
           type: 'ai-complete',
-          title: 'AI завершив аналіз',
+          title: 'AI completed analysis',
           detail: formatUrlLabel(url)
         });
       } catch (error) {
-        console.error('Помилка X-Ray:', error);
+        console.error('X-Ray error:', error);
         emitReactiveEvent({
           type: 'ai-failed',
-          title: 'AI помилка',
+          title: 'AI error',
           detail: formatUrlLabel(url)
         });
       }
@@ -575,9 +575,9 @@ function createWindow() {
             answer: ${JSON.stringify(result)},
             originalText: ${JSON.stringify(data.text)}
           }, '*');
-        `).catch(err => console.error('Помилка показу AI відповіді:', err));
+        `).catch(err => console.error('Error showing AI response:', err));
       } catch (error) {
-        console.error('Помилка AI помічника:', error);
+        console.error('AI assistant error:', error);
       }
     }
     
@@ -594,10 +594,10 @@ function createWindow() {
               translation: ${JSON.stringify(result.translation)},
               originalText: ${JSON.stringify(data.text)}
             }, '*');
-          `).catch(err => console.error('Помилка показу перекладу:', err));
+          `).catch(err => console.error('Error showing translation:', err));
         }
       } catch (error) {
-        console.error('Помилка перекладу:', error);
+        console.error('Translation error:', error);
       }
     }
   });
@@ -651,15 +651,15 @@ function restoreSessionSmart() {
     const session = storage.getSession();
     const sessionTabs = session.tabs || [];
     
-    console.log('[SESSION] Знайдено збережених вкладок:', sessionTabs.length);
+    console.log('[SESSION] Found saved tabs:', sessionTabs.length);
     
     // Перша вкладка вже є (newtab), відновлюємо тільки інші
     if (sessionTabs.length === 0) {
-      console.log('[SESSION] Немає вкладок для відновлення - показуємо тільки newtab');
+      console.log('[SESSION] No tabs to restore - showing only newtab');
       return;
     }
     
-    console.log('[SESSION] Відновлюю', sessionTabs.length, 'вкладок...');
+    console.log('[SESSION] Restoring', sessionTabs.length, 'tabs...');
     
     // НЕ закриваємо newtab - вона залишається першою
     // Додаємо відновлені вкладки після неї
@@ -681,14 +681,14 @@ function restoreSessionSmart() {
           id: nextTabId,
           browserView: tabView,
           url: tab.url,
-          title: tab.title || 'Завантаження...'
+          title: tab.title || 'Loading...'
         };
         
         tabs.push(tabData);
         
         // Завантажуємо URL
         tabView.webContents.loadURL(tab.url).catch(err => {
-          console.log('[ERROR] Не вдалося завантажити вкладку:', tab.url);
+          console.log('[ERROR] Failed to load tab:', tab.url);
         });
         
         // Додаємо обробники для відновленої вкладки
@@ -697,7 +697,7 @@ function restoreSessionSmart() {
           if (!currentUrl.includes('newtab.html')) {
             emitReactiveEvent({
               type: 'page-load',
-              title: 'Завантаження завершено',
+              title: 'Page loaded',
               detail: formatUrlLabel(currentUrl)
             });
           }
@@ -744,9 +744,9 @@ function restoreSessionSmart() {
       mainWindow.webContents.send('tab-activated', activeTabId);
     }
     
-    console.log('[SESSION] Сесію відновлено успішно!');
+    console.log('[SESSION] Session restored successfully!');
   } catch (error) {
-    console.error('[ERROR] Помилка відновлення сесії:', error.message);
+    console.error('[ERROR] Session restore error:', error.message);
   }
 }
 
@@ -779,7 +779,7 @@ app.on('window-all-closed', () => {
 // Вбиваємо процес Tor при закритті
 app.on('will-quit', () => {
   if (torProcess) {
-    console.log('Закриваємо Tor...');
+    console.log('Closing Tor...');
     torProcess.kill();
   }
 });
@@ -798,7 +798,7 @@ ipcMain.on('window-maximize', () => {
 });
 
 ipcMain.on('window-close', () => {
-  console.log(' Отримано команду закриття вікна');
+  console.log('Window close command received');
   if (mainWindow) {
     mainWindow.close();
   }
@@ -809,7 +809,7 @@ ipcMain.on('window-close', () => {
 
 // Застосування теми
 ipcMain.on('apply-theme', (event, theme) => {
-  console.log('[THEME] Застосовується тема:', theme.name);
+  console.log('[THEME] Applying theme:', theme.name);
   
   // Відправляємо тему на головне вікно
   mainWindow.webContents.send('theme-changed', theme);
@@ -823,7 +823,7 @@ ipcMain.handle('get-reactive-events', () => {
 // Обробка перекладу тексту
 async function translateText(text, targetLanguage) {
   try {
-    console.log(' Переклад на', targetLanguage + ':', text.substring(0, 50) + '...');
+    console.log('Translation to', targetLanguage + ':', text.substring(0, 50) + '...');
 
     if (!groqClient) {
       return { 
@@ -854,7 +854,7 @@ async function translateText(text, targetLanguage) {
 Текст для перекладу:
 ${text}`;
 
-    console.log(' Перекладаю через Groq AI...');
+    console.log('Translating via Groq AI...');
 
     // Питаємо Groq AI
     const completion = await groqClient.chat.completions.create({
@@ -873,14 +873,14 @@ ${text}`;
       };
     }
 
-    console.log(' Переклад готовий');
+    console.log('Translation ready');
     return { 
       success: true, 
       translation: translation 
     };
 
   } catch (error) {
-    console.error('Помилка перекладу:', error);
+    console.error('Translation error:', error);
     return { 
       success: false, 
       message: ` ${error.message}` 
@@ -894,20 +894,20 @@ ipcMain.handle('translate-text', async (event, text, targetLanguage) => {
 
 // Обробка зміни мови перекладу
 ipcMain.on('change-translation-language', (event, language) => {
-  console.log(' Мова перекладу змінена на:', language);
+  console.log('Translation language changed to:', language);
   
   // Відправляємо повідомлення всім вкладкам
   tabs.forEach(tab => {
     tab.browserView.webContents.executeJavaScript(`
       window.postMessage({ type: 'SET_TRANSLATION_LANGUAGE', language: '${language}' }, '*');
-    `).catch(err => console.error('Помилка зміни мови:', err));
+    `).catch(err => console.error('Language change error:', err));
   });
 });
 
 // Розумний Організатор Вкладок (Tab Zen Master)
 ipcMain.handle('organize-tabs', async (event) => {
   try {
-    console.log(' Організовую вкладки через AI...');
+    console.log('Organizing tabs via AI...');
 
     if (!groqClient) {
       return { 
@@ -936,7 +936,7 @@ ipcMain.handle('organize-tabs', async (event) => {
       } catch (error) {
         return {
           id: tab.id,
-          title: 'Помилка завантаження',
+          title: 'Load error',
           url: ''
         };
       }
@@ -967,7 +967,7 @@ ipcMain.handle('organize-tabs', async (event) => {
 Список вкладок:
 ${tabsListString}`;
 
-    console.log(' Аналізую вкладки через Groq AI...');
+    console.log('Analyzing tabs via Groq AI...');
 
     // Питаємо Groq AI
     const completion = await groqClient.chat.completions.create({
@@ -993,14 +993,14 @@ ${tabsListString}`;
     try {
       groupsData = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('Помилка парсингу JSON:', responseText);
+      console.error('JSON parsing error:', responseText);
       return { 
         success: false, 
         message: ' AI повернув некоректний формат відповіді' 
       };
     }
 
-    console.log(' Організація готова:', groupsData);
+    console.log('Organization ready:', groupsData);
     return { 
       success: true, 
       groups: groupsData.groups,
@@ -1008,7 +1008,7 @@ ${tabsListString}`;
     };
 
   } catch (error) {
-    console.error('Помилка організації вкладок:', error);
+    console.error('Tab organization error:', error);
     return { 
       success: false, 
       message: ` ${error.message}` 
@@ -1040,7 +1040,7 @@ ipcMain.on('sidebar-toggled', (event, isCollapsed) => {
     });
   }
   
-  console.log(` Панель ${isCollapsed ? 'згорнуто' : 'розгорнуто'}, ширина браузера: ${bounds.width - sidebarWidth}px`);
+  console.log(`Sidebar ${isCollapsed ? 'collapsed' : 'expanded'}, browser width: ${bounds.width - sidebarWidth}px`);
 });
 
 // Обробка відкриття/закриття меню
@@ -1067,7 +1067,7 @@ ipcMain.on('menu-toggled', (event, isOpen) => {
       });
     }
   }
-  console.log(` Меню ${isOpen ? 'відкрито' : 'закрито'}`);
+  console.log(`Menu ${isOpen ? 'opened' : 'closed'}`);
 });
 
 // Обробник для панелі налаштувань (Chrome-style settings)
@@ -1094,7 +1094,7 @@ ipcMain.on('settings-panel-toggled', (event, isOpen) => {
       });
     }
   }
-  console.log(` Панель налаштувань ${isOpen ? 'відкрита' : 'закрита'}`);
+  console.log(`Settings panel ${isOpen ? 'opened' : 'closed'}`);
 });
 
 // ========== Синхронізація налаштувань теми ==========
@@ -1102,7 +1102,7 @@ ipcMain.on('settings-panel-toggled', (event, isOpen) => {
 // Отримуємо оновлення налаштувань теми з UI
 ipcMain.on('update-theme-settings', (event, settings) => {
   themeSettings = { ...themeSettings, ...settings };
-  console.log(' Налаштування теми оновлено:', themeSettings);
+  console.log('Theme settings updated:', themeSettings);
   
   // Оновлюємо всі відкриті newtab сторінки
   tabs.forEach(tab => {
@@ -1158,12 +1158,12 @@ function injectThemeToNewtab(browserView) {
         document.body.style.backgroundImage = 'none';
       }
       
-      console.log(' Тема застосована до newtab:', settings);
+      console.log('Theme applied to newtab:', settings);
     })();
   `;
   
   browserView.webContents.executeJavaScript(script).catch(err => {
-    console.log('Помилка інжекту теми:', err.message);
+    console.log('Theme injection error:', err.message);
   });
 }
 
@@ -1208,7 +1208,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     id: nextTabId++,
     browserView: newBrowserView,
     url: url,
-    title: 'Завантаження...'
+    title: 'Loading...'
   };
   
   tabs.push(newTab);
@@ -1316,7 +1316,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
               answer: ${JSON.stringify(result)},
               originalText: ${JSON.stringify(selectedText)}
             }, '*');
-          `).catch(err => console.error('Помилка AI:', err));
+          `).catch(err => console.error('AI error:', err));
         }
       }));
       
@@ -1332,7 +1332,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
                 translation: ${JSON.stringify(result.translation)},
                 originalText: ${JSON.stringify(selectedText)}
               }, '*');
-            `).catch(err => console.error('Помилка перекладу:', err));
+            `).catch(err => console.error('Translation error:', err));
           }
         }
       }));
@@ -1376,19 +1376,19 @@ ipcMain.handle('create-tab', async (event, url = null) => {
           if (typeof window.showCodeExplanation === 'function') {
             window.showCodeExplanation(${JSON.stringify(explanation)});
           }
-        `).catch(err => console.error('Помилка показу пояснення коду:', err));
+        `).catch(err => console.error('Error showing code explanation:', err));
 
         emitReactiveEvent({
           type: 'ai-complete',
-          title: 'AI завершив аналіз',
-          detail: 'Пояснення готове'
+          title: 'AI completed analysis',
+          detail: 'Explanation ready'
         });
       } catch (err) {
-        console.error('Помилка обробки AI запиту:', err);
+        console.error('AI request processing error:', err);
         emitReactiveEvent({
           type: 'ai-failed',
-          title: 'AI помилка',
-          detail: 'Не вдалося проаналізувати код'
+          title: 'AI error',
+          detail: 'Failed to analyze code'
         });
       }
     }
@@ -1407,18 +1407,18 @@ ipcMain.handle('create-tab', async (event, url = null) => {
           if (typeof window._showXRayResult === 'function') {
             window._showXRayResult(${JSON.stringify(result)});
           }
-        `).catch(err => console.error('Помилка показу X-Ray:', err));
+        `).catch(err => console.error('Error showing X-Ray:', err));
 
         emitReactiveEvent({
           type: 'ai-complete',
-          title: 'AI завершив аналіз',
+          title: 'AI completed analysis',
           detail: formatUrlLabel(url)
         });
       } catch (error) {
-        console.error('Помилка X-Ray:', error);
+        console.error('X-Ray error:', error);
         emitReactiveEvent({
           type: 'ai-failed',
-          title: 'AI помилка',
+          title: 'AI error',
           detail: formatUrlLabel(url)
         });
       }
@@ -1436,9 +1436,9 @@ ipcMain.handle('create-tab', async (event, url = null) => {
             answer: ${JSON.stringify(result)},
             originalText: ${JSON.stringify(data.text)}
           }, '*');
-        `).catch(err => console.error('Помилка показу AI відповіді:', err));
+        `).catch(err => console.error('Error showing AI response:', err));
       } catch (error) {
-        console.error('Помилка AI помічника:', error);
+        console.error('AI assistant error:', error);
       }
     }
     
@@ -1455,10 +1455,10 @@ ipcMain.handle('create-tab', async (event, url = null) => {
               translation: ${JSON.stringify(result.translation)},
               originalText: ${JSON.stringify(data.text)}
             }, '*');
-          `).catch(err => console.error('Помилка показу перекладу:', err));
+          `).catch(err => console.error('Error showing translation:', err));
         }
       } catch (error) {
-        console.error('Помилка перекладу:', error);
+        console.error('Translation error:', error);
       }
     }
   });
@@ -1476,7 +1476,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
 ipcMain.on('switch-tab', (event, tabId) => {
   const tab = tabs.find(t => t.id === tabId);
   if (!tab) {
-    console.error('Вкладку не знайдено:', tabId);
+    console.error('Tab not found:', tabId);
     return;
   }
   
@@ -1496,7 +1496,7 @@ ipcMain.on('switch-tab', (event, tabId) => {
   const url = tab.browserView.webContents.getURL();
   mainWindow.webContents.send('update-url-bar', url);
   
-  console.log(' Перемкнуто на вкладку:', tabId);
+  console.log('Switched to tab:', tabId);
 });
 
 // Закрити вкладку
@@ -1508,7 +1508,7 @@ ipcMain.on('close-tab', (event, tabId) => {
   
   // Якщо це остання вкладка, закриваємо браузер
   if (tabs.length <= 1) {
-    console.log(' Закриття останньої вкладки - закриваємо браузер');
+    console.log('Closing last tab - closing browser');
     app.quit();
     return;
   }
@@ -1528,7 +1528,7 @@ ipcMain.on('close-tab', (event, tabId) => {
   tab.browserView.webContents.destroy();
   tabs.splice(tabIndex, 1);
   
-  console.log(' Закрито вкладку:', tabId, '| Залишилось вкладок:', tabs.length);
+  console.log('Tab closed:', tabId, '| Remaining tabs:', tabs.length);
 });
 
 // Оновити URL активної вкладки
@@ -1571,7 +1571,7 @@ ipcMain.on('navigate', (event, input) => {
     }
   }
   
-  console.log(' Навігація:', input, '→', url);
+  console.log('Navigation:', input, '→', url);
   activeTab.browserView.webContents.loadURL(url);
 });
 
@@ -1580,7 +1580,7 @@ ipcMain.on('go-back', () => {
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (activeTab && activeTab.browserView.webContents.canGoBack()) {
     activeTab.browserView.webContents.goBack();
-    console.log(' Назад');
+    console.log('Back');
   }
 });
 
@@ -1588,7 +1588,7 @@ ipcMain.on('go-forward', () => {
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (activeTab && activeTab.browserView.webContents.canGoForward()) {
     activeTab.browserView.webContents.goForward();
-    console.log(' Вперед');
+    console.log('Forward');
   }
 });
 
@@ -1596,7 +1596,7 @@ ipcMain.on('reload', () => {
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (activeTab) {
     activeTab.browserView.webContents.reload();
-    console.log(' Оновлено');
+    console.log('Reloaded');
   }
 });
 
@@ -1604,7 +1604,7 @@ ipcMain.on('reload', () => {
 // Функція для сканування посилань через AI
 async function xrayLink(url) {
   try {
-    console.log(' X-Ray сканування:', url);
+    console.log('X-Ray scanning:', url);
     
     if (!groqClient) {
       return ' AI не ініціалізовано';
@@ -1650,12 +1650,12 @@ async function xrayLink(url) {
       max_tokens: 100
     });
     
-    const result = completion.choices[0]?.message?.content || 'Не вдалося проаналізувати';
-    console.log(' X-Ray результат:', result);
+    const result = completion.choices[0]?.message?.content || 'Analysis failed';
+    console.log('X-Ray result:', result);
     return result;
     
   } catch (error) {
-    console.error(' X-Ray помилка:', error.message);
+    console.error('X-Ray error:', error.message);
     if (error.name === 'AbortError') {
       return ' Таймаут - сторінка завантажується занадто довго';
     }
@@ -1675,7 +1675,7 @@ ipcMain.handle('ask-gemini', async (event, prompt) => {
       throw new Error('AI не ініціалізовано. Перевірте API ключ у config.js');
     }
 
-    console.log(' Отримано запит на узагальнення нотаток...');
+    console.log('Received notes summary request...');
     
     const completion = await groqClient.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
@@ -1684,11 +1684,11 @@ ipcMain.handle('ask-gemini', async (event, prompt) => {
       max_tokens: 2048
     });
     
-    const text = completion.choices[0]?.message?.content || 'Помилка: не отримано відповідь';
-    console.log(' Відповідь отримана від Groq (блискавично!)');
+    const text = completion.choices[0]?.message?.content || 'Error: no response received';
+    console.log('Response received from Groq (lightning fast!)');
     return text;
   } catch (error) {
-    console.error(' Помилка Groq API:', error);
+    console.error('Groq API error:', error);
     throw new Error(`Не вдалося отримати відповідь від AI: ${error.message}`);
   }
 });
@@ -1696,7 +1696,7 @@ ipcMain.handle('ask-gemini', async (event, prompt) => {
 // Обробник розумного пошуку
 ipcMain.handle('smart-search', async (event, query) => {
   try {
-    console.log(' Розумний пошук:', query);
+    console.log('Smart search:', query);
 
     if (!groqClient) {
       return { 
@@ -1729,7 +1729,7 @@ ipcMain.handle('smart-search', async (event, query) => {
 Текст сторінки:
 ${cleanText}`;
 
-    console.log(' Аналізую сенс через Groq AI...');
+    console.log('Analyzing meaning via Groq AI...');
 
     // Питаємо Groq AI
     const completion = await groqClient.chat.completions.create({
@@ -1751,7 +1751,7 @@ ${cleanText}`;
     // Очищаємо цитату від лапок
     const cleanQuote = exactQuote.replace(/^["']|["']$/g, '').trim();
 
-    console.log(' Знайдено фразу:', cleanQuote);
+    console.log('Phrase found:', cleanQuote);
 
     // Використовуємо вбудований пошук Chromium
     const requestId = await browserView.webContents.findInPage(cleanQuote, {
@@ -1765,7 +1765,7 @@ ${cleanText}`;
     };
 
   } catch (error) {
-    console.error(' Помилка розумного пошуку:', error);
+    console.error('Smart search error:', error);
     return { 
       success: false, 
       message: ` Помилка: ${error.message}` 
@@ -1783,7 +1783,7 @@ function showPopupInBrowser(text) {
     if (typeof window.showAIPopup === 'function') {
       window.showAIPopup(${JSON.stringify(text)});
     }
-  `).catch(err => console.error('Помилка показу popup:', err));
+  `).catch(err => console.error('Popup display error:', err));
 }
 
 // Функція для інжектування світлої теми
@@ -1808,10 +1808,10 @@ function injectLightTheme(targetView = null) {
   
   view.webContents.insertCSS(lightThemeCSS)
     .then(() => {
-      console.log(' Світла тема активована');
+      console.log('Light theme activated');
     })
     .catch(err => {
-      console.error('Помилка інжекту світлої теми:', err);
+      console.error('Light theme injection error:', err);
     });
 }
 
@@ -1823,7 +1823,7 @@ function injectSelectionListener(targetView = null) {
   
   view.webContents.executeJavaScript(injectScript)
     .catch(err => {
-      console.error('Помилка інжекту скрипта:', err);
+      console.error('Script injection error:', err);
     });
 }
 
@@ -1836,13 +1836,13 @@ function injectCodeMate(targetView = null) {
     
     view.webContents.executeJavaScript(codeInjectorScript)
       .then(() => {
-        console.log(' Code Mate активовано на сторінці');
+        console.log('Code Mate activated on page');
       })
       .catch(err => {
-        console.error('Помилка інжекту Code Mate:', err);
+        console.error('Code Mate injection error:', err);
       });
   } catch (error) {
-    console.error('Не вдалося прочитати code-injector.js:', error);
+    console.error('Failed to read code-injector.js:', error);
   }
 }
 
@@ -1855,13 +1855,13 @@ function injectLinkXRay(targetView = null) {
     
     view.webContents.executeJavaScript(linkXRayScript)
       .then(() => {
-        console.log(' Link X-Ray активовано на сторінці');
+        console.log('Link X-Ray activated on page');
       })
       .catch(err => {
-        console.error('Помилка інжекту Link X-Ray:', err);
+        console.error('Link X-Ray injection error:', err);
       });
   } catch (error) {
-    console.error('Не вдалося прочитати link-xray.js:', error);
+    console.error('Failed to read link-xray.js:', error);
   }
 }
 
@@ -1873,13 +1873,13 @@ function injectUnifiedT9(targetBrowserView = browserView) {
     
     targetBrowserView.webContents.executeJavaScript(unifiedT9Script)
       .then(() => {
-        console.log('[T9] Система автодоповнення готова (VS Code стиль)');
+        console.log('[T9] Autocomplete system ready (VS Code style)');
       })
       .catch(err => {
-        console.error('[T9] Помилка інжекту:', err);
+        console.error('[T9] Injection error:', err);
       });
   } catch (error) {
-    console.error('[T9] Не вдалося прочитати unified-t9.js:', error);
+    console.error('[T9] Failed to read unified-t9.js:', error);
   }
 }
 
@@ -1920,7 +1920,7 @@ async function getAIExplanation(text) {
       max_tokens: maxTokens
     });
     
-    return completion.choices[0]?.message?.content || 'Помилка: не отримано відповідь';
+    return completion.choices[0]?.message?.content || 'Error: no response received';
   } catch (error) {
     console.error('API Error:', error);
     
@@ -1945,42 +1945,42 @@ ipcMain.handle('search-history', (event, query) => {
 
 ipcMain.on('clear-history', () => {
   storage.clearHistory();
-  console.log(' Історію очищено');
+  console.log('History cleared');
 });
 
 ipcMain.on('delete-history-item', (event, url) => {
   storage.deleteHistoryItem(url);
-  console.log('[HISTORY] Запис видалено:', url);
+  console.log('[HISTORY] Record deleted:', url);
 });
 
 ipcMain.on('open-url-from-history', (event, url) => {
-  console.log('[HISTORY] Відкриваємо URL з історії:', url);
+  console.log('[HISTORY] Opening URL from history:', url);
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (activeTab && activeTab.browserView) {
     activeTab.browserView.webContents.loadURL(url).catch(err => {
-      console.error('[HISTORY] Помилка завантаження URL:', err.message);
+      console.error('[HISTORY] URL load error:', err.message);
     });
-    console.log('[HISTORY] URL відкрито:', url);
+    console.log('[HISTORY] URL opened:', url);
   } else {
-    console.error('[HISTORY] Активна вкладка не знайдена');
+    console.error('[HISTORY] Active tab not found');
   }
 });
 
 ipcMain.on('open-history', async () => {
-  console.log('[HISTORY] Відкриваємо сторінку історії...');
+  console.log('[HISTORY] Opening history page...');
   const historyUrl = `file://${path.join(__dirname, '../public/history.html')}`;
-  console.log('[HISTORY] URL історії:', historyUrl);
+  console.log('[HISTORY] History URL:', historyUrl);
   
   const activeTab = tabs.find(t => t.id === activeTabId);
   if (activeTab && activeTab.browserView) {
     try {
       await activeTab.browserView.webContents.loadURL(historyUrl);
-      console.log('[HISTORY] Сторінка історії успішно завантажена');
+      console.log('[HISTORY] History page loaded successfully');
     } catch (err) {
-      console.error('[HISTORY] Помилка завантаження історії:', err.message);
+      console.error('[HISTORY] History load error:', err.message);
     }
   } else {
-    console.error('[HISTORY] Активна вкладка не знайдена');
+    console.error('[HISTORY] Active tab not found');
   }
 });
 
@@ -2014,7 +2014,7 @@ ipcMain.on('save-session', () => {
     .filter(tab => !tab.url.includes('newtab.html')); // НЕ зберігаємо newtab
   
   storage.saveSession(sessionTabs);
-  console.log(' Сесію збережено:', sessionTabs.length, 'вкладок');
+  console.log('Session saved:', sessionTabs.length, 'tabs');
 });
 
 ipcMain.handle('get-session', () => {
@@ -2028,13 +2028,13 @@ ipcMain.handle('get-settings', () => {
 
 ipcMain.on('save-settings', (event, settings) => {
   storage.setAllSettings(settings);
-  console.log(' Налаштування збережено');
+  console.log('Settings saved');
 });
 
 // Нотатки з пам'яттю
 ipcMain.on('save-note', (event, { text, url }) => {
   storage.addNote(text, url);
-  console.log(' Нотатку збережено');
+  console.log('Note saved');
 });
 
 ipcMain.handle('get-notes', () => {
@@ -2047,7 +2047,7 @@ ipcMain.on('delete-note', (event, id) => {
 
 ipcMain.on('update-note', (event, { id, text }) => {
   storage.updateNote(id, text);
-  console.log('📝 Нотатку оновлено:', id);
+  console.log('Note updated:', id);
 });
 
 ipcMain.on('clear-notes', () => {
@@ -2058,7 +2058,7 @@ ipcMain.on('clear-notes', () => {
 app.on('before-quit', () => {
   // storage.saveSession(sessionTabs);
   // console.log(' Сесію автоматично збережено при закритті');
-  console.log(' Сесію НЕ зберігаємо - завжди показуємо newtab при запуску');
+  console.log('Session NOT saved - always show newtab on startup');
 });
 
 // ==================== TOR INTEGRATION ====================
@@ -2071,7 +2071,7 @@ ipcMain.handle('toggle-tor', async () => {
     // Вимикаємо Tor - пряме підключення
     await ses.setProxy({ mode: 'direct' });
     isTorActive = false;
-    console.log('Tor вимкнено - звичайне підключення');
+    console.log('Tor disabled - regular connection');
     
     // Оновлюємо placeholder адресної строки
     mainWindow.webContents.send('update-search-engine', 'Google');
@@ -2087,7 +2087,7 @@ ipcMain.handle('toggle-tor', async () => {
       proxyRules: 'socks5://127.0.0.1:9050'
     });
     isTorActive = true;
-    console.log('Tor увімкнено - трафік через SOCKS5 proxy');
+    console.log('Tor enabled - traffic via SOCKS5 proxy');
     
     // Оновлюємо placeholder адресної строки
     mainWindow.webContents.send('update-search-engine', 'DuckDuckGo');
@@ -2113,7 +2113,7 @@ ipcMain.handle('predict-text', async (event, currentText) => {
     // Якщо тексту мало або немає Groq клієнта, не питаємо
     if (!currentText || currentText.length < 3 || !groqClient) return null;
 
-    console.log('AI-T9: Запит автозаповнення для:', currentText.substring(0, 30) + '...');
+    console.log('AI-T9: Autocomplete request for:', currentText.substring(0, 30) + '...');
 
     const completion = await groqClient.chat.completions.create({
       messages: [
@@ -2133,7 +2133,7 @@ ipcMain.handle('predict-text', async (event, currentText) => {
     });
 
     const suggestion = completion.choices[0]?.message?.content?.trim() || "";
-    console.log('AI-T9: Відповідь:', suggestion);
+    console.log('AI-T9: Response:', suggestion);
     return suggestion;
 
   } catch (error) {
@@ -2203,7 +2203,7 @@ async function summarizeArticle(title) {
         });
         return completion.choices[0]?.message?.content || `Аналіз: ${title.substring(0, 30)}...`;
     } catch (error) {
-        console.error('❌ Помилка AI самарі:', error.message);
+        console.error('❌ AI summary error:', error.message);
         return `${title.substring(0, 60)}...`;
     }
 }
@@ -2214,38 +2214,38 @@ let currentFeedGenerator = null;
 // Обробник запуску нескінченної стрічки
 ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], sourceNames = []) => {
     if (isFeedRunning) {
-        console.log('[WARNING] Стрічка вже запущена');
-        return { success: false, message: 'Стрічка вже активна' };
+        console.log('[WARNING] Feed is already running');
+        return { success: false, message: 'Feed is already active' };
     }
     
-    // Конвертуємо в масив, якщо передано одну категорію
+    // Convert to array if single category passed
     if (!Array.isArray(categories)) {
         categories = [categories];
     }
     
     isFeedRunning = true;
     currentFeedGenerator = infiniteArticleGenerator(categories, sourceNames);
-    console.log(`[FEED START] Запускаємо нескінченну стрічку новин для категорій: ${categories.join(', ')}...`);
+    console.log(`[FEED START] Starting infinite news feed for categories: ${categories.join(', ')}...`);
     if (sourceNames && sourceNames.length > 0) {
-        console.log(`[SOURCES] Обрано джерел: ${sourceNames.length}`);
-        console.log(`[SOURCES] Список джерел:`, sourceNames);
+        console.log(`[SOURCES] Selected sources: ${sourceNames.length}`);
+        console.log(`[SOURCES] Sources list:`, sourceNames);
     } else {
-        console.log(`[SOURCES] Використовуються всі доступні джерела`);
+        console.log(`[SOURCES] Using all available sources`);
     }
 
-    // Асинхронний цикл обробки статей
+    // Async article processing loop
     (async () => {
         for await (const article of currentFeedGenerator) {
             if (!isFeedRunning) {
-                console.log('[STOP] Стрічка зупинена користувачем');
+                console.log('[STOP] Feed stopped by user');
                 break;
             }
 
-            console.log(`[FEED] Отримано: ${article.title.substring(0, 50)}...`);
+            console.log(`[FEED] Received: ${article.title.substring(0, 50)}...`);
 
             try {
-                // ЗАВДАННЯ 1.2: Timeout Iterator Consumer
-                // Використовуємо Promise.race для таймауту 3 секунди
+                // TASK 1.2: Timeout Iterator Consumer
+                // Use Promise.race for 3 second timeout
                 const summary = await Promise.race([
                     summarizeArticle(article.title),
                     new Promise((_, reject) => 
@@ -2253,16 +2253,16 @@ ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], source
                     )
                 ]);
 
-                // Якщо ШІ встиг - відправляємо в UI
-                console.log(`[OK] AI обробив: ${summary.substring(0, 30)}...`);
+                // If AI finished - send to UI
+                console.log(`[OK] AI processed: ${summary.substring(0, 30)}...`);
                 event.sender.send('new-feed-item', { ...article, summary });
 
             } catch (error) {
                 if (error.message === 'AI_TIMEOUT') {
-                    console.log(`[TIMEOUT] AI завис (>3 сек). Пропускаємо з ${article.source}`);
+                    console.log(`[TIMEOUT] AI stuck (>3 sec). Skipping from ${article.source}`);
                     event.sender.send('feed-timeout-skip', article.source);
                 } else {
-                    console.error('[ERROR] Помилка обробки:', error.message);
+                    console.error('[ERROR] Processing error:', error.message);
                 }
             }
         }
@@ -2279,7 +2279,7 @@ ipcMain.handle('stop-infinite-feed', () => {
     
     isFeedRunning = false;
     currentFeedGenerator = null;
-    console.log('🛑 Стрічку зупинено');
+    console.log('🛑 Feed stopped');
     
     return { success: true, message: 'Стрічка зупинена' };
 });
@@ -2290,7 +2290,7 @@ ipcMain.handle('open-external', async (event, url) => {
         await shell.openExternal(url);
         return { success: true };
     } catch (error) {
-        console.error('❌ Помилка відкриття посилання:', error);
+        console.error('❌ Link open error:', error);
         return { success: false, error: error.message };
     }
 });
@@ -2298,11 +2298,11 @@ ipcMain.handle('open-external', async (event, url) => {
 // Обробник відкриття посилання у власному браузері (для новин)
 ipcMain.handle('open-in-browser', async (event, url) => {
     try {
-        console.log('[BROWSER] Відкриваємо URL у браузері:', url);
+        console.log('[BROWSER] Opening URL in browser:', url);
     requestOpenInNewTab(url);
     return { success: true };
     } catch (error) {
-        console.error('❌ Помилка відкриття у браузері:', error);
+        console.error('❌ Browser open error:', error);
         return { success: false, error: error.message };
     }
 });
