@@ -6,7 +6,7 @@
   if (window._linkXRayEnabled) return;
   window._linkXRayEnabled = true;
 
-  console.log(' Link X-Ray активовано');
+  console.log('Link X-Ray activated');
 
   // Створюємо елемент підказки (Tooltip)
   const tooltip = document.createElement('div');
@@ -68,7 +68,7 @@
 
   // Функція для сканування посилання
   async function scanLink(url, e) {
-    showTooltip(e, ' Сканую...');
+    showTooltip(e, 'Scanning...');
     
     try {
       // Відправляємо запит через console.log (перехоплюємо в main.js)
@@ -84,7 +84,7 @@
       }
     } catch (error) {
       if (currentLink) {
-        showTooltip(e, ' Помилка сканування');
+        showTooltip(e, 'Scan error');
       }
     }
   }
