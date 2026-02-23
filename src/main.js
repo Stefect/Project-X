@@ -2212,7 +2212,7 @@ let isFeedRunning = false;
 let currentFeedGenerator = null;
 
 // Обробник запуску нескінченної стрічки
-ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], sourceNames = []) => {
+ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], customSources = []) => {
     if (isFeedRunning) {
         console.log('[WARNING] Feed is already running');
         return { success: false, message: 'Feed is already active' };
@@ -2224,11 +2224,11 @@ ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], source
     }
     
     isFeedRunning = true;
-    currentFeedGenerator = infiniteArticleGenerator(categories, sourceNames);
+    currentFeedGenerator = infiniteArticleGenerator(categories, customSources);
     console.log(`[FEED START] Starting infinite news feed for categories: ${categories.join(', ')}...`);
-    if (sourceNames && sourceNames.length > 0) {
-        console.log(`[SOURCES] Selected sources: ${sourceNames.length}`);
-        console.log(`[SOURCES] Sources list:`, sourceNames);
+    if (customSources && customSources.length > 0) {
+        console.log(`[SOURCES] Selected sources: ${customSources.length}`);
+        console.log(`[SOURCES] Sources list:`, customSources.map(s => s.name || s).join(', '));
     } else {
         console.log(`[SOURCES] Using all available sources`);
     }
