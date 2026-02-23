@@ -582,23 +582,37 @@
         <div class="categories-header">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <div class="categories-title">Джерела</div>
-                    <div class="categories-subtitle">Фільтруй звідки брати новини</div>
+                    <div class="categories-title">My Sources</div>
+                    <div class="categories-subtitle">Add and manage your news sources</div>
                 </div>
-                <button id="btn-close-sources" style="background: transparent; border: none; color: rgba(255, 255, 255, 0.6); font-size: 28px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Закрити">×</button>
+                <button id="btn-close-sources" style="background: transparent; border: none; color: rgba(255, 255, 255, 0.6); font-size: 28px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Close">×</button>
             </div>
         </div>
-        <input type="text" id="sources-search" class="sources-search" placeholder="Пошук джерел...">
-        <div style="padding: 10px 15px; display: flex; gap: 8px;">
-            <button id="sources-select-all" style="flex: 1; padding: 8px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: white; font-size: 11px; cursor: pointer;">Вибрати всі</button>
-            <button id="sources-clear-all" style="flex: 1; padding: 8px; background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 6px; color: white; font-size: 11px; cursor: pointer;">Зняти всі</button>
+        
+        <!-- Add new source form -->
+        <div style="padding: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+            <div style="margin-bottom: 10px;">
+                <input type="text" id="source-name-input" placeholder="Source name (e.g. Reddit Ukraine)" 
+                       style="width: 100%; padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; font-size: 13px; margin-bottom: 8px;">
+                <input type="text" id="source-url-input" placeholder="Source URL (RSS, Reddit JSON, etc.)" 
+                       style="width: 100%; padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: white; font-size: 13px;">
+            </div>
+            <button id="add-source-btn" style="width: 100%; padding: 10px; background: rgba(76, 175, 80, 0.3); border: 1px solid rgba(76, 175, 80, 0.5); border-radius: 6px; color: white; font-size: 13px; cursor: pointer; font-weight: 600;">
+                + Add Source
+            </button>
+        </div>
+        
+        <div style="padding: 10px 15px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="sources-select-all" style="flex: 1; min-width: 80px; padding: 8px; background: rgba(102, 126, 234, 0.2); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 6px; color: white; font-size: 11px; cursor: pointer;">Select all</button>
+            <button id="sources-clear-all" style="flex: 1; min-width: 80px; padding: 8px; background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 6px; color: white; font-size: 11px; cursor: pointer;">Clear all</button>
+            <button id="sources-reset-defaults" style="flex: 1; min-width: 80px; padding: 8px; background: rgba(255, 152, 0, 0.2); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: 6px; color: white; font-size: 11px; cursor: pointer;">Reset defaults</button>
         </div>
         <div class="categories-list" id="sources-list">
-            <!-- Джерела будуть додані динамічно через JS -->
+            <!-- Sources will be added dynamically via JS -->
         </div>
         <div class="categories-footer">
             <button id="sources-save-btn" class="categories-save-btn">
-                Зберегти
+                Save Selection
             </button>
         </div>
     </div>
@@ -656,14 +670,13 @@
         const categoriesPanel = document.getElementById('categories-panel');
         const sourcesPanel = document.getElementById('sources-panel');
         const sourcesList = document.getElementById('sources-list');
-        const sourcesSearch = document.getElementById('sources-search');
         const container = document.getElementById('feed-container');
         const stats = document.getElementById('stats');
         let feedActive = false;
         let articlesLoaded = 0;
-        let selectedCategories = ['all']; // Масив обраних категорій
-        let selectedSources = []; // Масив обраних джерел (якщо порожній - всі)
-        let sourcesFilterActive = false; // Чи користувач активував фільтр джерел
+        let selectedCategories = ['all']; // Array of selected categories
+        let selectedSources = []; // Array of selected sources (full objects with URL)
+        let sourcesFilterActive = false; // Whether user activated source filter
 
         // Обробник кнопки закриття панелі
         if (btnCloseFeed) {
@@ -780,129 +793,151 @@
             });
         }
 
-        // === ДЖЕРЕЛА (SOURCES) ===
+        // === SOURCES (Custom User Sources) ===
         
-        // Список всіх доступних джерел (синхронізовано з ai-feed.js)
-        const ALL_SOURCES = [
-            // Українські новинні агентства - ТИМЧАСОВО ВІДКЛЮЧЕНІ (RSS feeds return 404)
-            // { name: 'Suspilne News', type: 'rss', tag: 'UA' },
-            // { name: 'Ukrainska Pravda', type: 'rss', tag: 'UA' },
-            // { name: 'Kyiv Independent', type: 'rss', tag: 'UA' },
+        // Load sources from localStorage
+        function loadSources() {
+            const saved = localStorage.getItem('userSources');
+            return saved ? JSON.parse(saved) : getDefaultSources();
+        }
+        
+        // Default sources for first-time users
+        function getDefaultSources() {
+            return [
+                { name: 'Reddit Ukraine', url: 'https://www.reddit.com/r/ukraine/new.json?limit=10', type: 'reddit' },
+                { name: 'Dev.to', url: 'https://dev.to/api/articles?per_page=10', type: 'devto' },
+                { name: 'Hacker News', url: 'https://hacker-news.firebaseio.com/v0/newstories.json', type: 'hackernews' }
+            ];
+        }
+        
+        // Save sources to localStorage
+        function saveSources(sources) {
+            localStorage.setItem('userSources', JSON.stringify(sources));
+        }
+        
+        // Auto-detect source type from URL
+        function detectSourceType(url) {
+            if (url.includes('reddit.com') && url.includes('.json')) return 'reddit';
+            if (url.includes('dev.to/api')) return 'devto';
+            if (url.includes('hacker-news.firebaseio.com')) return 'hackernews';
+            if (url.includes('rss') || url.includes('feed') || url.endsWith('.xml')) return 'rss';
+            return 'rss'; // Default to RSS
+        }
+        
+        // Add new source
+        function addSource() {
+            const nameInput = document.getElementById('source-name-input');
+            const urlInput = document.getElementById('source-url-input');
+            const name = nameInput.value.trim();
+            const url = urlInput.value.trim();
             
-            // Українські Reddit канали
-            { name: 'Reddit Ukraine', type: 'reddit', tag: 'UA' },
-            { name: 'Reddit Ukraine Conflict', type: 'reddit', tag: 'UA' },
+            if (!name || !url) {
+                alert('Please enter both name and URL');
+                return;
+            }
             
-            // Міжнародні платформи
-            { name: 'Dev.to', type: 'devto', tag: 'DEV' },
-            { name: 'Hacker News', type: 'hackernews', tag: 'TECH' },
+            const sources = loadSources();
+            const type = detectSourceType(url);
             
-            // Reddit - Технології та програмування
-            { name: 'Reddit Tech', type: 'reddit', tag: 'TECH' },
-            { name: 'Reddit Programming', type: 'reddit', tag: 'CODE' },
-            { name: 'Reddit Machine Learning', type: 'reddit', tag: 'AI' },
-            { name: 'Reddit Artificial', type: 'reddit', tag: 'AI' },
-            { name: 'Reddit Local LLaMA', type: 'reddit', tag: 'AI' },
+            // Check if source already exists
+            if (sources.find(s => s.url === url)) {
+                alert('This source already exists');
+                return;
+            }
             
-            // Reddit - Наука
-            { name: 'Reddit Science', type: 'reddit', tag: 'SCI' },
-            { name: 'Reddit Space', type: 'reddit', tag: 'SPACE' },
-            { name: 'Reddit Physics', type: 'reddit', tag: 'SCI' },
+            sources.push({ name, url, type });
+            saveSources(sources);
             
-            // Reddit - Новини
-            { name: 'Reddit World News', type: 'reddit', tag: 'NEWS' },
-            { name: 'Reddit News', type: 'reddit', tag: 'NEWS' },
-            // Reddit Ukraine вже в топі списку
+            nameInput.value = '';
+            urlInput.value = '';
             
-            // Reddit - Ігри
-            { name: 'Reddit Gaming', type: 'reddit', tag: 'GAME' },
-            { name: 'Reddit PC Gaming', type: 'reddit', tag: 'GAME' },
-            { name: 'Reddit Games', type: 'reddit', tag: 'GAME' },
+            renderSources();
+            console.log('[SOURCES] Added new source:', name, type);
+        }
+        
+        // Delete source
+        function deleteSource(url) {
+            const sources = loadSources();
+            const filtered = sources.filter(s => s.url !== url);
+            saveSources(filtered);
+            renderSources();
+            console.log('[SOURCES] Deleted source:', url);
+        }
+        
+        // Render sources list
+        function renderSources() {
+            const sourcesList = document.getElementById('sources-list');
+            if (!sourcesList) return;
             
-            // Reddit - Криптовалюта
-            { name: 'Reddit Crypto', type: 'reddit', tag: 'CRYPTO' },
-            { name: 'Reddit Bitcoin', type: 'reddit', tag: 'CRYPTO' },
-            { name: 'Reddit Ethereum', type: 'reddit', tag: 'CRYPTO' },
-            
-            // Reddit - Бізнес
-            { name: 'Reddit Business', type: 'reddit', tag: 'BIZ' },
-            { name: 'Reddit Economics', type: 'reddit', tag: 'BIZ' },
-            { name: 'Reddit Entrepreneur', type: 'reddit', tag: 'BIZ' },
-            
-            // Reddit - Розваги
-            { name: 'Reddit Movies', type: 'reddit', tag: 'ENT' },
-            { name: 'Reddit Music', type: 'reddit', tag: 'ENT' },
-            { name: 'Reddit Television', type: 'reddit', tag: 'ENT' },
-            
-            // Reddit - Спорт
-            { name: 'Reddit Sports', type: 'reddit', tag: 'SPORT' },
-            { name: 'Reddit Soccer', type: 'reddit', tag: 'SPORT' },
-            { name: 'Reddit NBA', type: 'reddit', tag: 'SPORT' },
-            
-            // Reddit - Здоров'я
-            { name: 'Reddit Health', type: 'reddit', tag: 'HEALTH' },
-            { name: 'Reddit Fitness', type: 'reddit', tag: 'HEALTH' },
-            { name: 'Reddit Nutrition', type: 'reddit', tag: 'HEALTH' }
-        ];
-
-        // Функція для рендерингу списку джерел
-        function renderSources(filter = '') {
             sourcesList.innerHTML = '';
-            const filteredSources = ALL_SOURCES.filter(source => 
-                source.name.toLowerCase().includes(filter.toLowerCase())
-            );
+            const sources = loadSources();
             
-            filteredSources.forEach(source => {
+            if (sources.length === 0) {
+                sourcesList.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 12px;">No sources added yet.<br>Add your first source above!</div>';
+                return;
+            }
+            
+            sources.forEach(source => {
                 const item = document.createElement('div');
                 item.className = 'source-item';
-                // Активуємо тільки якщо джерело є в списку вибраних (коли фільтр активний)
+                // Activate if source is in selected list
                 if (sourcesFilterActive && selectedSources.includes(source.name)) {
                     item.classList.add('active');
                 }
                 item.setAttribute('data-source', source.name);
                 
-                // Виділяємо українські джерела синім кольором (tag UA)
-                const isUkrainian = source.tag === 'UA';
-                if (isUkrainian) {
-                    item.style.background = 'rgba(33, 150, 243, 0.15)';
-                    item.style.borderColor = 'rgba(33, 150, 243, 0.4)';
-                }
-                
-                const typeLabel = source.tag || 
-                                 (source.type === 'reddit' ? '[R]' : 
-                                  source.type === 'devto' ? '[D]' : 
-                                  source.type === 'hackernews' ? '[HN]' : 
-                                  source.type === 'rss' ? '[RSS]' :
-                                  source.type === 'rss2json' ? '[UA]' : '[?]');
+                const typeLabel = source.type === 'reddit' ? '[Reddit]' : 
+                                 source.type === 'devto' ? '[Dev.to]' : 
+                                 source.type === 'hackernews' ? '[HN]' : 
+                                 source.type === 'rss' ? '[RSS]' : '[?]';
                 
                 item.innerHTML = `
-                    <span style="font-size: 11px; color: ${isUkrainian ? '#2196f3' : 'rgba(255,255,255,0.5)'}; font-weight: 600;">${typeLabel}</span>
-                    <span class="category-name" style="flex: 1; font-size: 12px;">${source.name}</span>
-                    <span class="category-check">✓</span>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 600;">${typeLabel}</span>
+                        <span class="category-name" style="flex: 1; font-size: 12px;">${source.name}</span>
+                        <span class="category-check">✓</span>
+                    </div>
+                    <button class="delete-source-btn" data-url="${source.url}" style="background: rgba(244, 67, 54, 0.3); border: none; border-radius: 4px; color: white; cursor: pointer; padding: 4px 8px; font-size: 11px; margin-left: 8px;">Delete</button>
                 `;
                 
-                item.addEventListener('click', () => {
-                    item.classList.toggle('active');
-                    if (isUkrainian) {
-                        if (item.classList.contains('active')) {
-                            item.style.background = 'rgba(33, 150, 243, 0.3)';
-                            item.style.borderColor = 'rgba(33, 150, 243, 0.6)';
-                        } else {
-                            item.style.background = 'rgba(33, 150, 243, 0.15)';
-                            item.style.borderColor = 'rgba(33, 150, 243, 0.4)';
-                        }
+                // Toggle selection
+                item.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('delete-source-btn')) {
+                        item.classList.toggle('active');
+                        console.log('Selected source (not saved)');
                     }
-                    console.log('Selected source (not saved)');
                 });
                 
                 sourcesList.appendChild(item);
             });
+            
+            // Add delete button handlers
+            document.querySelectorAll('.delete-source-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const url = btn.getAttribute('data-url');
+                    if (confirm('Delete this source?')) {
+                        deleteSource(url);
+                    }
+                });
+            });
         }
 
-        // Початковий рендеринг джерел
+        // Initial render
         renderSources();
+        
+        // Add source button handler
+        const addSourceBtn = document.getElementById('add-source-btn');
+        if (addSourceBtn) {
+            addSourceBtn.addEventListener('click', addSource);
+        }
+        
+        // Enter key support for inputs
+        document.getElementById('source-url-input')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addSource();
+        });
 
-        // Кнопки "Вибрати всі" та "Зняти всі"
+        // "Select All" and "Clear All" buttons
         const selectAllBtn = document.getElementById('sources-select-all');
         const clearAllBtn = document.getElementById('sources-clear-all');
         
@@ -931,49 +966,62 @@
                 });
             });
         }
-
-        // Пошук джерел
-        if (sourcesSearch) {
-            sourcesSearch.addEventListener('input', (e) => {
-                renderSources(e.target.value);
+        
+        // "Reset to Defaults" button
+        const resetDefaultsBtn = document.getElementById('sources-reset-defaults');
+        if (resetDefaultsBtn) {
+            resetDefaultsBtn.addEventListener('click', () => {
+                if (confirm('Reset to default sources? This will remove all custom sources.')) {
+                    localStorage.removeItem('userSources');
+                    renderSources();
+                    console.log('[SOURCES] Reset to defaults: Reddit Ukraine, Dev.to, Hacker News');
+                }
             });
         }
 
-        // Обробник кнопки джерел
+        // Handler for sources button
         if (btnSources) {
             btnSources.addEventListener('click', () => {
                 sourcesPanel.classList.toggle('active');
-                // Закриваємо панель категорій якщо вона відкрита
+                // Close categories panel if it's open
                 if (categoriesPanel) {
                     categoriesPanel.classList.remove('active');
                 }
             });
         }
 
-        // Обробник кнопки "Зберегти" в панелі джерел
+        // Handler for "Save" button in sources panel
         const sourcesSaveBtn = document.getElementById('sources-save-btn');
         if (sourcesSaveBtn) {
             sourcesSaveBtn.addEventListener('click', async () => {
                 const activeSourceItems = document.querySelectorAll('.source-item.active');
-                selectedSources = Array.from(activeSourceItems).map(item => item.getAttribute('data-source'));
-                sourcesFilterActive = selectedSources.length > 0; // Фільтр активний тільки якщо щось вибрано
+                const allSources = loadSources();
+                
+                // Get full source objects (not just names)
+                selectedSources = Array.from(activeSourceItems).map(item => {
+                    const sourceName = item.getAttribute('data-source');
+                    return allSources.find(s => s.name === sourceName);
+                }).filter(s => s); // Remove undefined
+                
+                sourcesFilterActive = selectedSources.length > 0;
                 
                 console.log('[SAVE SOURCES] Saved sources (count):', selectedSources.length);
-                console.log('[SAVE SOURCES] Saved sources (list):', JSON.stringify(selectedSources));
+                console.log('[SAVE SOURCES] Saved sources (list):', selectedSources.map(s => s.name));
                 console.log('[SAVE SOURCES] Filter active:', sourcesFilterActive);
                 
-                // Закриваємо панель джерел
+                // Close sources panel
                 sourcesPanel.classList.remove('active');
                 
-                // Якщо стрічка активна, перезапускаємо її з новими джерелами
+                // If feed is active, restart it with new sources
                 if (feedActive && api) {
                     await api.stopFeed();
-                    container.innerHTML = '<div class="loading">Завантаження новин...</div>';
+                    container.innerHTML = '<div class="loading">Loading news...</div>';
                     articlesLoaded = 0;
                     updateStats();
                     
                     setTimeout(async () => {
-                        await api.startFeed(selectedCategories, selectedSources);
+                        const sourcesToUse = sourcesFilterActive ? selectedSources : loadSources();
+                        await api.startFeed(selectedCategories, sourcesToUse);
                         feedActive = true;
                     }, 500);
                 }
@@ -1031,13 +1079,27 @@
             console.log('[START FEED] Starting feed...');
             console.log('[START FEED] Categories:', selectedCategories);
             console.log('[START FEED] sourcesFilterActive:', sourcesFilterActive);
-            console.log('[START FEED] selectedSources:', JSON.stringify(selectedSources));
-            console.log('[START FEED] Sources:', sourcesFilterActive && selectedSources.length > 0 ? `${selectedSources.length} selected: ${selectedSources.join(', ')}` : 'All (filter not active)');
+            console.log('[START FEED] selectedSources:', selectedSources.map(s => s.name || s));
+            console.log('[START FEED] Sources:', sourcesFilterActive && selectedSources.length > 0 ? `${selectedSources.length} selected` : 'All (filter not active)');
             
             try {
-                // Pass sources only if filter is active
-                const sourcesToUse = sourcesFilterActive ? selectedSources : [];
-                console.log('[START FEED] Passing sourcesToUse:', JSON.stringify(sourcesToUse));
+                // Always pass available sources
+                let sourcesToUse;
+                if (sourcesFilterActive && selectedSources.length > 0) {
+                    sourcesToUse = selectedSources;
+                } else {
+                    // If no filter active, use all available sources
+                    const allSources = loadSources();
+                    sourcesToUse = allSources.length > 0 ? allSources : getDefaultSources();
+                }
+                
+                console.log('[START FEED] Passing sources:', sourcesToUse.map(s => s.name || s).join(', '));
+                
+                if (sourcesToUse.length === 0) {
+                    alert('No sources available. Please add sources first!');
+                    return;
+                }
+                
                 const result = await api.startFeed(selectedCategories, sourcesToUse);
                 console.log('✅ Feed started:', result);
                 
