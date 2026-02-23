@@ -39,7 +39,7 @@ function loadData() {
       return { ...defaultData, ...data };
     }
   } catch (error) {
-    console.error('Помилка читання даних:', error);
+    console.error('Data read error:', error);
   }
   return { ...defaultData };
 }
@@ -50,7 +50,7 @@ function saveData(data) {
     const dataPath = getDataPath();
     fs.writeFileSync(dataPath, JSON.stringify(data, null, 2), 'utf8');
   } catch (error) {
-    console.error('Помилка збереження даних:', error);
+    console.error('Data save error:', error);
   }
 }
 

@@ -435,5 +435,5 @@
     version: '1.0.0'
   };
 
-  console.log('[UNIFIED-T9] Система автодоповнення готова (VS Code стиль)');
+  console.log('[UNIFIED-T9] Autocomplete system ready (VS Code style)');
 })();
