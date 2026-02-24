@@ -696,6 +696,12 @@
       overflow-y: hidden;
       -webkit-app-region: drag;
       position: relative;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+    }
+
+    .tabs-bar::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
     }
 
     .menu-section {
@@ -1243,18 +1249,16 @@
       overflow-y: hidden;
       -webkit-app-region: drag;
       padding: 0 5px;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE and Edge */
+      scroll-behavior: smooth; /* Плавне прокручування */
     }
 
-    .tabs-bar::-webkit-scrollbar {
-      height: 3px;
+    .tabs-container::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
     }
 
-    .tabs-bar::-webkit-scrollbar-thumb {
-      background: #565f89;
-      border-radius: 2px;
-    }
-
-    /* ╨Ъ╨╜╨╛╨┐╨║╨╕ ╨║╨╡╤А╤Г╨▓╨░╨╜╨╜╤П ╨▓╤Ц╨║╨╜╨╛╨╝ (╤Ц╨╜╤В╨╡╨│╤А╨╛╨▓╨░╨╜╤Ц ╨▓ ╨┐╨░╨╜╨╡╨╗╤М ╨▓╨║╨╗╨░╨┤╨╛╨║) */
+    /* Кнопки керування вікном (інтегровані в панель вкладок) */
     .window-controls {
       display: flex;
       height: 40px;
@@ -1309,6 +1313,15 @@
 
     .tab:hover {
       background: #343a55;
+    }
+
+    .tab.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .tab.drag-over {
+      border-left: 3px solid #3b82f6;
     }
 
     .tab.active {
