@@ -161,15 +161,20 @@ function isBookmarked(url) {
 }
 
 // ==================== СЕСІЯ ====================
-function saveSession(tabs) {
-  const sessionTabs = tabs.map(tab => ({
+function saveSession(tabs, activeTabId = null) {
+  const sessionTabs = tabs.map((tab, index) => ({
     url: tab.url || '',
-    title: tab.title || 'Нова вкладка'
+    title: tab.title || 'Нова вкладка',
+    isActive: tab.isActive || false,
+    index: index
   })).filter(t => t.url && !t.url.includes('newtab.html'));
+  
+  // Знаходимо індекс активної вкладки
+  const activeIndex = sessionTabs.findIndex(t => t.isActive);
   
   setData('session', {
     tabs: sessionTabs,
-    activeTabIndex: 0,
+    activeTabIndex: activeIndex >= 0 ? activeIndex : 0,
     savedAt: Date.now()
   });
 }
