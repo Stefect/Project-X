@@ -520,6 +520,122 @@
       const tabsContainer = tabsBar.querySelector('.tabs-container');
       const newTabBtn = document.getElementById('new-tab-btn');
       
+      // Прокручування вкладок колесиком миші (плавне)
+      if (tabsContainer) {
+        tabsContainer.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          // Плавне прокручування
+          const scrollAmount = e.deltaY;
+          tabsContainer.scrollBy({
+            left: scrollAmount,
+            behavior: 'smooth'
+          });
+        }, { passive: false });
+      }
+
+      // Drag and Drop для вкладок
+      let draggedTab = null;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let isDraggingOut = false;
+
+      // Ініціалізація drag and drop для вкладок
+      function initTabDragAndDrop() {
+        const tabs = tabsContainer.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+          if (!tab.hasAttribute('data-drag-initialized')) {
+            tab.setAttribute('draggable', 'true');
+            tab.setAttribute('data-drag-initialized', 'true');
+            
+            tab.addEventListener('dragstart', handleTabDragStart);
+            tab.addEventListener('dragend', handleTabDragEnd);
+            tab.addEventListener('dragover', handleTabDragOver);
+            tab.addEventListener('drop', handleTabDrop);
+            tab.addEventListener('dragleave', handleTabDragLeave);
+          }
+        });
+      }
+
+      function handleTabDragStart(e) {
+        draggedTab = e.target.closest('.tab');
+        if (!draggedTab) return;
+        
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        isDraggingOut = false;
+        
+        draggedTab.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', draggedTab.innerHTML);
+        e.dataTransfer.setData('tabId', draggedTab.dataset.tabId);
+      }
+
+      function handleTabDragEnd(e) {
+        if (!draggedTab) return;
+        
+        draggedTab.classList.remove('dragging');
+        draggedTab = null;
+        
+        // Видаляємо всі класи drag-over
+        document.querySelectorAll('.tab.drag-over').forEach(tab => {
+          tab.classList.remove('drag-over');
+        });
+      }
+
+      function handleTabDragOver(e) {
+        if (e.preventDefault) {
+          e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+        
+        const targetTab = e.target.closest('.tab');
+        if (targetTab && targetTab !== draggedTab) {
+          targetTab.classList.add('drag-over');
+        }
+        
+        return false;
+      }
+
+      function handleTabDrop(e) {
+        if (e.stopPropagation) {
+          e.stopPropagation();
+        }
+        
+        const targetTab = e.target.closest('.tab');
+        if (!targetTab || !draggedTab || targetTab === draggedTab) return;
+        
+        // Визначаємо позицію для вставки
+        const allTabs = Array.from(tabsContainer.querySelectorAll('.tab'));
+        const draggedIndex = allTabs.indexOf(draggedTab);
+        const targetIndex = allTabs.indexOf(targetTab);
+        
+        if (draggedIndex < targetIndex) {
+          // Вставляємо після target
+          targetTab.parentNode.insertBefore(draggedTab, targetTab.nextSibling);
+        } else {
+          // Вставляємо перед target
+          targetTab.parentNode.insertBefore(draggedTab, targetTab);
+        }
+        
+        targetTab.classList.remove('drag-over');
+        
+        // Відправляємо повідомлення про зміну порядку вкладок
+        const newOrder = Array.from(tabsContainer.querySelectorAll('.tab')).map(tab => parseInt(tab.dataset.tabId));
+        ipcRenderer.send('reorder-tabs', newOrder);
+        
+        return false;
+      }
+
+      function handleTabDragLeave(e) {
+        const targetTab = e.target.closest('.tab');
+        if (targetTab) {
+          targetTab.classList.remove('drag-over');
+        }
+      }
+
+      // Ініціалізуємо drag and drop для існуючих вкладок
+      initTabDragAndDrop();
+      
       console.log('🔍 Initializing tabs:', {
         tabsBar: !!tabsBar,
         tabsContainer: !!tabsContainer,
@@ -592,6 +708,9 @@
           
           // Додаємо перед кнопкою "+" в контейнер вкладок
           tabsContainer.insertBefore(tabElement, newTabBtn);
+          
+          // Ініціалізуємо drag and drop для нової вкладки
+          initTabDragAndDrop();
           
           // Перемикаємось на нову вкладку
           switchTab(result.id);
@@ -709,6 +828,13 @@
       ipcRenderer.on('tab-restored', (event, data) => {
         console.log('[SESSION] Tab restored:', data.tabId, data.title);
         
+        // При відновленні першої вкладки видаляємо початкову newtab
+        const initialTab = document.querySelector('.tab[data-tab-id="1"]');
+        if (initialTab && initialTab.querySelector('.tab-title')?.textContent === 'Нова вкладка') {
+          console.log('[SESSION] Removing initial newtab');
+          initialTab.remove();
+        }
+        
         // Створюємо візуальний елемент вкладки (BrowserView вже створено в main.js)
         const tabElement = document.createElement('div');
         tabElement.className = 'tab';
@@ -729,6 +855,9 @@
         
         // Додаємо перед кнопкою "+"
         tabsContainer.insertBefore(tabElement, newTabBtn);
+        
+        // Ініціалізуємо drag and drop для відновленої вкладки
+        initTabDragAndDrop();
       });
 
       // Відкрити URL в новій вкладці (з main процесу)
@@ -736,6 +865,19 @@
         if (url) {
           createTab(url);
         }
+      });
+      
+      // Активація вкладки з main процесу
+      ipcRenderer.on('tab-activated', (event, tabId) => {
+        console.log('[SESSION] Activating tab:', tabId);
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+          if (parseInt(tab.dataset.tabId) === tabId) {
+            tab.classList.add('active');
+          } else {
+            tab.classList.remove('active');
+          }
+        });
       });
     
     // Обробники подій для вкладок

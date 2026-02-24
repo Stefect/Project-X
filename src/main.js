@@ -636,33 +636,42 @@ function createWindow() {
     const sessionTabs = tabs
       .map(tab => ({
         url: tab.browserView?.webContents?.getURL() || '',
-        title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
+        title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка',
+        isActive: tab.id === activeTabId
       }))
       .filter(tab => !tab.url.includes('newtab.html')); // НЕ зберігаємо newtab
     
-    storage.saveSession(sessionTabs);
-    console.log('[SESSION] Auto-save on close:', sessionTabs.length, 'tabs');
+    storage.saveSession(sessionTabs, activeTabId);
+    console.log('[SESSION] Auto-save on close:', sessionTabs.length, 'tabs, active:', activeTabId);
   });
 }
 
-// Розумне відновлення сесії - перша вкладка завжди newtab, потім решта
+// Розумне відновлення сесії - якщо є збережені вкладки, відкриваємо останню активну
 function restoreSessionSmart() {
   try {
     const session = storage.getSession();
     const sessionTabs = session.tabs || [];
+    const savedActiveIndex = session.activeTabIndex || 0;
     
-    console.log('[SESSION] Found saved tabs:', sessionTabs.length);
+    console.log('[SESSION] Found saved tabs:', sessionTabs.length, 'active index:', savedActiveIndex);
     
-    // Перша вкладка вже є (newtab), відновлюємо тільки інші
+    // Якщо немає збережених вкладок, залишаємо newtab
     if (sessionTabs.length === 0) {
-      console.log('[SESSION] No tabs to restore - showing only newtab');
+      console.log('[SESSION] No tabs to restore - showing newtab');
       return;
     }
     
     console.log('[SESSION] Restoring', sessionTabs.length, 'tabs...');
     
-    // НЕ закриваємо newtab - вона залишається першою
-    // Додаємо відновлені вкладки після неї
+    // Видаляємо початкову newtab вкладку, оскільки є що відновити
+    if (tabs.length > 0 && tabs[0].url.includes('newtab.html')) {
+      const newtabView = tabs[0].browserView;
+      mainWindow.removeBrowserView(newtabView);
+      if (newtabView && newtabView.webContents) {
+        newtabView.webContents.close();
+      }
+      tabs.shift();
+    }
     
     // Відновлюємо кожну вкладку
     sessionTabs.forEach((tab, index) => {
@@ -721,25 +730,30 @@ function restoreSessionSmart() {
         mainWindow.webContents.send('tab-restored', {
           tabId: nextTabId,
           url: tab.url,
-          title: tab.title
+          title: tab.title || 'Loading...'
         });
         
         nextTabId++;
       }
     });
     
-    // Активуємо першу вкладку
+    // Активуємо останню активну вкладку або першу, якщо не знайдена
     if (tabs.length > 0) {
-      activeTabId = tabs[0].id;
-      mainWindow.setBrowserView(tabs[0].browserView);
-      
-      const bounds = mainWindow.getContentBounds();
-      tabs[0].browserView.setBounds({
-        x: 0,
-        y: 100,
-        width: bounds.width - sidebarWidth,
-        height: bounds.height - 100
-      });
+      // Переконуємося що індекс в межах масиву
+      const activeIndex = Math.min(savedActiveIndex, tabs.length - 1);
+      activeTabId = tabs[activeIndex].id;
+      const activeView = tabs[activeIndex].browserView;
+      if (activeView) {
+        mainWindow.setBrowserView(activeView);
+        
+        const bounds = mainWindow.getContentBounds();
+        activeView.setBounds({
+          x: sidebarWidth,
+          y: 100,
+          width: bounds.width - sidebarWidth,
+          height: bounds.height - 100
+        });
+      }
       
       mainWindow.webContents.send('tab-activated', activeTabId);
     }
@@ -1499,6 +1513,28 @@ ipcMain.on('switch-tab', (event, tabId) => {
   console.log('Switched to tab:', tabId);
 });
 
+// Перевпорядкування вкладок
+ipcMain.on('reorder-tabs', (event, newOrder) => {
+  try {
+    console.log('[TABS] Reordering tabs:', newOrder);
+    
+    // Створюємо новий масив вкладок в правильному порядку
+    const reorderedTabs = [];
+    newOrder.forEach(tabId => {
+      const tab = tabs.find(t => t.id === tabId);
+      if (tab) {
+        reorderedTabs.push(tab);
+      }
+    });
+    
+    // Оновлюємо масив вкладок
+    tabs = reorderedTabs;
+    console.log('[TABS] Tabs reordered successfully');
+  } catch (error) {
+    console.error('[ERROR] Error reordering tabs:', error);
+  }
+});
+
 // Закрити вкладку
 ipcMain.on('close-tab', (event, tabId) => {
   const tabIndex = tabs.findIndex(t => t.id === tabId);
@@ -2009,12 +2045,13 @@ ipcMain.on('save-session', () => {
   const sessionTabs = tabs
     .map(tab => ({
       url: tab.browserView?.webContents?.getURL() || '',
-      title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка'
+      title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка',
+      isActive: tab.id === activeTabId
     }))
     .filter(tab => !tab.url.includes('newtab.html')); // НЕ зберігаємо newtab
   
-  storage.saveSession(sessionTabs);
-  console.log('Session saved:', sessionTabs.length, 'tabs');
+  storage.saveSession(sessionTabs, activeTabId);
+  console.log('Session saved:', sessionTabs.length, 'tabs, active:', activeTabId);
 });
 
 ipcMain.handle('get-session', () => {
