@@ -872,6 +872,11 @@ body:not(.newtab-page) .container {
   overflow-y: hidden;
   -webkit-app-region: drag;
   position: relative;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tabs-bar::-webkit-scrollbar {
+  display: none;
 }
 .menu-section {
   display: flex;
@@ -1344,13 +1349,12 @@ body:not(.newtab-page) .container {
   overflow-y: hidden;
   -webkit-app-region: drag;
   padding: 0 5px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
 }
-.tabs-bar::-webkit-scrollbar {
-  height: 3px;
-}
-.tabs-bar::-webkit-scrollbar-thumb {
-  background: #565f89;
-  border-radius: 2px;
+.tabs-container::-webkit-scrollbar {
+  display: none;
 }
 .window-controls {
   display: flex;
@@ -1402,6 +1406,13 @@ body:not(.newtab-page) .container {
 }
 .tab:hover {
   background: #343a55;
+}
+.tab.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+.tab.drag-over {
+  border-left: 3px solid #3b82f6;
 }
 .tab.active {
   background: #f7768e;
