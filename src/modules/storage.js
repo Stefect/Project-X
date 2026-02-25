@@ -267,11 +267,8 @@ module.exports = {
   // Сесія
   saveSession,
   getSession,
-  clearSession,
   
   // Налаштування
-  getSetting,
-  setSetting,
   getAllSettings,
   setAllSettings,
   
@@ -280,9 +277,5 @@ module.exports = {
   getNotes,
   deleteNote,
   updateNote,
-  clearNotes,
-  
-  // Прямий доступ
-  getData,
-  setData
+  clearNotes
 };

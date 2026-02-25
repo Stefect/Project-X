@@ -46,7 +46,7 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
   
   // ==================== NOTES SUMMARIZATION ====================
   
-  ipcMain.handle('ask-gemini', async (event, prompt) => {
+  ipcMain.handle('ask-ai', async (event, prompt) => {
     try {
       if (!groqClient) {
         throw new Error('AI не ініціалізовано. Перевірте API ключ у .env файлі');
