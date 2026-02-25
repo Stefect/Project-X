@@ -340,4 +340,4 @@ async function* infiniteArticleGenerator(categories = ['all'], customSources = [
     }
 }
 
-module.exports = { infiniteArticleGenerator, getSourcesByCategory, getSourcesByCategories, getAllSources };
+module.exports = { infiniteArticleGenerator };

@@ -1509,7 +1509,7 @@
         summarizeBtn.disabled = true;
 
         try {
-          const result = await ipcRenderer.invoke('ask-gemini', prompt);
+          const result = await ipcRenderer.invoke('ask-ai', prompt);
           
           // Замінюємо список на узагальнення
           notesList.innerHTML = `<div style="padding: 10px; line-height: 1.6; white-space: pre-wrap;">${result}</div>`;
