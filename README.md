@@ -169,30 +169,32 @@ Built applications will be located in the `dist/` directory.
 ```
 Project-X/
 ├── src/                      # Source code
-│   ├── main.js              # Main Electron process
-│   ├── preload.js           # Preload script for security
+│   ├── main.js              # App coordinator (307 lines)
+│   ├── preload.js           # Security bridge
 │   ├── config.js            # API configuration (gitignored)
-│   └── modules/             # Feature modules
-│       ├── ai-feed.js       # AI content feed generator
-│       ├── unified-t9.js    # VS Code-style T9 autocomplete
-│       └── storage.js       # Data persistence layer
+│   └── modules/             # Feature modules (modular architecture)
+│       ├── ai-feed.js       # Content feed generator (333 lines)
+│       ├── ai-handlers.js   # AI IPC handlers (220 lines)
+│       ├── ipc-handlers.js  # Storage IPC handlers (136 lines)
+│       ├── reactive-events.js # Live tracker dashboard (150 lines)
+│       ├── storage.js       # Data persistence (259 lines)
+│       ├── tab-manager.js   # Tab lifecycle & navigation (490 lines)
+│       ├── theme-manager.js # Theme system (114 lines)
+│       ├── tor-manager.js   # Tor integration (153 lines)
+│       └── unified-t9.js    # VS Code T9 autocomplete (374 lines)
 ├── public/                   # Frontend files
 │   ├── index.html           # Main UI
 │   ├── feed.html            # AI feed page
 │   ├── history.html         # History page
 │   ├── newtab.html          # New tab page
-│   ├── settings.html        # Settings page
 │   └── css/                 # Stylesheets
 ├── bin/                      # Binary files
 │   ├── tor/                 # Tor bundle
 │   └── data/                # GeoIP data
-├── build/                    # Build resources (icons)
-├── dist/                     # Built applications
 ├── .env                      # Environment variables (gitignored)
 ├── .env.example             # Environment template
-├── package.json             # Project metadata
-├── tailwind.config.js       # Tailwind configuration
-└── postcss.config.js        # PostCSS configuration
+├── CHANGELOG.md             # Version history
+└── package.json             # Project metadata
 ```
 
 ## 🔧 Configuration
