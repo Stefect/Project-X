@@ -19,8 +19,8 @@ BrowserX is a modern, privacy-focused web browser built on Electron with integra
 ### 🤖 AI-Powered Features
 - **AI Content Feed** - Infinite scroll news feed with AI-curated content from multiple sources (Reddit, Dev.to, Hacker News, etc.)
 - **Smart T9 Autocomplete** - VS Code-style IntelliSense for text inputs with hybrid local dictionary + AI suggestions
-- **Link X-Ray** - Hover over any link for 1 second to get AI-powered page preview
-- **AI Translation** - Built-in translation support for multiple languages
+- **Notes Summarization** - AI-powered summarization of your saved notes
+- **Tab Organization** - AI-powered automatic tab organization by topic
 
 ### 🔒 Privacy & Security
 - **Tor Integration** - Built-in Tor support for anonymous browsing
@@ -44,7 +44,7 @@ BrowserX is a modern, privacy-focused web browser built on Electron with integra
 
 - **Framework:** Electron 40.1.0
 - **UI:** HTML5, CSS3, Tailwind CSS 4.1.18
-- **AI Integration:** Groq SDK, Google Generative AI
+- **AI Integration:** Groq SDK (llama-3.3-70b-versatile)
 - **Data Parsing:** RSS Parser, Axios
 - **Privacy:** Tor Expert Bundle
 
@@ -69,22 +69,17 @@ npm install
 
 ### Step 3: Configure API Keys
 
-1. Copy the configuration template:
+1. Copy the environment template:
    ```bash
-   cp config.js.example config.js
+   cp .env.example .env
    ```
 
-2. Edit `config.js` and add your API keys:
-   ```javascript
-   module.exports = {
-     groq: {
-       apiKey: 'YOUR_GROQ_API_KEY'
-     },
-     google: {
-       apiKey: 'YOUR_GOOGLE_API_KEY'
-     }
-   };
+2. Edit `.env` and add your Groq API key:
    ```
+   GROQ_API_KEY=your_groq_api_key_here
+   ```
+   
+   Get your free API key at: https://console.groq.com/keys
 
 ### Step 4: Install Tor (Optional, for Anonymous Browsing)
 
@@ -146,11 +141,6 @@ Built applications will be located in the `dist/` directory.
 4. Press `Tab` or `Enter` to accept suggestion
 5. Press `Escape` to close suggestions
 
-#### Link X-Ray
-1. Hover mouse over any link for 1 second
-2. View AI-generated preview of the page content
-3. Move mouse away to dismiss the preview
-
 ### Privacy Features
 
 #### Tor Mode
@@ -183,12 +173,9 @@ Project-X/
 │   ├── preload.js           # Preload script for security
 │   ├── config.js            # API configuration (gitignored)
 │   └── modules/             # Feature modules
-│       ├── ai-feed.js       # AI content feed
-│       ├── unified-t9.js    # T9 autocomplete
-│       ├── link-xray.js     # Link preview
-│       ├── storage.js       # Data persistence
-│       ├── code-injector.js # Script injection
-│       └── inject.js        # Content injection
+│       ├── ai-feed.js       # AI content feed generator
+│       ├── unified-t9.js    # VS Code-style T9 autocomplete
+│       └── storage.js       # Data persistence layer
 ├── public/                   # Frontend files
 │   ├── index.html           # Main UI
 │   ├── feed.html            # AI feed page
@@ -201,6 +188,8 @@ Project-X/
 │   └── data/                # GeoIP data
 ├── build/                    # Build resources (icons)
 ├── dist/                     # Built applications
+├── .env                      # Environment variables (gitignored)
+├── .env.example             # Environment template
 ├── package.json             # Project metadata
 ├── tailwind.config.js       # Tailwind configuration
 └── postcss.config.js        # PostCSS configuration
@@ -210,14 +199,11 @@ Project-X/
 
 ### API Keys
 
-The application requires API keys for AI features:
+The application requires a Groq API key for AI features (autocomplete, notes summarization, tab organization, feed summaries).
 
-- **Groq API** - For fast AI inference (autocomplete, link analysis)
-- **Google Generative AI** - Alternative AI provider
+Get your free API key at: https://console.groq.com/keys
 
-Get your keys:
-- Groq: https://console.groq.com/
-- Google AI: https://makersuite.google.com/app/apikey
+Configure it in the `.env` file (see installation instructions above).
 
 ### Custom News Sources
 

@@ -1,12 +1,6 @@
 // Preload script для інжекту в веб-сторінки
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Безпечно експонуємо API для сторінки
-contextBridge.exposeInMainWorld('aiHelper', {
-  sendSelectedText: (text) => ipcRenderer.send('text-selected', text),
-  onExplanation: (callback) => ipcRenderer.on('show-explanation', (event, explanation) => callback(explanation))
-});
-
 // API для роботи з пам'яттю браузера
 contextBridge.exposeInMainWorld('browserStorage', {
   // Історія
@@ -37,21 +31,8 @@ contextBridge.exposeInMainWorld('browserStorage', {
   clearNotes: () => ipcRenderer.send('clear-notes')
 });
 
-// API для AI-автозаповнення (T9 на стероїдах)
-contextBridge.exposeInMainWorld('aiAutocomplete', {
-  predict: (text) => ipcRenderer.invoke('predict-text', text)
-});
-
-// API для Smart Compose (розумного помічника тексту)
+// API для Infinite Feed (нескінченна стрічка новин)
 contextBridge.exposeInMainWorld('api', {
-  invoke: (channel, ...args) => {
-    const validChannels = ['predict-completion', 'predict-text', 'start-infinite-feed', 'stop-infinite-feed', 'open-external', 'open-in-browser'];
-    if (validChannels.includes(channel)) {
-      return ipcRenderer.invoke(channel, ...args);
-    }
-    return Promise.resolve(null);
-  },
-  // API для Infinite Feed (нескінченна стрічка новин)
   startFeed: (categories, sourceNames) => ipcRenderer.invoke('start-infinite-feed', categories, sourceNames),
   stopFeed: () => ipcRenderer.invoke('stop-infinite-feed'),
   onNewFeedItem: (callback) => ipcRenderer.on('new-feed-item', (_event, data) => callback(data)),

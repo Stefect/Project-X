@@ -1,5 +1,9 @@
+// Завантажуємо змінні середовища з .env файлу
+require('dotenv').config();
+
 const { app, BrowserWindow, BrowserView, ipcMain, Menu, MenuItem, session, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { spawn, execSync } = require('child_process');
 const Groq = require('groq-sdk');
 const EventEmitter = require('events');
@@ -147,8 +151,8 @@ function setupReactiveNetworkEvents() {
 }
 
 // Очищаємо кеш config при кожному запуску
-delete require.cache[require.resolve('../config')];
-const config = require('../config');
+delete require.cache[require.resolve('./config')];
+const config = require('./config');
 
 let mainWindow;
 let browserView;
@@ -189,7 +193,6 @@ function startTor() {
   const isWindows = process.platform === 'win32';
   const torBinary = isWindows ? 'tor.exe' : 'tor';
   const torPath = path.join(__dirname, '..', 'bin', 'tor', torBinary);
-  const fs = require('fs');
   
   // Перевіряємо чи існує tor
   if (!fs.existsSync(torPath)) {
@@ -370,9 +373,6 @@ function createWindow() {
       injectThemeToNewtab(browserView);
     } else {
       // Інжектуємо модулі тільки для звичайних сайтів (не для newtab)
-      injectSelectionListener(browserView);
-      injectCodeMate(browserView);
-      injectLinkXRay(browserView);
       injectUnifiedT9(browserView); // Єдина оптимізована T9 система
     }
   });
@@ -417,41 +417,7 @@ function createWindow() {
       
       menu.append(new MenuItem({ type: 'separator' }));
       
-      // 2. AI Помічник
-      menu.append(new MenuItem({
-        label: '🤖 AI Помічник',
-        click: async () => {
-          const result = await getAIExplanation(selectedText);
-          browserView.webContents.executeJavaScript(`
-            window.postMessage({ 
-              type: 'AI_ASSISTANT_RESULT', 
-              answer: ${JSON.stringify(result)},
-              originalText: ${JSON.stringify(selectedText)}
-            }, '*');
-          `).catch(err => console.error('AI error:', err));
-        }
-      }));
-      
-      // 3. Переклад
-      menu.append(new MenuItem({
-        label: '🌐 Перекласти',
-        click: async () => {
-          const result = await translateText(selectedText, 'uk');
-          if (result.success) {
-            browserView.webContents.executeJavaScript(`
-              window.postMessage({ 
-                type: 'TRANSLATION_RESULT', 
-                translation: ${JSON.stringify(result.translation)},
-                originalText: ${JSON.stringify(selectedText)}
-              }, '*');
-            `).catch(err => console.error('Translation error:', err));
-          }
-        }
-      }));
-      
-      menu.append(new MenuItem({ type: 'separator' }));
-      
-      // 4. Додати в нотатки
+      // 2. Додати в нотатки
       menu.append(new MenuItem({
         label: 'Додати в конспект',
         click: () => {
@@ -464,9 +430,6 @@ function createWindow() {
   });
 
   browserView.webContents.on('did-navigate-in-page', () => {
-    injectSelectionListener(browserView);
-    injectCodeMate(browserView);
-    injectLinkXRay(browserView);
     injectUnifiedT9(browserView); // Єдина оптимізована T9 система
   });
 
@@ -497,108 +460,6 @@ function createWindow() {
     
     if (level >= 1) { // Warn або Error
       console.log(`${logPrefix} [${levelName}] ${message} (${sourceId}:${line})`);
-    }
-    
-    // Обробка запитів на аналіз коду (Code Mate)
-    if (message.startsWith('AI_CODE_REQUEST:')) {
-      try {
-        const data = JSON.parse(message.replace('AI_CODE_REQUEST:', ''));
-        emitReactiveEvent({
-          type: 'ai-start',
-          title: 'AI аналіз коду',
-          detail: 'Запит на пояснення'
-        });
-        const explanation = await getAIExplanation(data.prompt);
-        
-        // Відправляємо пояснення назад у браузер
-        browserView.webContents.executeJavaScript(`
-          if (typeof window.showCodeExplanation === 'function') {
-            window.showCodeExplanation(${JSON.stringify(explanation)});
-          }
-        `).catch(err => console.error('Error showing code explanation:', err));
-
-        emitReactiveEvent({
-          type: 'ai-complete',
-          title: 'AI completed analysis',
-          detail: 'Explanation ready'
-        });
-      } catch (error) {
-        console.error('[CODE MATE] Error processing code analysis request:', error);
-        emitReactiveEvent({
-          type: 'ai-failed',
-          title: 'AI error',
-          detail: 'Failed to analyze code'
-        });
-      }
-    }
-    
-    // Обробка X-Ray запитів (сканування посилань)
-    if (message.startsWith('XRAY_REQUEST:')) {
-      const url = message.replace('XRAY_REQUEST:', '').trim();
-      try {
-        emitReactiveEvent({
-          type: 'ai-start',
-          title: 'AI link analysis',
-          detail: formatUrlLabel(url)
-        });
-        const result = await xrayLink(url);
-        browserView.webContents.executeJavaScript(`
-          if (typeof window._showXRayResult === 'function') {
-            window._showXRayResult(${JSON.stringify(result)});
-          }
-        `).catch(err => console.error('Error showing X-Ray:', err));
-
-        emitReactiveEvent({
-          type: 'ai-complete',
-          title: 'AI completed analysis',
-          detail: formatUrlLabel(url)
-        });
-      } catch (error) {
-        console.error('X-Ray error:', error);
-        emitReactiveEvent({
-          type: 'ai-failed',
-          title: 'AI error',
-          detail: formatUrlLabel(url)
-        });
-      }
-    }
-    
-    // Обробка запитів до AI помічника (натискання K на виділений текст)
-    if (message.startsWith('AI_ASSISTANT_REQUEST:')) {
-      try {
-        const data = JSON.parse(message.replace('AI_ASSISTANT_REQUEST:', ''));
-        const result = await getAIExplanation(data.text);
-        
-        browserView.webContents.executeJavaScript(`
-          window.postMessage({ 
-            type: 'AI_ASSISTANT_RESULT', 
-            answer: ${JSON.stringify(result)},
-            originalText: ${JSON.stringify(data.text)}
-          }, '*');
-        `).catch(err => console.error('Error showing AI response:', err));
-      } catch (error) {
-        console.error('AI assistant error:', error);
-      }
-    }
-    
-    // Обробка запитів на переклад
-    if (message.startsWith('TRANSLATE_REQUEST:')) {
-      try {
-        const data = JSON.parse(message.replace('TRANSLATE_REQUEST:', ''));
-        const result = await translateText(data.text, data.targetLanguage);
-        
-        if (result.success) {
-          browserView.webContents.executeJavaScript(`
-            window.postMessage({ 
-              type: 'TRANSLATION_RESULT', 
-              translation: ${JSON.stringify(result.translation)},
-              originalText: ${JSON.stringify(data.text)}
-            }, '*');
-          `).catch(err => console.error('Error showing translation:', err));
-        }
-      } catch (error) {
-        console.error('Translation error:', error);
-      }
     }
   });
 
@@ -711,9 +572,6 @@ function restoreSessionSmart() {
             });
           }
           if (!currentUrl.includes('newtab.html')) {
-            injectSelectionListener(tabView);
-            injectCodeMate(tabView);
-            injectLinkXRay(tabView);
             injectUnifiedT9(tabView); // Єдина оптимізована T9 система
           }
         });
@@ -831,91 +689,6 @@ ipcMain.on('apply-theme', (event, theme) => {
 
 ipcMain.handle('get-reactive-events', () => {
   return reactiveEventBuffer.slice(0, 20);
-});
-
-// Функція для показу popup з перекладом
-// Обробка перекладу тексту
-async function translateText(text, targetLanguage) {
-  try {
-    console.log('Translation to', targetLanguage + ':', text.substring(0, 50) + '...');
-
-    if (!groqClient) {
-      return { 
-        success: false, 
-        message: ' AI не ініціалізовано. Перевірте API ключ у config.js' 
-      };
-    }
-
-    // Визначаємо назву мови
-    const languageNames = {
-      'uk': 'українську',
-      'en': 'англійську',
-      'ru': 'російську',
-      'de': 'німецьку',
-      'fr': 'французьку',
-      'es': 'іспанську',
-      'it': 'італійську',
-      'pl': 'польську',
-      'ja': 'японську',
-      'zh': 'китайську'
-    };
-
-    const targetLangName = languageNames[targetLanguage] || targetLanguage;
-
-    // Формуємо промпт для перекладу
-    const prompt = `Переклади наступний текст на ${targetLangName} мову. Поверни ТІЛЬКИ переклад без додаткових коментарів.
-
-Текст для перекладу:
-${text}`;
-
-    console.log('Translating via Groq AI...');
-
-    // Питаємо Groq AI
-    const completion = await groqClient.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.3,
-      max_tokens: 1000
-    });
-
-    const translation = completion.choices[0]?.message?.content?.trim();
-
-    if (!translation) {
-      return { 
-        success: false, 
-        message: ' Помилка перекладу' 
-      };
-    }
-
-    console.log('Translation ready');
-    return { 
-      success: true, 
-      translation: translation 
-    };
-
-  } catch (error) {
-    console.error('Translation error:', error);
-    return { 
-      success: false, 
-      message: ` ${error.message}` 
-    };
-  }
-}
-
-ipcMain.handle('translate-text', async (event, text, targetLanguage) => {
-  return await translateText(text, targetLanguage);
-});
-
-// Обробка зміни мови перекладу
-ipcMain.on('change-translation-language', (event, language) => {
-  console.log('Translation language changed to:', language);
-  
-  // Відправляємо повідомлення всім вкладкам
-  tabs.forEach(tab => {
-    tab.browserView.webContents.executeJavaScript(`
-      window.postMessage({ type: 'SET_TRANSLATION_LANGUAGE', language: '${language}' }, '*');
-    `).catch(err => console.error('Language change error:', err));
-  });
 });
 
 // Розумний Організатор Вкладок (Tab Zen Master)
@@ -1244,9 +1017,6 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       injectThemeToNewtab(newBrowserView);
     } else {
       // Інжектуємо модулі тільки для звичайних сайтів
-      injectSelectionListener(newBrowserView);
-      injectCodeMate(newBrowserView);
-      injectLinkXRay(newBrowserView);
       injectUnifiedT9(newBrowserView); // Єдина оптимізована T9 система
     }
     
@@ -1319,41 +1089,7 @@ ipcMain.handle('create-tab', async (event, url = null) => {
       
       menu.append(new MenuItem({ type: 'separator' }));
       
-      // 2. AI Помічник
-      menu.append(new MenuItem({
-        label: '🤖 AI Помічник',
-        click: async () => {
-          const result = await getAIExplanation(selectedText);
-          newBrowserView.webContents.executeJavaScript(`
-            window.postMessage({ 
-              type: 'AI_ASSISTANT_RESULT', 
-              answer: ${JSON.stringify(result)},
-              originalText: ${JSON.stringify(selectedText)}
-            }, '*');
-          `).catch(err => console.error('AI error:', err));
-        }
-      }));
-      
-      // 3. Переклад
-      menu.append(new MenuItem({
-        label: '🌐 Перекласти',
-        click: async () => {
-          const result = await translateText(selectedText, 'uk');
-          if (result.success) {
-            newBrowserView.webContents.executeJavaScript(`
-              window.postMessage({ 
-                type: 'TRANSLATION_RESULT', 
-                translation: ${JSON.stringify(result.translation)},
-                originalText: ${JSON.stringify(selectedText)}
-              }, '*');
-            `).catch(err => console.error('Translation error:', err));
-          }
-        }
-      }));
-      
-      menu.append(new MenuItem({ type: 'separator' }));
-      
-      // 4. Додати в нотатки
+      // 2. Додати в нотатки
       menu.append(new MenuItem({
         label: ' Додати в конспект',
         click: () => {
@@ -1374,106 +1110,6 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     
     if (level >= 1) { // Warn або Error
       console.log(`${logPrefix} [${levelName}] ${message} (${sourceId}:${line})`);
-    }
-    
-    if (message.startsWith('AI_CODE_REQUEST:')) {
-      try {
-        const data = JSON.parse(message.replace('AI_CODE_REQUEST:', ''));
-        emitReactiveEvent({
-          type: 'ai-start',
-          title: 'AI аналіз коду',
-          detail: 'Запит на пояснення'
-        });
-        const explanation = await getAIExplanation(data.prompt);
-        
-        newBrowserView.webContents.executeJavaScript(`
-          if (typeof window.showCodeExplanation === 'function') {
-            window.showCodeExplanation(${JSON.stringify(explanation)});
-          }
-        `).catch(err => console.error('Error showing code explanation:', err));
-
-        emitReactiveEvent({
-          type: 'ai-complete',
-          title: 'AI completed analysis',
-          detail: 'Explanation ready'
-        });
-      } catch (err) {
-        console.error('AI request processing error:', err);
-        emitReactiveEvent({
-          type: 'ai-failed',
-          title: 'AI error',
-          detail: 'Failed to analyze code'
-        });
-      }
-    }
-    
-    // Обробка X-Ray запитів (сканування посилань)
-    if (message.startsWith('XRAY_REQUEST:')) {
-      const url = message.replace('XRAY_REQUEST:', '').trim();
-      try {
-        emitReactiveEvent({
-          type: 'ai-start',
-          title: 'AI аналіз посилання',
-          detail: formatUrlLabel(url)
-        });
-        const result = await xrayLink(url);
-        newBrowserView.webContents.executeJavaScript(`
-          if (typeof window._showXRayResult === 'function') {
-            window._showXRayResult(${JSON.stringify(result)});
-          }
-        `).catch(err => console.error('Error showing X-Ray:', err));
-
-        emitReactiveEvent({
-          type: 'ai-complete',
-          title: 'AI completed analysis',
-          detail: formatUrlLabel(url)
-        });
-      } catch (error) {
-        console.error('X-Ray error:', error);
-        emitReactiveEvent({
-          type: 'ai-failed',
-          title: 'AI error',
-          detail: formatUrlLabel(url)
-        });
-      }
-    }
-    
-    // Обробка запитів до AI помічника (натискання K на виділений текст)
-    if (message.startsWith('AI_ASSISTANT_REQUEST:')) {
-      try {
-        const data = JSON.parse(message.replace('AI_ASSISTANT_REQUEST:', ''));
-        const result = await getAIExplanation(data.text);
-        
-        newBrowserView.webContents.executeJavaScript(`
-          window.postMessage({ 
-            type: 'AI_ASSISTANT_RESULT', 
-            answer: ${JSON.stringify(result)},
-            originalText: ${JSON.stringify(data.text)}
-          }, '*');
-        `).catch(err => console.error('Error showing AI response:', err));
-      } catch (error) {
-        console.error('AI assistant error:', error);
-      }
-    }
-    
-    // Обробка запитів на переклад
-    if (message.startsWith('TRANSLATE_REQUEST:')) {
-      try {
-        const data = JSON.parse(message.replace('TRANSLATE_REQUEST:', ''));
-        const result = await translateText(data.text, data.targetLanguage);
-        
-        if (result.success) {
-          newBrowserView.webContents.executeJavaScript(`
-            window.postMessage({ 
-              type: 'TRANSLATION_RESULT', 
-              translation: ${JSON.stringify(result.translation)},
-              originalText: ${JSON.stringify(data.text)}
-            }, '*');
-          `).catch(err => console.error('Error showing translation:', err));
-        }
-      } catch (error) {
-        console.error('Translation error:', error);
-      }
     }
   });
   
@@ -1636,74 +1272,6 @@ ipcMain.on('reload', () => {
   }
 });
 
-// ========== AI Link X-Ray (Рентген Посилань) ==========
-// Функція для сканування посилань через AI
-async function xrayLink(url) {
-  try {
-    console.log('X-Ray scanning:', url);
-    
-    if (!groqClient) {
-      return ' AI не ініціалізовано';
-    }
-    
-    // Використовуємо вбудований fetch (Node.js 18+)
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000); // 5 сек таймаут
-    
-    const response = await fetch(url, { 
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'uk,en;q=0.9'
-      },
-      redirect: 'follow'
-    });
-    const html = await response.text();
-    clearTimeout(timeout);
-    
-    // Вирізаємо HTML теги, залишаємо тільки текст
-    const cleanText = html
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Видаляємо скрипти
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Видаляємо стилі
-      .replace(/<[^>]*>/g, ' ') // Видаляємо теги
-      .replace(/\s+/g, ' ') // Прибираємо зайві пробіли
-      .substring(0, 2000); // Перші 2000 символів
-    
-    // Питаємо Groq AI
-    const completion = await groqClient.chat.completions.create({
-      messages: [{ 
-        role: 'user', 
-        content: `Проаналізуй цей текст веб-сторінки (це перегляд посилання).
-Напиши ДУЖЕ коротко (максимум 10-15 слів) про що ця сторінка.
-Якщо це схоже на спам, продаж або клікбейт — почни з .
-Якщо це корисний контент — почни з .
-
-Текст: ${cleanText}` 
-      }],
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.3,
-      max_tokens: 100
-    });
-    
-    const result = completion.choices[0]?.message?.content || 'Analysis failed';
-    console.log('X-Ray result:', result);
-    return result;
-    
-  } catch (error) {
-    console.error('X-Ray error:', error.message);
-    if (error.name === 'AbortError') {
-      return ' Таймаут - сторінка завантажується занадто довго';
-    }
-    return ' Не вдалося просканувати';
-  }
-}
-
-// IPC handler для X-Ray (для зворотної сумісності)
-ipcMain.handle('xray-link', async (event, url) => {
-  return await xrayLink(url);
-});
-
 // Обробник для узагальнення нотаток через Groq
 ipcMain.handle('ask-gemini', async (event, prompt) => {
   try {
@@ -1728,99 +1296,6 @@ ipcMain.handle('ask-gemini', async (event, prompt) => {
     throw new Error(`Не вдалося отримати відповідь від AI: ${error.message}`);
   }
 });
-
-// Обробник розумного пошуку
-ipcMain.handle('smart-search', async (event, query) => {
-  try {
-    console.log('Smart search:', query);
-
-    if (!groqClient) {
-      return { 
-        success: false, 
-        message: ' AI не ініціалізовано. Перевірте API ключ у config.js' 
-      };
-    }
-
-    // Отримуємо текст сторінки
-    const pageText = await browserView.webContents.executeJavaScript('document.body.innerText');
-    
-    if (!pageText || pageText.trim().length === 0) {
-      return { 
-        success: false, 
-        message: ' Сторінка порожня або не завантажилась' 
-      };
-    }
-
-    // Обрізаємо текст, якщо дуже довгий (Groq має ліміти)
-    const cleanText = pageText.substring(0, 30000);
-
-    // Формуємо промпт для AI
-    const prompt = `Я дам тобі текст веб-сторінки і пошуковий запит.
-Твоє завдання: знайти у тексті ОДНЕ речення або коротку фразу (максимум 10-15 слів), яка найкраще відповідає на запит.
-Поверни ТІЛЬКИ цю фразу точнісінько так, як вона написана в тексті (щоб я міг знайти її через Ctrl+F).
-Якщо відповіді немає, напиши "NOT_FOUND".
-
-Запит користувача: "${query}"
-
-Текст сторінки:
-${cleanText}`;
-
-    console.log('Analyzing meaning via Groq AI...');
-
-    // Питаємо Groq AI
-    const completion = await groqClient.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile', // Найрозумніша модель
-      temperature: 0.3, // Низька температура для точності
-      max_tokens: 100
-    });
-
-    const exactQuote = completion.choices[0]?.message?.content?.trim() || 'NOT_FOUND';
-
-    if (exactQuote.includes('NOT_FOUND') || exactQuote.length < 5) {
-      return { 
-        success: false, 
-        message: ' Нічого схожого не знайшов. Спробуйте інший запит.' 
-      };
-    }
-
-    // Очищаємо цитату від лапок
-    const cleanQuote = exactQuote.replace(/^["']|["']$/g, '').trim();
-
-    console.log('Phrase found:', cleanQuote);
-
-    // Використовуємо вбудований пошук Chromium
-    const requestId = await browserView.webContents.findInPage(cleanQuote, {
-      findNext: false
-    });
-
-    return { 
-      success: true, 
-      message: ' Знайдено! Підсвічено на сторінці.',
-      quote: cleanQuote 
-    };
-
-  } catch (error) {
-    console.error('Smart search error:', error);
-    return { 
-      success: false, 
-      message: ` Помилка: ${error.message}` 
-    };
-  }
-});
-
-// Функція для показу popup в браузері
-function showPopupInBrowser(text) {
-  // Знаходимо активну вкладку
-  const activeTab = tabs.find(t => t.id === activeTabId);
-  const targetView = activeTab ? activeTab.browserView : browserView;
-  
-  targetView.webContents.executeJavaScript(`
-    if (typeof window.showAIPopup === 'function') {
-      window.showAIPopup(${JSON.stringify(text)});
-    }
-  `).catch(err => console.error('Popup display error:', err));
-}
 
 // Функція для інжектування світлої теми
 function injectLightTheme(targetView = null) {
@@ -1851,59 +1326,8 @@ function injectLightTheme(targetView = null) {
     });
 }
 
-// Функція для інжектування слухача виділення тексту
-function injectSelectionListener(targetView = null) {
-  const fs = require('fs');
-  const injectScript = fs.readFileSync(path.join(__dirname, 'modules', 'inject.js'), 'utf8');
-  const view = targetView || browserView;
-  
-  view.webContents.executeJavaScript(injectScript)
-    .catch(err => {
-      console.error('Script injection error:', err);
-    });
-}
-
-// Функція для інжектування Code Mate (автоматичні AI кнопки для коду)
-function injectCodeMate(targetView = null) {
-  const fs = require('fs');
-  const view = targetView || browserView;
-  try {
-    const codeInjectorScript = fs.readFileSync(path.join(__dirname, 'modules', 'code-injector.js'), 'utf8');
-    
-    view.webContents.executeJavaScript(codeInjectorScript)
-      .then(() => {
-        console.log('Code Mate activated on page');
-      })
-      .catch(err => {
-        console.error('Code Mate injection error:', err);
-      });
-  } catch (error) {
-    console.error('Failed to read code-injector.js:', error);
-  }
-}
-
-// Функція для інжектування Link X-Ray (AI сканування посилань)
-function injectLinkXRay(targetView = null) {
-  const fs = require('fs');
-  const view = targetView || browserView;
-  try {
-    const linkXRayScript = fs.readFileSync(path.join(__dirname, 'modules', 'link-xray.js'), 'utf8');
-    
-    view.webContents.executeJavaScript(linkXRayScript)
-      .then(() => {
-        console.log('Link X-Ray activated on page');
-      })
-      .catch(err => {
-        console.error('Link X-Ray injection error:', err);
-      });
-  } catch (error) {
-    console.error('Failed to read link-xray.js:', error);
-  }
-}
-
 // Unified T9 Autocomplete (VS Code IntelliSense style)
 function injectUnifiedT9(targetBrowserView = browserView) {
-  const fs = require('fs');
   try {
     const unifiedT9Script = fs.readFileSync(path.join(__dirname, 'modules', 'unified-t9.js'), 'utf8');
     
@@ -1916,55 +1340,6 @@ function injectUnifiedT9(targetBrowserView = browserView) {
       });
   } catch (error) {
     console.error('[T9] Failed to read unified-t9.js:', error);
-  }
-}
-
-// Функція для отримання пояснення від Groq AI
-async function getAIExplanation(text) {
-  const apiKey = config.GROQ_API_KEY;
-  
-  if (!apiKey || apiKey === 'YOUR_GROQ_API_KEY_HERE' || apiKey === 'REPLACE_WITH_YOUR_GROQ_KEY') {
-    return ' API ключ не налаштовано!\n\n1. Відкрийте https://console.groq.com/keys\n2. Натисніть "Create API Key"\n3. Скопіюйте ключ у файл config.js';
-  }
-
-  if (!groqClient) {
-    return ' AI не ініціалізовано.\n\nПеревірте що:\n1. API ключ правильний\n2. Groq API активовано';
-  }
-
-  try {
-    // Визначаємо тип запиту (чи це код, чи просто текст)
-    const isCodeAnalysis = text.includes('```') || text.includes('Проаналізуй цей код');
-    
-    let prompt, model, maxTokens;
-    
-    if (isCodeAnalysis) {
-      // Для аналізу коду використовуємо розумнішу модель
-      prompt = text;
-      model = 'llama-3.3-70b-versatile'; // Оновлена найрозумніша модель для коду
-      maxTokens = 500;
-    } else {
-      // Для простих пояснень використовуємо швидку модель
-      prompt = `Поясни цей термін або текст дуже коротко і просто українською мовою (максимум 2-3 речення): "${text}"`;
-      model = 'llama-3.1-8b-instant'; // Швидка модель для миттєвих підказок
-      maxTokens = 200;
-    }
-    
-    const completion = await groqClient.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: model,
-      temperature: 0.5,
-      max_tokens: maxTokens
-    });
-    
-    return completion.choices[0]?.message?.content || 'Error: no response received';
-  } catch (error) {
-    console.error('API Error:', error);
-    
-    if (error.message.includes('404') || error.message.includes('not found')) {
-      return ` API ключ невірний!\n\n1. Перейдіть на https://console.groq.com/keys\n2. Створіть новий ключ\n3. Оновіть config.js`;
-    }
-    
-    return ` Помилка AI: ${error.message}`;
   }
 }
 
@@ -2144,106 +1519,7 @@ ipcMain.handle('get-tor-status', () => {
   };
 });
 
-// AI-автозаповнення з Groq
-ipcMain.handle('predict-text', async (event, currentText) => {
-  try {
-    // Якщо тексту мало або немає Groq клієнта, не питаємо
-    if (!currentText || currentText.length < 3 || !groqClient) return null;
-
-    console.log('AI-T9: Autocomplete request for:', currentText.substring(0, 30) + '...');
-
-    const completion = await groqClient.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: "You are an autocomplete engine. Your task is to complete the user's sentence. Return ONLY the missing part of the word or sentence. Do not repeat the input. Do not add quotes. If unsure, return empty string. Keep it under 5 words."
-        },
-        {
-          role: "user",
-          content: `Complete this text: "${currentText}"`
-        }
-      ],
-      model: "llama-3.1-8b-instant", // Найшвидша модель Groq
-      max_tokens: 15, // Обмежуємо для швидкості
-      temperature: 0.1, // Мінімальна креативність для точності
-      stop: ["\n", ".", "!", "?"] // Зупиняємось на кінці речення
-    });
-
-    const suggestion = completion.choices[0]?.message?.content?.trim() || "";
-    console.log('AI-T9: Response:', suggestion);
-    return suggestion;
-
-  } catch (error) {
-    console.error('AI-T9 Error:', error.message);
-    return null;
-  }
-});
-
-// T9 AI-автозаповнення згідно з інструкціями
-ipcMain.handle('predict-completion', async (event, currentText) => {
-    // Не витрачаємо ресурси, якщо тексту мало
-    if (!currentText || currentText.length < 5) return null;
-
-    try {
-        const completion = await groqClient.chat.completions.create({
-            messages: [
-                {
-                    role: "system",
-                    // ЦЕ НАЙВАЖЛИВІШЕ: Інструкція для ШІ
-                    content: "You are a precise autocomplete engine. Receive a text fragment and output ONLY the completion for the last sentence. Do not repeat the input. Do not start with a space. Keep it short (max 5-7 words). If unsure, return empty string."
-                },
-                {
-                    role: "user",
-                    content: currentText
-                }
-            ],
-            // Використовуємо Llama 3.1 (вона дуже швидка)
-            model: "llama-3.1-8b-instant",
-            temperature: 0.1, // Мінімальна фантазія, максимальна точність
-            max_tokens: 15,   // Обмежуємо довжину відповіді
-        });
-
-        const result = completion.choices[0]?.message?.content || "";
-        return result.trim(); // Прибираємо зайві пробіли
-    } catch (error) {
-        console.error("Groq Error:", error);
-        return null;
-    }
-});
-
-// ---------------------------------------------------------
-// 🌊 AI INFINITE FEED - Нескінченна стрічка новин з ШІ
-// ---------------------------------------------------------
-
-// Функція для створення AI самарі статті
-async function summarizeArticle(title) {
-    if (!groqClient) {
-        // Якщо немає Groq, повертаємо просте самарі
-        return `Стаття про: ${title.substring(0, 50)}...`;
-    }
-    
-    try {
-        const completion = await groqClient.chat.completions.create({
-            messages: [
-                { 
-                    role: "system", 
-                    content: "You are a news summarizer. Create ONE short sentence (max 15 words) summarizing the article title. Be concise and engaging. Answer in Ukrainian." 
-                },
-                { 
-                    role: "user", 
-                    content: `Summarize: ${title}` 
-                }
-            ],
-            model: "llama-3.1-8b-instant",
-            temperature: 0.3,
-            max_tokens: 50
-        });
-        return completion.choices[0]?.message?.content || `Аналіз: ${title.substring(0, 30)}...`;
-    } catch (error) {
-        console.error('❌ AI summary error:', error.message);
-        return `${title.substring(0, 60)}...`;
-    }
-}
+// ==================== IPC HANDLERS ДЛЯ STORAGE ====================
 
 let isFeedRunning = false;
 let currentFeedGenerator = null;
