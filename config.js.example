@@ -1,0 +1,32 @@
+# Example Configuration Template
+
+Copy this file as `config.js` in the root directory and add your API keys.
+
+```javascript
+module.exports = {
+  groq: {
+    apiKey: 'YOUR_GROQ_API_KEY_HERE'
+  },
+  google: {
+    apiKey: 'YOUR_GOOGLE_API_KEY_HERE'
+  }
+};
+```
+
+## Getting API Keys
+
+### Groq API
+1. Visit: https://console.groq.com/
+2. Sign up for free account
+3. Generate API key
+4. Copy and paste above
+
+### Google Generative AI
+1. Visit: https://makersuite.google.com/app/apikey
+2. Sign in with Google account
+3. Create API key
+4. Copy and paste above
+
+## Security
+
+⚠️ Never commit `config.js` to Git - it's already in `.gitignore`
