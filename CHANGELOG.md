@@ -2,7 +2,62 @@
 
 All notable changes to BrowserX will be documented in this file.
 
-## [2.3.0] - 2025-01-XX
+## [2.4.0] - 2026-02-25
+
+### Modularization 🏗️
+- **Major Architecture Refactoring** - Split monolithic main.js into focused modules
+  - Created 6 new modules for better code organization
+  - Reduced main.js from 1623 to 307 lines (-81% coordinator complexity)
+  - Each module follows Single Responsibility Principle
+  
+#### New Modules:
+- `reactive-events.js` (150 lines) - Live tracker dashboard & network event monitoring
+- `tor-manager.js` (153 lines) - Tor process lifecycle & proxy configuration
+- `theme-manager.js` (114 lines) - Theme injection & visual customization
+- `tab-manager.js` (490 lines) - Complete tab lifecycle management & navigation
+- `ipc-handlers.js` (136 lines) - Storage IPC (history, bookmarks, notes, settings)
+- `ai-handlers.js` (220 lines) - AI features (summarization, organization, feed)
+
+#### Benefits:
+- ✅ **Better Testability** - Modules can be unit tested independently
+- ✅ **Improved Maintainability** - Clear separation of concerns
+- ✅ **Easier Debugging** - Issues isolated to specific modules
+- ✅ **Scalability** - New features can be added as new modules
+- ✅ **Code Readability** - Max ~500 lines per file, clear purpose
+- ✅ **Reduced Cognitive Load** - main.js is now just a coordinator
+
+#### Architecture:
+```
+main.js (307 lines)
+  ├── App Lifecycle (ready, quit, activate)
+  ├── Window Management (create, resize, close)
+  └── IPC Routing (delegates to modules)
+
+modules/ (9 files, 2229 lines total)
+  ├── Core Features
+  │   ├── unified-t9.js (374) - Autocomplete engine
+  │   ├── ai-feed.js (333) - Content generation
+  │   └── storage.js (259) - Data persistence
+  ├── Tab System
+  │   └── tab-manager.js (490) - Complete tab lifecycle
+  ├── AI Features  
+  │   └── ai-handlers.js (220) - IPC for AI operations
+  ├── Infrastructure
+  │   ├── ipc-handlers.js (136) - Storage IPC routing
+  │   ├── reactive-events.js (150) - Network monitoring
+  │   ├── tor-manager.js (153) - Privacy layer
+  │   └── theme-manager.js (114) - Visual customization
+```
+
+### Code Metrics 📊
+- **Before modularization:** 1623 lines in main.js
+- **After modularization:** 307 lines in main.js + 1263 lines in new modules
+- **Coordinator reduction:** -81% (1623 → 307)
+- **Total codebase:** 2536 lines (organized vs 1623 monolithic)
+- **Module count:** 3 → 9 modules
+- **Average module size:** ~248 lines (manageable)
+
+## [2.3.0] - 2026-02-25
 
 ### Major Refactoring 🔨
 - **Removed unused AI features** to focus on core functionality
