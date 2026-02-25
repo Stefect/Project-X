@@ -114,7 +114,5 @@ function injectLightTheme(targetView) {
 
 module.exports = {
   updateThemeSettings,
-  getThemeSettings,
-  injectThemeToNewtab,
-  injectLightTheme
+  injectThemeToNewtab
 };
