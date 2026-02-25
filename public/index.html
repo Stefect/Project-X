@@ -1675,16 +1675,6 @@
       }
     }
 
-    // Обробка зміни мови перекладу
-    const translationLanguageSelect = document.getElementById('translation-language');
-    if (translationLanguageSelect) {
-      translationLanguageSelect.addEventListener('change', (e) => {
-        const selectedLanguage = e.target.value;
-        console.log('🌍 Translation language selected:', selectedLanguage);
-        ipcRenderer.send('change-translation-language', selectedLanguage);
-      });
-    }
-
     // Simple settings removed — open-settings button deprecated
 
     // Меню
