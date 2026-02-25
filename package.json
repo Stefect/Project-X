@@ -1,7 +1,7 @@
 {
   "name": "browserx",
   "version": "2.2.0",
-  "description": "BrowserX - AI-powered browser with smart features, AI autocomplete, history, bookmarks and session memory",
+  "description": "BrowserX - Privacy-focused browser with AI-powered T9 autocomplete, infinite news feed, and Tor integration",
   "main": "src/main.js",
   "scripts": {
     "start": "npm run build:css && electron .",
@@ -33,6 +33,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.13.4",
+    "dotenv": "^17.3.1",
     "groq-sdk": "^0.37.0",
     "node-fetch": "^3.3.2",
     "rss-parser": "^3.13.0"
