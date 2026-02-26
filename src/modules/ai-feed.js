@@ -151,7 +151,7 @@ async function fetchOneArticle(source) {
     try {
         console.log(`[LOADING] ${source.name} (${source.type})...`);
         
-        // For RSS sources use rss-parser
+        // Для RSS джерел використовуємо rss-parser
         if (source.type === 'rss') {
             try {
                 console.log(`[RSS] Parsing: ${source.url}`);
@@ -213,7 +213,7 @@ async function fetchOneArticle(source) {
             }
         } else if (source.type === 'hackernews') {
             if (data && data.length > 0) {
-                // Limit to first 30 stories to avoid huge response
+                // Обмежуємо до перших 30 історій щоб уникнути великої відповіді
                 const limitedData = data.slice(0, 30);
                 const randomId = limitedData[Math.floor(Math.random() * limitedData.length)];
                 const itemResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${randomId}.json`);
@@ -259,7 +259,7 @@ async function fetchOneArticle(source) {
  * Використання: AI-powered стрічка новин з автоматичним завантаженням
  */
 async function* infiniteArticleGenerator(categories = ['all'], customSources = []) {
-    // Convert to array if single category passed
+    // Конвертуємо в масив, якщо передана одна категорія
     if (!Array.isArray(categories)) {
         categories = [categories];
     }
@@ -270,26 +270,26 @@ async function* infiniteArticleGenerator(categories = ['all'], customSources = [
     
     let sources;
     
-    // If custom sources provided (from feed.html with full URL objects), use them
+    // Якщо надані кастомні джерела (з feed.html з повними URL об'єктами), використовуємо їх
     if (customSources && customSources.length > 0) {
-        // Check if it's an object with url property
+        // Перевіряємо чи це об'єкт з властивістю url
         if (customSources[0] && typeof customSources[0] === 'object' && customSources[0].url) {
             sources = customSources;
             console.log('[FILTER] Using custom sources (objects):', sources.map(s => s.name).join(', '));
         }
-        // Check if it's just strings (legacy)
+        // Перевіряємо чи це просто рядки (застаріле)
         else if (typeof customSources[0] === 'string') {
             sources = getSourcesByCategories(categories);
             sources = filterSourcesByNames(sources, customSources);
             console.log('[FILTER] Using filtered built-in sources:', sources.map(s => s.name).join(', '));
         }
-        // Unknown format
+        // Невідомий формат
         else {
             console.error('[FILTER ERROR] Unknown sources format:', customSources[0]);
             sources = getSourcesByCategories(categories);
         }
     } else {
-        // No custom sources - use built-in
+        // Немає кастомних джерел - використовуємо вбудовані
         sources = getSourcesByCategories(categories);
         console.log('[FILTER] Using built-in sources:', sources.length, 'sources');
     }
@@ -303,7 +303,7 @@ async function* infiniteArticleGenerator(categories = ['all'], customSources = [
     
     const sourceGen = roundRobinSourceGenerator(sources);
     
-    // Track consecutive errors per source to skip broken sources
+    // Відстежуємо послідовні помилки для кожного джерела щоб пропускати зламані
     const sourceErrors = new Map();
     const MAX_CONSECUTIVE_ERRORS = 3;
     const skippedSources = new Set();
@@ -325,16 +325,16 @@ async function* infiniteArticleGenerator(categories = ['all'], customSources = [
             sourceErrors.set(currentSource.name, 0);
             yield article; // Повертаємо статтю через yield
         } else {
-            // Increment error counter
+            // Збільшуємо лічильник помилок
             const errorCount = (sourceErrors.get(currentSource.name) || 0) + 1;
             sourceErrors.set(currentSource.name, errorCount);
             
-            // Skip source if too many consecutive errors
+            // Пропускаємо джерело якщо занадто багато послідовних помилок
             if (errorCount >= MAX_CONSECUTIVE_ERRORS) {
                 console.error(`[SKIP] Source "${currentSource.name}" has ${errorCount} consecutive errors, skipping...`);
                 skippedSources.add(currentSource.name);
                 
-                // If all sources are skipped, stop generator
+                // Якщо всі джерела пропущені, зупиняємо генератор
                 if (skippedSources.size >= sources.length) {
                     console.error('[FATAL] All sources have failed, stopping feed...');
                     return;
