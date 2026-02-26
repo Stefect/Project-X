@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
@@ -1072,7 +1072,7 @@
         btnStart.addEventListener('click', async () => {
             if (!api) {
                 console.error('API not available');
-                alert('❌ API не доступне! Перезавантажте сторінку.');
+                alert('[ERR] API не доступне! Перезавантажте сторінку.');
                 return;
             }
             
@@ -1101,7 +1101,7 @@
                 }
                 
                 const result = await api.startFeed(selectedCategories, sourcesToUse);
-                console.log('✅ Feed started:', result);
+                console.log('[OK] Feed started:', result);
                 
                 btnStart.style.display = 'none';
                 btnStop.style.display = 'flex';
@@ -1112,8 +1112,8 @@
                     container.innerHTML = '<div class="loading">Завантаження новин...</div>';
                 }
             } catch (error) {
-                console.error('❌ Feed start error:', error);
-                alert('❌ Помилка запуску стрічки: ' + error.message);
+                console.error('[ERR] Feed start error:', error);
+                alert('[ERR] Помилка запуску стрічки: ' + error.message);
             }
         });
 
@@ -1199,3 +1199,4 @@
     </script>
 </body>
 </html>
+

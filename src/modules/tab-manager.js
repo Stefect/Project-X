@@ -90,6 +90,11 @@ function setupTabEventHandlers(tab, mainWindow, { storage, themeManager, injectU
   // Завантаження завершено
   browserView.webContents.on('did-finish-load', () => {
     const currentUrl = browserView.webContents.getURL();
+    const title = browserView.webContents.getTitle();
+    
+    // Оновлюємо URL та title в об'єкті вкладки для збереження сесії
+    tab.url = currentUrl;
+    tab.title = title;
 
     if (!currentUrl.includes('newtab.html')) {
       emitReactiveEvent({
@@ -107,7 +112,6 @@ function setupTabEventHandlers(tab, mainWindow, { storage, themeManager, injectU
     }
     
     // Оновлюємо інформацію про вкладку
-    const title = browserView.webContents.getTitle();
     mainWindow.webContents.send('update-tab-info', id, title, currentUrl);
   });
   
@@ -115,6 +119,10 @@ function setupTabEventHandlers(tab, mainWindow, { storage, themeManager, injectU
   browserView.webContents.on('did-navigate', () => {
     const currentUrl = browserView.webContents.getURL();
     const title = browserView.webContents.getTitle();
+    
+    // Оновлюємо URL в об'єкті вкладки для збереження сесії
+    tab.url = currentUrl;
+    tab.title = title;
     
     // Зберігаємо в історію
     try {
@@ -134,6 +142,9 @@ function setupTabEventHandlers(tab, mainWindow, { storage, themeManager, injectU
   
   // Навігація всередині сторінки
   browserView.webContents.on('did-navigate-in-page', (event, url) => {
+    // Оновлюємо URL в об'єкті вкладки
+    tab.url = url;
+    
     if (id === activeTabId) {
       mainWindow.webContents.send('update-url-bar', url);
     }
@@ -174,7 +185,7 @@ function setupTabEventHandlers(tab, mainWindow, { storage, themeManager, injectU
       menu.append(new MenuItem({ type: 'separator' }));
       
       menu.append(new MenuItem({
-        label: '📝 Додати в конспект',
+        label: 'Додати в конспект',
         click: () => {
           mainWindow.webContents.send('add-to-notes', selectedText);
         }
@@ -381,12 +392,28 @@ function setTopbarHeight(height) {
  */
 function getSessionData() {
   return tabs
-    .map(tab => ({
-      url: tab.browserView?.webContents?.getURL() || '',
-      title: tab.browserView?.webContents?.getTitle() || 'Нова вкладка',
-      isActive: tab.id === activeTabId
-    }))
-    .filter(tab => !tab.url.includes('newtab.html'));
+    .map(tab => {
+      // Використовуємо збережений tab.url як основний джерело, webContents як фолбек
+      let url = tab.url || '';
+      let title = tab.title || 'Нова вкладка';
+      
+      // Спробувати отримати актуальний URL з webContents якщо доступний
+      try {
+        if (tab.browserView?.webContents && !tab.browserView.webContents.isDestroyed()) {
+          url = tab.browserView.webContents.getURL() || url;
+          title = tab.browserView.webContents.getTitle() || title;
+        }
+      } catch (e) {
+        // webContents може бути знищений при закритті
+      }
+      
+      return {
+        url,
+        title,
+        isActive: tab.id === activeTabId
+      };
+    })
+    .filter(tab => tab.url && !tab.url.includes('newtab.html'));
 }
 
 /**

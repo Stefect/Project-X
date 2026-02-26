@@ -1,6 +1,6 @@
 /**
  * AI Handlers - IPC обробники для AI функціоналу
- * Notes summarization, Tab organization, Infinite Feed
+ * Резюмування нотаток, Організація вкладок, Нескінченна стрічка
  */
 
 const { ipcMain } = require('electron');
@@ -9,11 +9,15 @@ let isFeedRunning = false;
 let currentFeedGenerator = null;
 
 /**
- * Самаризує заголовок статті через AI
+ * Перекладає та резюмує заголовок статті через AI
+ * Повертає об'єкт { translatedTitle, summary }
  */
 async function summarizeArticle(title, groqClient) {
   if (!groqClient) {
-    return `Стаття про: ${title.substring(0, 50)}...`;
+    return { 
+      translatedTitle: title,
+      summary: `Стаття про: ${title.substring(0, 50)}...`
+    };
   }
   
   try {
@@ -21,21 +25,46 @@ async function summarizeArticle(title, groqClient) {
       messages: [
         { 
           role: "system", 
-          content: "You are a news summarizer. Create ONE short sentence (max 15 words) summarizing the article title. Be concise and engaging. Answer in Ukrainian." 
+          content: `Ти - перекладач новин. Твоє завдання:
+1. Переклади заголовок статті на українську мову
+2. Створи коротке резюме (1 речення, до 15 слів)
+
+Поверни відповідь СТРОГО у форматі JSON без markdown:
+{"title": "Перекладений заголовок", "summary": "Коротке резюме"}` 
         },
         { 
           role: "user", 
-          content: `Summarize: ${title}` 
+          content: `Переклади: ${title}` 
         }
       ],
       model: "llama-3.1-8b-instant",
       temperature: 0.3,
-      max_tokens: 50
+      max_tokens: 150
     });
-    return completion.choices[0]?.message?.content || `Аналіз: ${title.substring(0, 30)}...`;
+    
+    const responseText = completion.choices[0]?.message?.content || '';
+    
+    try {
+      // Пробуємо розпарсити JSON
+      const cleanJson = responseText.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      return {
+        translatedTitle: parsed.title || title,
+        summary: parsed.summary || `Аналіз: ${title.substring(0, 30)}...`
+      };
+    } catch (parseError) {
+      // Якщо не вдалось розпарсити, використовуємо просто як summary
+      return {
+        translatedTitle: title,
+        summary: responseText || `Аналіз: ${title.substring(0, 30)}...`
+      };
+    }
   } catch (error) {
     console.error('[AI] Summary error:', error.message);
-    return `${title.substring(0, 60)}...`;
+    return {
+      translatedTitle: title,
+      summary: `${title.substring(0, 60)}...`
+    };
   }
 }
 
@@ -48,7 +77,7 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
   console.log('[AI-HANDLERS] groqClient:', groqClient ? 'INITIALIZED' : 'NULL/UNDEFINED');
   console.log('[AI-HANDLERS] tabManager:', tabManager ? 'INITIALIZED' : 'NULL/UNDEFINED');
   
-  // ==================== NOTES SUMMARIZATION ====================
+  // ==================== РЕЗЮМУВАННЯ НОТАТОК ====================
   
   ipcMain.handle('ask-ai', async (event, prompt) => {
     try {
@@ -74,7 +103,7 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
     }
   });
 
-  // ==================== TAB ORGANIZATION ====================
+  // ==================== ОРГАНІЗАЦІЯ ВКЛАДОК ====================
   
   ipcMain.handle('organize-tabs', async (event) => {
     try {
@@ -84,7 +113,7 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
       if (!groqClient) {
         return { 
           success: false, 
-          message: '❌ AI не ініціалізовано. Перевірте API ключ у .env' 
+          message: 'AI не ініціалізовано. Перевірте API ключ у .env' 
         };
       }
 
@@ -95,7 +124,7 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
         console.log('[AI] Not enough tabs for organization');
         return { 
           success: false, 
-          message: '⚠️ Занадто мало вкладок для організації (потрібно хоча б 2)' 
+          message: 'Занадто мало вкладок для організації (потрібно хоча б 2)' 
         };
       }
 
@@ -155,7 +184,7 @@ ${tabsListString}`;
         console.error('[AI] Empty response from Groq');
         return { 
           success: false, 
-          message: '❌ Помилка отримання відповіді від AI' 
+          message: 'Помилка отримання відповіді від AI' 
         };
       }
 
@@ -172,7 +201,7 @@ ${tabsListString}`;
         console.error('[AI] Failed to parse:', responseText);
         return { 
           success: false, 
-          message: '❌ AI повернув некоректний формат' 
+          message: 'AI повернув некоректний формат' 
         };
       }
 
@@ -191,17 +220,17 @@ ${tabsListString}`;
       console.error('[AI] Tab organization error:', error);
       return { 
         success: false, 
-        message: `❌ ${error.message}` 
+        message: `${error.message}` 
       };
     }
   });
 
-  // ==================== INFINITE FEED ====================
+  // ==================== НЕСКІНЧЕННА СТРІЧКА ====================
   
   ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], customSources = []) => {
     if (isFeedRunning) {
       console.log('[FEED] Already running');
-      return { success: false, message: 'Feed is already active' };
+      return { success: false, message: 'Стрічка вже активна' };
     }
     
     if (!Array.isArray(categories)) {
@@ -216,7 +245,7 @@ ${tabsListString}`;
       console.log(`[FEED] Custom sources: ${customSources.length}`);
     }
 
-    // ==================== iTask1: TIMEOUT ITERATOR ====================
+    // ==================== iTask1: ІТЕРАТОР З ТАЙМАУТОМ ====================
     // Споживання async generator з timeout на кожній ітерації
     
     (async () => {
@@ -230,16 +259,20 @@ ${tabsListString}`;
         console.log(`[FEED] Received: ${article.title.substring(0, 50)}...`);
 
         try {
-          // Promise.race - таймаут 3 секунди для кожної AI обробки
-          const summary = await Promise.race([
+          // Promise.race - таймаут 5 секунд для перекладу та AI обробки
+          const result = await Promise.race([
             summarizeArticle(article.title, groqClient),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('AI_TIMEOUT')), 3000)
+              setTimeout(() => reject(new Error('AI_TIMEOUT')), 5000)
             )
           ]);
 
-          console.log(`[FEED] AI processed: ${summary.substring(0, 30)}...`);
-          event.sender.send('new-feed-item', { ...article, summary });
+          console.log(`[FEED] AI processed: ${result.summary.substring(0, 30)}...`);
+          event.sender.send('new-feed-item', { 
+            ...article, 
+            title: result.translatedTitle,
+            summary: result.summary 
+          });
 
         } catch (error) {
           if (error.message === 'AI_TIMEOUT') {
