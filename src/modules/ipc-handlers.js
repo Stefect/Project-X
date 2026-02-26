@@ -1,16 +1,16 @@
 /**
  * IPC Handlers - Центральні обробники IPC повідомлень
- * History, Bookmarks, Sessions, Settings, Notes
+ * Історія, Закладки, Сесії, Налаштування, Нотатки
  */
 
-const { ipcMain, shell } = require('electron');
+const { ipcMain, shell, BrowserWindow } = require('electron');
 const path = require('path');
 
 /**
  * Реєструє всі IPC handlers для storage та утиліт
  */
 function registerStorageHandlers(storage, tabManager) {
-  // ==================== HISTORY ====================
+  // ==================== ІСТОРІЯ ====================
   
   ipcMain.handle('get-history', (event, limit) => {
     return storage.getHistory(limit || 100);
@@ -55,7 +55,7 @@ function registerStorageHandlers(storage, tabManager) {
     }
   });
 
-  // ==================== BOOKMARKS ====================
+  // ==================== ЗАКЛАДКИ ====================
   
   ipcMain.handle('get-bookmarks', () => {
     return storage.getBookmarks();
@@ -76,7 +76,7 @@ function registerStorageHandlers(storage, tabManager) {
     return storage.isBookmarked(url);
   });
 
-  // ==================== SESSION ====================
+  // ==================== СЕСІЯ ====================
   
   ipcMain.on('save-session', () => {
     const sessionTabs = tabManager.getSessionData();
@@ -89,7 +89,7 @@ function registerStorageHandlers(storage, tabManager) {
     return storage.getSession();
   });
 
-  // ==================== SETTINGS ====================
+  // ==================== НАЛАШТУВАННЯ ====================
   
   ipcMain.handle('get-settings', () => {
     return storage.getAllSettings();
@@ -100,7 +100,7 @@ function registerStorageHandlers(storage, tabManager) {
     console.log('[SETTINGS] Saved');
   });
 
-  // ==================== NOTES ====================
+  // ==================== НОТАТКИ ====================
   
   ipcMain.on('save-note', (event, { text, url }) => {
     storage.addNote(text, url);
@@ -126,7 +126,7 @@ function registerStorageHandlers(storage, tabManager) {
     console.log('[NOTES] Cleared');
   });
 
-  // ==================== UTILITIES ====================
+  // ==================== УТИЛІТИ ====================
   
   ipcMain.handle('open-external', async (event, url) => {
     try {
@@ -141,9 +141,10 @@ function registerStorageHandlers(storage, tabManager) {
   ipcMain.handle('open-in-browser', async (event, url) => {
     try {
       console.log('[BROWSER] Opening in new tab:', url);
-      // Відправляємо команду на відкриття в новій вкладці
-      if (event.sender) {
-        event.sender.send('open-in-new-tab', url);
+      // Відправляємо команду до головного вікна (не до event.sender - sidebar)
+      const mainWindow = BrowserWindow.getAllWindows()[0];
+      if (mainWindow) {
+        mainWindow.webContents.send('open-in-new-tab', url);
       }
       return { success: true };
     } catch (error) {

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
@@ -259,10 +259,10 @@
 
             // Очищуємо контейнер при першому запуску
             if (articlesLoaded === 0) {
-              newsFeedContainer.innerHTML = '<div class="news-loading">🔄 Loading news...</div>';
+              newsFeedContainer.innerHTML = '<div class="news-loading">[RELOAD] Loading news...</div>';
             }
           } catch (error) {
-            console.error('❌ Error starting feed:', error);
+            console.error('[ERR] Error starting feed:', error);
           }
         });
       }
@@ -278,7 +278,7 @@
             newsStartBtn.style.display = 'flex';
             isFeedActive = false;
           } catch (error) {
-            console.error('❌ Error stopping feed:', error);
+            console.error('[ERR] Error stopping feed:', error);
           }
         });
       }
@@ -321,11 +321,11 @@
 
       // Повідомлення про пропуск (timeout)
       window.api.onFeedSkip((source) => {
-        console.log('⏱️ Article skipped from:', source);
+        console.log('[TIME] Article skipped from:', source);
         
         const notice = document.createElement('div');
         notice.className = 'news-skip';
-        notice.textContent = `⏱️ Skipped from ${source}`;
+        notice.textContent = `[TIME] Skipped from ${source}`;
         
         newsFeedContainer.prepend(notice);
 
@@ -337,9 +337,9 @@
         }, 3000);
       });
 
-      console.log('✅ News Feed initialized on newtab');
+      console.log('[OK] News Feed initialized on newtab');
     } else {
-      console.warn('⚠️ window.api not available. News feed will not work.');
+      console.warn('[WARN] window.api not available. News feed will not work.');
     }
 
     // Функція для безпечного відображення HTML
@@ -351,3 +351,4 @@
   </script>
 </body>
 </html>
+
