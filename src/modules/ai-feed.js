@@ -131,15 +131,18 @@ function filterSourcesByNames(sources, selectedNames) {
     return filtered;
 }
 
-// ---------------------------------------------------------
-// 1. ЗАВДАННЯ 1.1: Round Robin Generator
-// Цей генератор нескінченно ходить по масиву джерел по колу
-// ---------------------------------------------------------
+// ==================== iTask1: GENERATORS ====================
+
+/**
+ * roundRobinSourceGenerator - Round Robin Generator
+ * Завдання: генератор для нескінченного циклічного перебору списку
+ * Використання: балансування навантаження між джерелами новин
+ */
 function* roundRobinSourceGenerator(sources) {
     let index = 0;
     while (true) {
-        yield sources[index];
-        index = (index + 1) % sources.length;
+        yield sources[index]; // Повертаємо поточне джерело
+        index = (index + 1) % sources.length; // Циклічний перехід до наступного
     }
 }
 
@@ -248,9 +251,13 @@ async function fetchOneArticle(source) {
     }
 }
 
-// ---------------------------------------------------------
-// Infinite article stream generator
-// ---------------------------------------------------------
+// ==================== iTask1: ASYNC GENERATOR ====================
+
+/**
+ * infiniteArticleGenerator - Нескінченний генератор статей
+ * Завдання: async generator для нескінченного потоку даних з обробкою помилок
+ * Використання: AI-powered стрічка новин з автоматичним завантаженням
+ */
 async function* infiniteArticleGenerator(categories = ['all'], customSources = []) {
     // Convert to array if single category passed
     if (!Array.isArray(categories)) {
@@ -304,9 +311,9 @@ async function* infiniteArticleGenerator(categories = ['all'], customSources = [
     console.log(`[GENERATOR] Started for categories: ${categories.join(', ')}, sources: ${sources.length}`);
     
     while (true) {
-        const currentSource = sourceGen.next().value; // Get next source (Round Robin)
+        const currentSource = sourceGen.next().value; // Отримуємо наступне джерело (Round Robin)
         
-        // Skip if source has too many errors
+        // Пропускаємо джерела з багатьма помилками
         if (skippedSources.has(currentSource.name)) {
             continue;
         }
@@ -314,9 +321,9 @@ async function* infiniteArticleGenerator(categories = ['all'], customSources = [
         const article = await fetchOneArticle(currentSource);
         
         if (article) {
-            // Reset error counter on success
+            // Скидаємо лічильник помилок при успіху
             sourceErrors.set(currentSource.name, 0);
-            yield article; // Return article
+            yield article; // Повертаємо статтю через yield
         } else {
             // Increment error counter
             const errorCount = (sourceErrors.get(currentSource.name) || 0) + 1;
