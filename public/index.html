@@ -57,7 +57,7 @@
       </svg>
     </button>
     <input type="text" class="address-bar" id="url" placeholder="Google пошук або введіть адресу">
-    <button class="organize-btn" id="organize-tabs-btn" title="AI організація вкладок">Організувати</button>
+    <button class="organize-btn" id="organize-tabs-btn" title="Організація вкладок за доменами">📂 Групи</button>
     <button class="nav-button" id="tor-btn" title="Перемкнути Tor" style="font-weight: 600; color: #9ca3af;">
       Tor: OFF
     </button>
@@ -786,6 +786,11 @@
           
           if (titleElement) titleElement.textContent = title || 'Нова вкладка';
           
+          // Зберігаємо URL в dataset для організації
+          if (url) {
+            tabElement.dataset.url = url;
+          }
+          
           if (faviconElement && url) {
             const faviconUrl = new URL(url).origin + '/favicon.ico';
             faviconElement.src = faviconUrl;
@@ -924,164 +929,291 @@
       }
     });
 
-    // ========== Організація вкладок через AI ==========
-    const organizeTabsBtn = document.getElementById('organize-tabs-btn');
+    // ========== Організація вкладок за доменами ==========
     
-    if (organizeTabsBtn) {
-      organizeTabsBtn.addEventListener('click', async () => {
+    // Функція для відображення організованих груп (над вкладками)
+    function displayOrganizedGroups(groups, tabsData) {
+      console.log('📂 Показую', groups.length, 'груп');
+      
+      // Видаляємо старий блок груп якщо є
+      const oldGroups = document.getElementById('tab-groups-display');
+      if (oldGroups) oldGroups.remove();
+      
+      // Створюємо контейнер для груп - компактний banner
+      const groupsContainer = document.createElement('div');
+      groupsContainer.id = 'tab-groups-display';
+      groupsContainer.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 10px;
+        background: #1f2335;
+        font-size: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        height: 32px;
+        -webkit-app-region: no-drag;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      `;
+      
+      let html = `<span style="color: #565f89; font-weight: 500; flex-shrink: 0; font-size: 11px; margin-right: 4px;">📂</span>`;
+      
+      // Кнопка "Показати всі"
+      html += `
+        <button class="group-badge" data-group-filter="all" style="
+          display: inline-flex;
+          align-items: center;
+          padding: 6px 12px;
+          background: rgba(122, 162, 247, 0.15);
+          border: 1px solid rgba(122, 162, 247, 0.3);
+          border-radius: 6px;
+          color: #c0caf5;
+          font-weight: 500;
+          cursor: pointer;
+          font-size: 11px;
+          flex-shrink: 0;
+          -webkit-app-region: no-drag;
+          transition: all 0.15s;
+        " onmouseover="this.style.background='rgba(122, 162, 247, 0.25)'" onmouseout="this.style.background='rgba(122, 162, 247, 0.15)'">Всі (${tabsData.length})</button>
+      `;
+      
+      groups.forEach((group, idx) => {
+        html += `
+          <button class="group-badge" data-group-filter="${group.name}" style="
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid rgba(65, 72, 104, 0.6);
+            border-radius: 6px;
+            color: #c0caf5;
+            font-weight: 500;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 11px;
+            -webkit-app-region: no-drag;
+          " onmouseover="this.style.background='rgba(192, 202, 245, 0.1)'" onmouseout="this.style.background='transparent'">
+            ${group.name} <span style="opacity: 0.5; font-size: 10px;">(${group.tabIds.length})</span>
+          </button>
+        `;
+      });
+      
+      html += `<button id="close-groups-display" style="
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        margin-left: auto;
+        background: transparent;
+        color: #c0caf5;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        -webkit-app-region: no-drag;
+        transition: all 0.15s;
+      " onmouseover="this.style.background='rgba(192, 202, 245, 0.1)'" onmouseout="this.style.background='transparent'">✕</button>`;
+      
+      groupsContainer.innerHTML = html;
+      
+      // Додаємо стиль для приховування scrollbar
+      const style = document.createElement('style');
+      style.textContent = `
+        #tab-groups-display::-webkit-scrollbar {
+          display: none;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Вставляємо перед tabs-bar
+      const tabsBar = document.getElementById('tabs-bar');
+      if (tabsBar && tabsBar.parentNode) {
+        tabsBar.parentNode.insertBefore(groupsContainer, tabsBar);
+        console.log('✅ Groups displayed above tabs-bar');
+        
+        // Оновлюємо висоту топбара (100 + 32px для groups display)
+        ipcRenderer.send('topbar-height-changed', 132);
+        
+        // Додаємо обробники після вставки
+        setTimeout(() => {
+          // Закриття
+          const closeBtn = document.getElementById('close-groups-display');
+          if (closeBtn) {
+            closeBtn.onclick = () => {
+              groupsContainer.remove();
+              // Показуємо всі вкладки
+              document.querySelectorAll('.tab').forEach(tab => {
+                tab.style.display = '';
+              });
+              // Повертаємо стандартну висоту топбара
+              ipcRenderer.send('topbar-height-changed', 100);
+            };
+          }
+          
+          // Фільтрація по групам
+          const groupBadges = document.querySelectorAll('.group-badge');
+          groupBadges.forEach(badge => {
+            badge.onclick = () => {
+              const filterGroup = badge.dataset.groupFilter;
+              console.log('🔍 Filtering by:', filterGroup);
+              
+              // Скидаємо стилі для всіх badges
+              groupBadges.forEach(b => {
+                if (b.dataset.groupFilter === 'all') {
+                  b.style.background = 'rgba(122, 162, 247, 0.15)';
+                  b.style.border = '1px solid rgba(122, 162, 247, 0.3)';
+                } else {
+                  b.style.background = 'transparent';
+                  b.style.border = '1px solid rgba(65, 72, 104, 0.6)';
+                }
+              });
+              
+              // Виділяємо активний
+              if (badge.dataset.groupFilter === 'all') {
+                badge.style.background = 'rgba(122, 162, 247, 0.25)';
+                badge.style.border = '1px solid rgba(122, 162, 247, 0.5)';
+              } else {
+                badge.style.background = 'rgba(122, 162, 247, 0.15)';
+                badge.style.border = '1px solid rgba(122, 162, 247, 0.4)';
+              }
+              
+              // Фільтруємо вкладки
+              const allTabs = document.querySelectorAll('.tab');
+              
+              if (filterGroup === 'all') {
+                // Показуємо всі
+                allTabs.forEach(tab => {
+                  tab.style.display = '';
+                });
+              } else {
+                // Показуємо тільки вибрану групу
+                allTabs.forEach(tab => {
+                  const url = tab.dataset.url || '';
+                  let tabDomain = 'Інші';
+                  
+                  if (url) {
+                    try {
+                      const urlObj = new URL(url);
+                      tabDomain = urlObj.hostname.replace('www.', '');
+                    } catch (e) {
+                      tabDomain = 'Локальні файли';
+                    }
+                  }
+                  
+                  // Показуємо або ховаємо в залежності від групи
+                  if (tabDomain === filterGroup) {
+                    tab.style.display = '';
+                  } else {
+                    tab.style.display = 'none';
+                  }
+                });
+              }
+            };
+          });
+        }, 100);
+      }
+    }
+    
+    // Функція організації вкладок за доменом
+    function organizeTabsByDomain() {
       const allTabs = document.querySelectorAll('.tab');
       
       if (allTabs.length < 2) {
         alert('Потрібно хоча б 2 вкладки для організації!');
-        return;
+        return null;
       }
 
-      // Показуємо індикатор завантаження
-      organizeTabsBtn.innerHTML = ' Думаю...';
-      organizeTabsBtn.disabled = true;
+      const domainGroups = new Map();
+      const tabsData = [];
 
-      try {
-        const result = await ipcRenderer.invoke('organize-tabs');
+      console.log('🔍 Аналізую', allTabs.length, 'вкладок...');
+
+      allTabs.forEach((tab, index) => {
+        const tabId = tab.dataset.tabId;
+        const titleSpan = tab.querySelector('.tab-title');
+        const title = titleSpan ? titleSpan.textContent : 'Без назви';
+        const url = tab.dataset.url || '';
         
-        if (!result.success) {
-          alert(result.message || ' Не вдалося згрупувати вкладки');
-          organizeTabsBtn.innerHTML = ' Навести лад';
-          organizeTabsBtn.disabled = false;
-          return;
-        }
+        console.log(`Tab ${index + 1}: "${title}" -> URL: "${url}"`);
 
-        // Показуємо результат користувачу
-        displayOrganizedGroups(result.groups, result.tabsData);
-        
-        organizeTabsBtn.innerHTML = ' Готово!';
-        setTimeout(() => {
-          organizeTabsBtn.innerHTML = ' Навести лад';
-          organizeTabsBtn.disabled = false;
-        }, 2000);
-
-      } catch (error) {
-        console.error('❌ Organization error:', error);
-        alert('Помилка: ' + error.message);
-        organizeTabsBtn.innerHTML = ' Навести лад';
-        organizeTabsBtn.disabled = false;
-      }
-    });
-
-    // Функція для відображення організованих груп
-    function displayOrganizedGroups(groups, tabsData) {
-      // Створюємо popup з результатами
-      const popup = document.createElement('div');
-      popup.id = 'organize-popup';
-      popup.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        border: 3px solid #10b981;
-        border-radius: 16px;
-        padding: 24px;
-        max-width: 600px;
-        max-height: 70vh;
-        overflow-y: auto;
-        z-index: 1000000;
-        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
-        font-family: 'Segoe UI', sans-serif;
-      `;
-      
-      let groupsHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="margin: 0; color: #10b981; font-size: 22px;"> AI організував ваші вкладки</h2>
-          <button id="close-organize-popup" style="
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 14px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-          "></button>
-        </div>
-      `;
-
-      groups.forEach((group, idx) => {
-        const groupColor = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'][idx % 5];
-        
-        groupsHTML += `
-          <div style="
-            margin-bottom: 16px; 
-            padding: 16px; 
-            background: linear-gradient(135deg, ${groupColor}15, ${groupColor}05);
-            border-left: 4px solid ${groupColor};
-            border-radius: 10px;
-          ">
-            <h3 style="margin: 0 0 12px 0; color: ${groupColor}; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-               ${group.name}
-              <span style="font-size: 12px; color: #666; font-weight: normal;">(${group.tabIds.length} вкладок)</span>
-            </h3>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-        `;
-
-        group.tabIds.forEach(tabId => {
-          const tabData = tabsData.find(t => t.id === tabId);
-          if (tabData) {
-            groupsHTML += `
-              <div style="
-                padding: 10px 12px;
-                background: white;
-                border-radius: 6px;
-                font-size: 13px;
-                color: #334155;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                display: flex;
-                align-items: center;
-                gap: 10px;
-              ">
-                <img src="https://www.google.com/s2/favicons?domain=${new URL(tabData.url || 'https://google.com').hostname}" 
-                     width="16" height="16" 
-                     onerror="this.style.display='none'"
-                     style="flex-shrink: 0;">
-                <div style="flex: 1; min-width: 0;">
-                  <div style="font-weight: 600; color: ${groupColor}; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${tabData.title}
-                  </div>
-                  <div style="font-size: 11px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${tabData.url}
-                  </div>
-                </div>
-              </div>
-            `;
+        // Витягуємо домен
+        let domain = 'Інші';
+        if (url) {
+          try {
+            const urlObj = new URL(url);
+            domain = urlObj.hostname.replace('www.', '');
+            console.log(`  → Домен: ${domain}`);
+          } catch (e) {
+            console.log('  → Помилка парсингу URL:', e.message);
+            domain = 'Локальні файли';
           }
-        });
+        } else {
+          console.log('  → URL відсутній, група: Інші');
+        }
 
-        groupsHTML += `
-            </div>
-          </div>
-        `;
+        if (!domainGroups.has(domain)) {
+          domainGroups.set(domain, []);
+        }
+        domainGroups.get(domain).push(tabId);
+        tabsData.push({ id: tabId, title, url });
       });
 
-      groupsHTML += `
-        <div style="margin-top: 20px; text-align: center; color: #64748b; font-size: 13px;">
-          Порада: Закрийте непотрібні вкладки для кращої організації
-        </div>
-      `;
+      const groups = Array.from(domainGroups.entries()).map(([domain, tabIds]) => ({
+        name: domain,
+        tabIds: tabIds
+      }));
 
-      popup.innerHTML = groupsHTML;
-      document.body.appendChild(popup);
+      console.log('✅ Організовано в', groups.length, 'груп:', groups.map(g => `${g.name} (${g.tabIds.length})`).join(', '));
+      return { success: true, groups, tabsData };
+    }
 
-      // Закриття popup
-      document.getElementById('close-organize-popup').addEventListener('click', () => {
-        popup.remove();
-      });
+    // Обробник кнопки організації
+    const organizeTabsBtn = document.getElementById('organize-tabs-btn');
+    
+    if (organizeTabsBtn) {
+      organizeTabsBtn.addEventListener('click', () => {
+        console.log('🎯 Organize clicked!');
+        
+        organizeTabsBtn.innerHTML = '⚙️ Організую...';
+        organizeTabsBtn.disabled = true;
 
-      // Закриття по кліку поза popup
-      popup.addEventListener('click', (e) => {
-        if (e.target === popup) {
-          popup.remove();
+        try {
+          const result = organizeTabsByDomain();
+          
+          if (result && result.success) {
+            displayOrganizedGroups(result.groups, result.tabsData);
+            organizeTabsBtn.innerHTML = '✅ Готово!';
+            setTimeout(() => {
+              organizeTabsBtn.innerHTML = '📂 Групи';
+              organizeTabsBtn.disabled = false;
+            }, 1500);
+          } else {
+            organizeTabsBtn.innerHTML = '❌ Помилка';
+            setTimeout(() => {
+              organizeTabsBtn.innerHTML = '📂 Групи';
+              organizeTabsBtn.disabled = false;
+            }, 2000);
+          }
+          
+          setTimeout(() => {
+            organizeTabsBtn.innerHTML = '📂 Навести лад';
+            organizeTabsBtn.disabled = false;
+          }, 2000);
+
+        } catch (error) {
+          console.error('❌ Error:', error);
+          alert('Помилка: ' + error.message);
+          organizeTabsBtn.innerHTML = '📂 Навести лад';
+          organizeTabsBtn.disabled = false;
         }
       });
-    }
     }
 
     // ========== Система тем ==========

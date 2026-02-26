@@ -11,6 +11,7 @@ const fs = require('fs');
 let tabs = [];
 let activeTabId = 1;
 let nextTabId = 2;
+let topbarHeight = 100; // Динамічна висота топбара (40px tabs + 60px toolbar)
 
 /**
  * Ініціалізує першу вкладку
@@ -48,9 +49,9 @@ function createTab(mainWindow, url = null, { storage, themeManager, injectUnifie
   newBrowserView.setBackgroundColor('#ffffff');
   newBrowserView.setBounds({ 
     x: 0, 
-    y: 100,
+    y: topbarHeight,
     width: bounds.width - sidebarWidth,
-    height: bounds.height - 100 
+    height: bounds.height - topbarHeight 
   });
   
   newBrowserView.setAutoResize({ 
@@ -223,9 +224,9 @@ function switchTab(tabId, mainWindow, sidebarWidth) {
   const bounds = mainWindow.getContentBounds();
   tab.browserView.setBounds({
     x: 0,
-    y: 100,
+    y: topbarHeight,
     width: bounds.width - sidebarWidth,
-    height: bounds.height - 100
+    height: bounds.height - topbarHeight
   });
   
   // Оновлюємо URL bar
@@ -361,10 +362,18 @@ function updateActiveTabBounds(mainWindow, sidebarWidth, offsetRight = 0) {
   const bounds = mainWindow.getContentBounds();
   activeTab.browserView.setBounds({
     x: 0,
-    y: 100,
+    y: topbarHeight,
     width: bounds.width - sidebarWidth - offsetRight,
-    height: bounds.height - 100
+    height: bounds.height - topbarHeight
   });
+}
+
+/**
+ * Встановлює висоту топбара
+ */
+function setTopbarHeight(height) {
+  topbarHeight = height;
+  console.log('[TAB] Topbar height set to:', height);
 }
 
 /**
@@ -457,9 +466,9 @@ function restoreSession(sessionData, mainWindow, { storage, themeManager, inject
       const bounds = mainWindow.getContentBounds();
       activeView.setBounds({
         x: sidebarWidth,
-        y: 100,
+        y: topbarHeight,
         width: bounds.width - sidebarWidth,
-        height: bounds.height - 100
+        height: bounds.height - topbarHeight
       });
     }
     
@@ -501,6 +510,7 @@ module.exports = {
   goForward,
   reload,
   updateActiveTabBounds,
+  setTopbarHeight,
   getSessionData,
   restoreSession,
   getAllTabs,

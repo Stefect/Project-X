@@ -212,9 +212,6 @@
   .inline {
     display: inline;
   }
-  .table {
-    display: table;
-  }
   .flex-shrink {
     flex-shrink: 1;
   }
@@ -716,6 +713,8 @@ body:not(.newtab-page) .container {
   border-bottom: 1px solid #414868;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   -webkit-app-region: no-drag;
+  position: relative;
+  z-index: 9999 !important;
 }
 .nav-button {
   width: 34px;
@@ -866,6 +865,7 @@ body:not(.newtab-page) .container {
   overflow-y: hidden;
   -webkit-app-region: drag;
   position: relative;
+  z-index: 90;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
