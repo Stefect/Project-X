@@ -4,10 +4,10 @@
  */
 
 // Завантажуємо змінні середовища
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const { app, BrowserWindow, BrowserView, ipcMain, Menu } = require('electron');
-const path = require('path');
 const fs = require('fs');
 const Groq = require('groq-sdk');
 
@@ -56,16 +56,23 @@ function injectUnifiedT9(targetBrowserView = browserView) {
  */
 function createWindow() {
   // Ініціалізуємо Groq AI
+  console.log('[GROQ] Starting initialization...');
+  console.log('[GROQ] config.GROQ_API_KEY:', config.GROQ_API_KEY ? `EXISTS (${config.GROQ_API_KEY.substring(0, 15)}...)` : 'NOT FOUND');
+  
   try {
     if (!config.GROQ_API_KEY || config.GROQ_API_KEY === 'YOUR_GROQ_API_KEY_HERE') {
       console.error('[ERROR] API key not configured in .env file');
     } else {
       groqClient = new Groq({ apiKey: config.GROQ_API_KEY });
       console.log('[OK] Groq AI initialized');
+      console.log('[OK] groqClient is:', typeof groqClient);
     }
   } catch (error) {
     console.error('[ERROR] Groq initialization error:', error.message);
   }
+
+  // Реєструємо AI handlers після ініціалізації groqClient
+  aiHandlers.registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
 
   // Створюємо вікно (frameless)
   mainWindow = new BrowserWindow({
@@ -85,14 +92,25 @@ function createWindow() {
       label: 'View',
       submenu: [
         {
-          label: 'Toggle DevTools',
+          label: 'Toggle Main Window DevTools',
           accelerator: 'F12',
+          click: () => {
+            if (mainWindow.webContents.isDevToolsOpened()) {
+              mainWindow.webContents.closeDevTools();
+            } else {
+              mainWindow.webContents.openDevTools({ mode: 'detach' });
+            }
+          }
+        },
+        {
+          label: 'Toggle BrowserView DevTools',
+          accelerator: 'Ctrl+Shift+I',
           click: () => {
             if (browserView && browserView.webContents) {
               if (browserView.webContents.isDevToolsOpened()) {
                 browserView.webContents.closeDevTools();
               } else {
-                browserView.webContents.openDevTools();
+                browserView.webContents.openDevTools({ mode: 'detach' });
               }
             }
           }
@@ -287,6 +305,12 @@ ipcMain.on('settings-panel-toggled', (event, isOpen) => {
   console.log(`[UI] Settings panel ${isOpen ? 'opened' : 'closed'}`);
 });
 
+ipcMain.on('topbar-height-changed', (event, height) => {
+  tabManager.setTopbarHeight(height);
+  tabManager.updateActiveTabBounds(mainWindow, sidebarWidth);
+  console.log(`[UI] Topbar height changed to: ${height}px`);
+});
+
 // ==================== TAB IPC HANDLERS ====================
 
 ipcMain.handle('create-tab', async (event, url = null) => {
@@ -354,6 +378,6 @@ ipcMain.handle('get-tor-status', () => {
 
 // Реєструємо IPC handlers з модулів
 ipcHandlers.registerStorageHandlers(storage, tabManager);
-aiHandlers.registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
+// AI handlers реєструються всередині createWindow() після ініціалізації groqClient
 
 console.log('[CONSOLE] BrowserX main process initialized');

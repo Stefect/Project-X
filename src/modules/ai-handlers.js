@@ -44,6 +44,10 @@ async function summarizeArticle(title, groqClient) {
  */
 function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
   
+  console.log('[AI-HANDLERS] Registering handlers...');
+  console.log('[AI-HANDLERS] groqClient:', groqClient ? 'INITIALIZED' : 'NULL/UNDEFINED');
+  console.log('[AI-HANDLERS] tabManager:', tabManager ? 'INITIALIZED' : 'NULL/UNDEFINED');
+  
   // ==================== NOTES SUMMARIZATION ====================
   
   ipcMain.handle('ask-ai', async (event, prompt) => {
@@ -75,6 +79,7 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
   ipcMain.handle('organize-tabs', async (event) => {
     try {
       console.log('[AI] Organizing tabs...');
+      console.log('[AI] groqClient status:', groqClient ? 'AVAILABLE' : 'NULL');
 
       if (!groqClient) {
         return { 
@@ -84,8 +89,10 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
       }
 
       const allTabs = tabManager.getAllTabs();
+      console.log('[AI] Total tabs:', allTabs.length);
       
       if (allTabs.length < 2) {
+        console.log('[AI] Not enough tabs for organization');
         return { 
           success: false, 
           message: '⚠️ Занадто мало вкладок для організації (потрібно хоча б 2)' 
@@ -93,10 +100,12 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
       }
 
       // Збираємо інформацію про всі вкладки
+      console.log('[AI] Gathering tab data...');
       const tabsData = await Promise.all(allTabs.map(async (tab) => {
         try {
           const title = tab.browserView.webContents.getTitle() || 'Без назви';
           const url = tab.browserView.webContents.getURL() || '';
+          console.log(`[AI] Tab ${tab.id}: ${title.substring(0, 40)}...`);
           return { id: tab.id, title, url };
         } catch (error) {
           return { id: tab.id, title: 'Load error', url: '' };
@@ -129,6 +138,7 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
 ${tabsListString}`;
 
       console.log('[AI] Analyzing tabs via Groq...');
+      console.log('[AI] Prompt length:', prompt.length, 'chars');
 
       const completion = await groqClient.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
@@ -137,9 +147,12 @@ ${tabsListString}`;
         max_tokens: 1000
       });
 
+      console.log('[AI] Groq API response received');
       let responseText = completion.choices[0]?.message?.content?.trim();
+      console.log('[AI] Raw response:', responseText?.substring(0, 200) + '...');
 
       if (!responseText) {
+        console.error('[AI] Empty response from Groq');
         return { 
           success: false, 
           message: '❌ Помилка отримання відповіді від AI' 
@@ -148,24 +161,31 @@ ${tabsListString}`;
 
       // Чистимо markdown теги
       responseText = responseText.replace(/```json|```/g, '').trim();
+      console.log('[AI] Cleaned response:', responseText?.substring(0, 150) + '...');
 
       let groupsData;
       try {
         groupsData = JSON.parse(responseText);
+        console.log('[AI] JSON parsed successfully:', Object.keys(groupsData));
       } catch (parseError) {
-        console.error('[AI] JSON parsing error:', responseText);
+        console.error('[AI] JSON parsing error:', parseError.message);
+        console.error('[AI] Failed to parse:', responseText);
         return { 
           success: false, 
           message: '❌ AI повернув некоректний формат' 
         };
       }
 
-      console.log('[AI] Organization ready:', groupsData);
-      return { 
+      console.log('[AI] Organization ready! Groups:', groupsData.groups?.length);
+      
+      const resultToReturn = { 
         success: true, 
         groups: groupsData.groups,
         tabsData: tabsData
       };
+      
+      console.log('[AI] Returning to frontend:', JSON.stringify(resultToReturn, null, 2).substring(0, 300));
+      return resultToReturn;
 
     } catch (error) {
       console.error('[AI] Tab organization error:', error);
@@ -196,8 +216,11 @@ ${tabsListString}`;
       console.log(`[FEED] Custom sources: ${customSources.length}`);
     }
 
-    // Асинхронна обробка статей
+    // ==================== iTask1: TIMEOUT ITERATOR ====================
+    // Споживання async generator з timeout на кожній ітерації
+    
     (async () => {
+      // for await - споживає async generator infiniteArticleGenerator
       for await (const article of currentFeedGenerator) {
         if (!isFeedRunning) {
           console.log('[FEED] Stopped by user');
@@ -207,7 +230,7 @@ ${tabsListString}`;
         console.log(`[FEED] Received: ${article.title.substring(0, 50)}...`);
 
         try {
-          // Timeout 3 секунди для AI обробки
+          // Promise.race - таймаут 3 секунди для кожної AI обробки
           const summary = await Promise.race([
             summarizeArticle(article.title, groqClient),
             new Promise((_, reject) => 

@@ -526,6 +526,8 @@
       border-bottom: 1px solid #414868;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
       -webkit-app-region: no-drag;
+      position: relative;
+      z-index: 9999 !important;
     }
 
     .nav-button {
@@ -696,6 +698,7 @@
       overflow-y: hidden;
       -webkit-app-region: drag;
       position: relative;
+      z-index: 90;
       scrollbar-width: none; /* Firefox */
       -ms-overflow-style: none; /* IE and Edge */
     }
