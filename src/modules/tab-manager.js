@@ -84,11 +84,26 @@ function createTab(mainWindow, url = null, { storage, themeManager, injectUnifie
 /**
  * Налаштовує обробники подій для вкладки
  */
-function setupTabEventHandlers(tab, mainWindow, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel }) {
-  const { browserView, id } = tab;
+function setupTabEventHandlers(tabOrId, mainWindow, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel }) {
+  // Отримуємо ID вкладки
+  const id = typeof tabOrId === 'object' ? tabOrId.id : tabOrId;
+  
+  // Функція для отримання актуального посилання на вкладку з масиву
+  const getTab = () => tabs.find(t => t.id === id);
+  
+  const initialTab = getTab();
+  if (!initialTab || !initialTab.browserView) {
+    console.error('[TAB] Cannot setup handlers - tab not found:', id);
+    return;
+  }
+  
+  const browserView = initialTab.browserView;
   
   // Завантаження завершено
   browserView.webContents.on('did-finish-load', () => {
+    const tab = getTab(); // Отримуємо актуальне посилання
+    if (!tab) return;
+    
     const currentUrl = browserView.webContents.getURL();
     const title = browserView.webContents.getTitle();
     
@@ -117,6 +132,9 @@ function setupTabEventHandlers(tab, mainWindow, { storage, themeManager, injectU
   
   // Навігація
   browserView.webContents.on('did-navigate', () => {
+    const tab = getTab(); // Отримуємо актуальне посилання
+    if (!tab) return;
+    
     const currentUrl = browserView.webContents.getURL();
     const title = browserView.webContents.getTitle();
     
@@ -142,6 +160,9 @@ function setupTabEventHandlers(tab, mainWindow, { storage, themeManager, injectU
   
   // Навігація всередині сторінки
   browserView.webContents.on('did-navigate-in-page', (event, url) => {
+    const tab = getTab(); // Отримуємо актуальне посилання
+    if (!tab) return;
+    
     // Оновлюємо URL в об'єкті вкладки
     tab.url = url;
     
