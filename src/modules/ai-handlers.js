@@ -1,6 +1,6 @@
 /**
  * AI Handlers - IPC обробники для AI функціоналу
- * Резюмування нотаток, Організація вкладок, Нескінченна стрічка
+ * Резюмування нотаток, Організація вкладок, Нескінченна стрічка, X-Ray
  */
 
 const { ipcMain } = require('electron');
@@ -298,6 +298,106 @@ ${tabsListString}`;
     console.log('[FEED] Stopped');
     
     return { success: true, message: 'Стрічка зупинена' };
+  });
+
+  // ==================== X-RAY: ОПИС ПОСИЛАНЬ ====================
+  
+  // Кеш описів щоб не робити повторних запитів
+  const xrayCache = new Map();
+  const XRAY_CACHE_MAX = 200;
+
+  ipcMain.handle('describe-url', async (event, url, linkText, context) => {
+    try {
+      if (!url || url.startsWith('file://') || url.startsWith('javascript:') || url.startsWith('#')) {
+        return null;
+      }
+
+      // Перевіряємо кеш
+      if (xrayCache.has(url)) {
+        return xrayCache.get(url);
+      }
+
+      if (!groqClient) {
+        // Без AI — показуємо текст посилання або домен
+        const domain = new URL(url).hostname;
+        const title = linkText || domain;
+        const result = { title, description: `Перейти на ${domain}` };
+        xrayCache.set(url, result);
+        return result;
+      }
+
+      console.log('[X-RAY] Describing:', url.substring(0, 80));
+      if (linkText) console.log('[X-RAY] Link text:', linkText.substring(0, 60));
+      if (context) console.log('[X-RAY] Context:', context.substring(0, 80));
+
+      // Формуємо запит з контекстом
+      let userMessage = `URL: ${url}`;
+      if (linkText && linkText.trim()) {
+        userMessage += `\nТекст посилання: «${linkText.trim()}»`;
+      }
+      if (context && context.trim()) {
+        userMessage += `\nКонтекст на сторінці: ${context.trim()}`;
+      }
+
+      const completion = await groqClient.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: `Ти — X-Ray помічник браузера. Користувач навів мишку на посилання. Тобі надано URL, текст посилання і контекст зі сторінки.
+
+ГОЛОВНЕ ЗАВДАННЯ: Опиши ЩО ЗНАХОДИТЬСЯ НА СТОРІНЦІ за посиланням, а НЕ як це стосується поточної сторінки.
+
+ПРАВИЛА:
+- Описуй ЦІЛЬОВУ сторінку: що користувач побачить, якщо натисне на посилання
+- Контекст зі сторінки використовуй ТІЛЬКИ для ідентифікації цільової сторінки, НЕ для зміни опису
+- Якщо посилання веде на сторінку Вікіпедії про рік 1886, пиши "Стаття Вікіпедії про 1886 рік", а НЕ "рік смерті когось"
+- Не вигадуй інформацію. Описуй лише те, що точно буде на цільовій сторінці
+- Пиши мовою тексту посилання/URL. Якщо не зрозуміло — українською
+- title — назва цільової сторінки (2-6 слів). description — що на ній знаходиться (до 15 слів)
+
+Поверни ТІЛЬКИ JSON, без markdown та пояснень:
+{"title": "...", "description": "..."}`
+          },
+          {
+            role: 'user',
+            content: userMessage
+          }
+        ],
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.2,
+        max_tokens: 120
+      });
+
+      const responseText = completion.choices[0]?.message?.content || '';
+      let result;
+
+      try {
+        const cleanJson = responseText.replace(/```json|```/g, '').trim();
+        result = JSON.parse(cleanJson);
+      } catch (parseError) {
+        const domain = new URL(url).hostname;
+        result = { title: domain, description: responseText.substring(0, 60) || `Посилання на ${domain}` };
+      }
+
+      // Зберігаємо в кеш
+      if (xrayCache.size >= XRAY_CACHE_MAX) {
+        const firstKey = xrayCache.keys().next().value;
+        xrayCache.delete(firstKey);
+      }
+      xrayCache.set(url, result);
+
+      console.log('[X-RAY] Result:', result.title);
+      return result;
+
+    } catch (error) {
+      console.error('[X-RAY] Error:', error.message);
+      try {
+        const domain = new URL(url).hostname;
+        return { title: domain, description: `Перейти на ${domain}` };
+      } catch {
+        return null;
+      }
+    }
   });
 
   console.log('[IPC] AI handlers registered');
