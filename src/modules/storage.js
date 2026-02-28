@@ -166,7 +166,9 @@ function saveSession(tabs, activeTabId = null) {
     url: tab.url || '',
     title: tab.title || 'Нова вкладка',
     isActive: tab.isActive || false,
-    index: index
+    index: index,
+    navigationHistory: tab.navigationHistory || [],
+    currentIndex: tab.currentIndex || 0
   })).filter(t => t.url && !t.url.includes('newtab.html'));
   
   // Знаходимо індекс активної вкладки

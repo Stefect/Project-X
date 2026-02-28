@@ -21,7 +21,9 @@ function initFirstTab(browserView, startUrl) {
     id: 1,
     browserView: browserView,
     url: startUrl,
-    title: 'New tab'
+    title: 'New tab',
+    navigationHistory: [],
+    currentIndex: 0
   }];
   activeTabId = 1;
   nextTabId = 2;
@@ -63,7 +65,9 @@ function createTab(mainWindow, url = null, { storage, themeManager, injectUnifie
     id: nextTabId++,
     browserView: newBrowserView,
     url: url,
-    title: 'Loading...'
+    title: 'Loading...',
+    navigationHistory: [],
+    currentIndex: 0
   };
   
   tabs.push(newTab);
@@ -110,6 +114,19 @@ function setupTabEventHandlers(tabOrId, mainWindow, { storage, themeManager, inj
     // Оновлюємо URL та title в об'єкті вкладки для збереження сесії
     tab.url = currentUrl;
     tab.title = title;
+    
+    // Оновлюємо поточний індекс в історії на основі реальної історії webContents
+    // ТІЛЬКИ якщо немає збереженої навігаційної історії з сесії
+    // (після рестарту webContents знає лише про 1 завантажений URL, activeIndex=0,
+    // що перезаписує правильний currentIndex з відновленої сесії)
+    try {
+      const navHistory = browserView.webContents.navigationHistory;
+      if (navHistory && (!tab.navigationHistory || tab.navigationHistory.length <= 1)) {
+        tab.currentIndex = navHistory.getActiveIndex();
+      }
+    } catch (e) {
+      // Ігноруємо помилки
+    }
 
     if (!currentUrl.includes('newtab.html')) {
       emitReactiveEvent({
@@ -138,11 +155,99 @@ function setupTabEventHandlers(tabOrId, mainWindow, { storage, themeManager, inj
     const currentUrl = browserView.webContents.getURL();
     const title = browserView.webContents.getTitle();
     
+    console.log(`[TAB.did-navigate] ${id}: BEFORE - currentIndex=${tab.currentIndex}, navHistory.length=${tab.navigationHistory?.length || 0}`);
+    console.log(`[TAB.did-navigate] ${id}: URL=${currentUrl}, _skipHistoryUpdate=${tab._skipHistoryUpdate}, _isRestoringHistory=${tab._isRestoringHistory}`);
+    
     // Оновлюємо URL в об'єкті вкладки для збереження сесії
     tab.url = currentUrl;
     tab.title = title;
     
-    // Зберігаємо в історію
+    // Якщо це навігація по нашій збереженій історії, просто скидаємо флаг
+    if (tab._skipHistoryUpdate) {
+      console.log(`[TAB.did-navigate] ${id}: SKIP - navigating saved history, keeping currentIndex=${tab.currentIndex}`);
+      tab._skipHistoryUpdate = false;
+      mainWindow.webContents.send('update-tab-info', id, title, currentUrl);
+      if (id === activeTabId) {
+        mainWindow.webContents.send('update-url-bar', currentUrl);
+      }
+      return;
+    }
+    
+    // Оновлюємо нашу збережену історію для нової/нормальної навігації
+    if (!tab.navigationHistory) {
+      tab.navigationHistory = [];
+      tab.currentIndex = 0;
+    }
+    
+    // ВАЖЛИВО: При першому завантаженні з восстановленої історії, не перезаписуємо
+    if (tab._isRestoringHistory) {
+      console.log(`[TAB.did-navigate] ${id}: RESTORING - keeping currentIndex=${tab.currentIndex}`);
+      tab._isRestoringHistory = false; // Скидаємо прапорець після першого разу
+      
+      // Просто оновлюємо глобальну історію
+      try {
+        const favicon = new URL(currentUrl).origin + '/favicon.ico';
+        storage.addToHistory(currentUrl, title, favicon);
+      } catch (err) {
+        storage.addToHistory(currentUrl, title);
+      }
+      
+      mainWindow.webContents.send('update-tab-info', id, title, currentUrl);
+      if (id === activeTabId) {
+        mainWindow.webContents.send('update-url-bar', currentUrl);
+      }
+      return;
+    }
+    
+    // Синхронізуємо з webContents історією ТІЛЬКИ якщо наша історія порожня
+    // (якщо є збережена історія з сесії, вона має пріоритет, бо webContents
+    // після рестарту накопичує loadURL виклики в неправильному порядку)
+    try {
+      const navHistory = browserView.webContents.navigationHistory;
+      if (navHistory) {
+        const entries = navHistory.getAllEntries();
+        const activeIndex = navHistory.getActiveIndex();
+        
+        console.log(`[TAB] WebContents history: ${entries.length} entries, active index: ${activeIndex}`);
+        
+        // Беремо історію з webContents тільки якщо наша порожня
+        if (tab.navigationHistory.length === 0 && entries.length > 0) {
+          tab.navigationHistory = entries.map(entry => ({
+            url: entry.url,
+            title: entry.title || entry.url
+          }));
+          tab.currentIndex = activeIndex;
+          console.log(`[TAB] Initialized from webContents: ${tab.navigationHistory.length} entries`);
+          return;
+        }
+      }
+    } catch (e) {
+      console.log('[TAB] Could not sync with webContents history:', e.message);
+    }
+    
+    // Якщо webContents синхронізація не вдалась, або її немає, використовуємо нашу логіку
+    // Видаляємо всі записи після поточного індексу
+    // (якщо користувач вернувся і почав багатити що-то нове)
+    tab.navigationHistory = tab.navigationHistory.slice(0, tab.currentIndex + 1);
+    
+    // Додаємо нову сторінку, тільки якщо це не та сама сторінка
+    const lastUrl = tab.navigationHistory[tab.navigationHistory.length - 1]?.url;
+    if (lastUrl !== currentUrl) {
+      tab.navigationHistory.push({ url: currentUrl, title: title });
+      tab.currentIndex = tab.navigationHistory.length - 1;
+      console.log(`[TAB] History updated: ${tab.currentIndex + 1} entries`);
+    }
+    
+    // Обмежуємо розмір історії до 50 записів
+    const MAX_HISTORY_SIZE = 50;
+    if (tab.navigationHistory.length > MAX_HISTORY_SIZE) {
+      const excess = tab.navigationHistory.length - MAX_HISTORY_SIZE;
+      tab.navigationHistory = tab.navigationHistory.slice(excess);
+      tab.currentIndex = Math.max(0, tab.currentIndex - excess);
+      console.log(`[TAB] History trimmed to ${MAX_HISTORY_SIZE} entries`);
+    }
+    
+    // Зберігаємо в глобальну історію браузера
     try {
       const favicon = new URL(currentUrl).origin + '/favicon.ico';
       storage.addToHistory(currentUrl, title, favicon);
@@ -356,9 +461,66 @@ function navigate(input, isTorActive) {
  */
 function goBack() {
   const activeTab = tabs.find(t => t.id === activeTabId);
-  if (activeTab && activeTab.browserView.webContents.canGoBack()) {
+  if (!activeTab) return;
+  
+  console.log('[TAB.goBack] canGoBack:', activeTab.browserView.webContents.canGoBack());
+  console.log('[TAB.goBack] navigationHistory:', activeTab.navigationHistory?.length || 0);
+  console.log('[TAB.goBack] currentIndex:', activeTab.currentIndex ?? 0);
+  
+  // Спочатку перевіряємо нашу збережену історію (критично для відновлених сесій,
+  // бо webContents після рестарту знає лише про нещодавно завантажені URL)
+  if (activeTab.navigationHistory && activeTab.navigationHistory.length > 1) {
+    const currentIndex = activeTab.currentIndex ?? 0;
+    console.log(`[TAB] goBack: currentIndex=${currentIndex}, historyLength=${activeTab.navigationHistory.length}`);
+    
+    if (currentIndex > 0) {
+      activeTab.currentIndex = currentIndex - 1;
+      const prevUrl = activeTab.navigationHistory[activeTab.currentIndex].url;
+      
+      console.log(`[TAB] Going back to: ${prevUrl}`);
+      
+      // Перевіряємо чи webContents може обробити навігацію нативно
+      // (краще зберігає стан сторінки: scroll, форми тощо)
+      try {
+        const navHistory = activeTab.browserView.webContents.navigationHistory;
+        if (navHistory) {
+          const entries = navHistory.getAllEntries();
+          const wcActiveIndex = navHistory.getActiveIndex();
+          // Якщо webContents має повну історію і попередній запис відповідає нашому
+          if (wcActiveIndex > 0 && entries[wcActiveIndex - 1]?.url === prevUrl) {
+            activeTab._skipHistoryUpdate = true;
+            activeTab.browserView.webContents.goBack();
+            console.log('[TAB] Back (webContents, synced)');
+            return;
+          }
+        }
+      } catch (e) { /* fallback to loadURL */ }
+      
+      // Флаг, щоб не перезаписувати історію при завантаженні
+      activeTab._skipHistoryUpdate = true;
+      
+      activeTab.browserView.webContents.loadURL(prevUrl).then(() => {
+        console.log(`[TAB] Navigated back to index ${activeTab.currentIndex}`);
+      }).catch(err => {
+        console.error('[TAB] Failed to navigate back:', err.message);
+        // Повертаємо індекс назад якщо помилка
+        activeTab.currentIndex = currentIndex;
+      }).finally(() => {
+        // Скидаємо флаг після завантаження
+        setTimeout(() => { activeTab._skipHistoryUpdate = false; }, 100);
+      });
+    } else {
+      console.log('[TAB] Already at the beginning of history');
+    }
+    return;
+  }
+  
+  // Фолбек: якщо нашої історії немає, використовуємо webContents
+  if (activeTab.browserView.webContents.canGoBack()) {
     activeTab.browserView.webContents.goBack();
-    console.log('[TAB] Back');
+    console.log('[TAB] Back (webContents fallback)');
+  } else {
+    console.log('[TAB] No history available');
   }
 }
 
@@ -367,9 +529,59 @@ function goBack() {
  */
 function goForward() {
   const activeTab = tabs.find(t => t.id === activeTabId);
-  if (activeTab && activeTab.browserView.webContents.canGoForward()) {
+  if (!activeTab) return;
+  
+  // Спочатку перевіряємо нашу збережену історію (критично для відновлених сесій)
+  if (activeTab.navigationHistory && activeTab.navigationHistory.length > 1) {
+    const currentIndex = activeTab.currentIndex ?? 0;
+    console.log(`[TAB] goForward: currentIndex=${currentIndex}, historyLength=${activeTab.navigationHistory.length}`);
+    
+    if (currentIndex < activeTab.navigationHistory.length - 1) {
+      activeTab.currentIndex = currentIndex + 1;
+      const nextUrl = activeTab.navigationHistory[activeTab.currentIndex].url;
+      
+      console.log(`[TAB] Going forward to: ${nextUrl}`);
+      
+      // Перевіряємо чи webContents може обробити навігацію нативно
+      try {
+        const navHistory = activeTab.browserView.webContents.navigationHistory;
+        if (navHistory) {
+          const entries = navHistory.getAllEntries();
+          const wcActiveIndex = navHistory.getActiveIndex();
+          if (wcActiveIndex < entries.length - 1 && entries[wcActiveIndex + 1]?.url === nextUrl) {
+            activeTab._skipHistoryUpdate = true;
+            activeTab.browserView.webContents.goForward();
+            console.log('[TAB] Forward (webContents, synced)');
+            return;
+          }
+        }
+      } catch (e) { /* fallback to loadURL */ }
+      
+      // Флаг, щоб не перезаписувати історію при завантаженні
+      activeTab._skipHistoryUpdate = true;
+      
+      activeTab.browserView.webContents.loadURL(nextUrl).then(() => {
+        console.log(`[TAB] Navigated forward to index ${activeTab.currentIndex}`);
+      }).catch(err => {
+        console.error('[TAB] Failed to navigate forward:', err.message);
+        // Повертаємо індекс назад якщо помилка
+        activeTab.currentIndex = currentIndex;
+      }).finally(() => {
+        // Скидаємо флаг після завантаження
+        setTimeout(() => { activeTab._skipHistoryUpdate = false; }, 100);
+      });
+    } else {
+      console.log('[TAB] Already at the end of history');
+    }
+    return;
+  }
+  
+  // Фолбек: якщо нашої історії немає, використовуємо webContents
+  if (activeTab.browserView.webContents.canGoForward()) {
     activeTab.browserView.webContents.goForward();
-    console.log('[TAB] Forward');
+    console.log('[TAB] Forward (webContents fallback)');
+  } else {
+    console.log('[TAB] No history available');
   }
 }
 
@@ -417,21 +629,60 @@ function getSessionData() {
       // Використовуємо збережений tab.url як основний джерело, webContents як фолбек
       let url = tab.url || '';
       let title = tab.title || 'Нова вкладка';
+      let navigationHistory = tab.navigationHistory || [];
+      let currentIndex = tab.currentIndex || 0;
       
-      // Спробувати отримати актуальний URL з webContents якщо доступний
+      console.log(`[SESSION.save] Tab ${tab.id}: currentIndex=${currentIndex}, navHistory.length=${navigationHistory.length}`);
+      
+      // Спробувати отримати актуальну історію навігації з webContents
       try {
         if (tab.browserView?.webContents && !tab.browserView.webContents.isDestroyed()) {
           url = tab.browserView.webContents.getURL() || url;
           title = tab.browserView.webContents.getTitle() || title;
+          
+          // Отримуємо історію навігації
+          const navHistory = tab.browserView.webContents.navigationHistory;
+          if (navHistory) {
+            const entries = navHistory.getAllEntries();
+            const activeIndexWC = navHistory.getActiveIndex();
+            
+            console.log(`[SESSION.save] WebContents: ${entries.length} entries, activeIndex=${activeIndexWC}`);
+            
+            // Якщо є записи в webContents історії, перевіримо чи потрібно оновити
+            if (entries.length > 0) {
+              // Якщо наша історія порожна, беремо з webContents як фолбек
+              if (navigationHistory.length === 0) {
+                navigationHistory = entries.map(entry => ({
+                  url: entry.url,
+                  title: entry.title || entry.url
+                }));
+                currentIndex = activeIndexWC;
+                console.log(`[SESSION.save] Updated from webContents (fallback): using activeIndex=${currentIndex}`);
+              }
+            }
+          }
         }
       } catch (e) {
-        // webContents може бути знищений при закритті
+        // webContents може бути знищений при закритті або API недоступний
+        console.log('[SESSION.save] Could not get navigation history:', e.message);
       }
+      
+      // Обмежуємо історію до останніх 20 записів для економії місця
+      const MAX_SAVED_HISTORY = 20;
+      if (navigationHistory.length > MAX_SAVED_HISTORY) {
+        const excess = navigationHistory.length - MAX_SAVED_HISTORY;
+        navigationHistory = navigationHistory.slice(excess);
+        currentIndex = Math.max(0, currentIndex - excess);
+      }
+      
+      console.log(`[SESSION.save] Final: currentIndex=${currentIndex}, navHistory.length=${navigationHistory.length}`);
       
       return {
         url,
         title,
-        isActive: tab.id === activeTabId
+        isActive: tab.id === activeTabId,
+        navigationHistory,
+        currentIndex
       };
     })
     .filter(tab => tab.url && !tab.url.includes('newtab.html'));
@@ -478,18 +729,26 @@ function restoreSession(sessionData, mainWindow, { storage, themeManager, inject
         id: nextTabId,
         browserView: tabView,
         url: tab.url,
-        title: tab.title || 'Loading...'
+        title: tab.title || 'Loading...',
+        navigationHistory: tab.navigationHistory || [],
+        currentIndex: tab.currentIndex || 0,
+        _isRestoringHistory: tab.navigationHistory && tab.navigationHistory.length > 0 // Флаг для першого did-navigate
       };
+      
+      console.log(`[SESSION.restore] Tab ${nextTabId}: url=${tab.url}, currentIndex=${tab.currentIndex}, navHistory.length=${tab.navigationHistory?.length || 0}, _isRestoringHistory=${tabData._isRestoringHistory}`);
       
       tabs.push(tabData);
       
       // Налаштовуємо обробники
       setupTabEventHandlers(tabData, mainWindow, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel });
       
-      // Завантажуємо URL
+      // Завантажуємо тільки поточний URL (швидко!)
+      // Історія навігації зберігається в tabData і використовується функціями goBack/goForward
       tabView.webContents.loadURL(tab.url).catch(err => {
         console.error('[TAB] Failed to load:', tab.url);
       });
+      
+      console.log(`[TAB] Restored with history: ${tab.navigationHistory?.length || 0} entries, current: ${tab.currentIndex || 0}`);
       
       // Відправляємо на UI
       mainWindow.webContents.send('tab-restored', {
