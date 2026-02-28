@@ -182,6 +182,10 @@ function createWindow() {
   // Автозбереження сесії при закритті
   mainWindow.on('close', () => {
     const sessionTabs = tabManager.getSessionData();
+    console.log('[SESSION] Before save:');
+    sessionTabs.forEach((tab, i) => {
+      console.log(`  Tab ${i}: url=${tab.url}, currentIndex=${tab.currentIndex}, navHistory.length=${tab.navigationHistory?.length || 0}`);
+    });
     const activeTabId = tabManager.getActiveTabId();
     storage.saveSession(sessionTabs, activeTabId);
     console.log('[SESSION] Auto-saved on close');
