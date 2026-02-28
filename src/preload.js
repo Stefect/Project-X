@@ -31,12 +31,18 @@ contextBridge.exposeInMainWorld('browserStorage', {
   clearNotes: () => ipcRenderer.send('clear-notes')
 });
 
-// API для Infinite Feed (нескінченна стрічка новин)
+// API для Infinite Feed (нескінченна стрічка новин) + X-Ray + AI
 contextBridge.exposeInMainWorld('api', {
   startFeed: (categories, sourceNames) => ipcRenderer.invoke('start-infinite-feed', categories, sourceNames),
   stopFeed: () => ipcRenderer.invoke('stop-infinite-feed'),
   onNewFeedItem: (callback) => ipcRenderer.on('new-feed-item', (_event, data) => callback(data)),
   onFeedSkip: (callback) => ipcRenderer.on('feed-timeout-skip', (_event, source) => callback(source)),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
-  openInBrowser: (url) => ipcRenderer.invoke('open-in-browser', url)
+  openInBrowser: (url) => ipcRenderer.invoke('open-in-browser', url),
+  
+  // X-Ray: опис посилань при наведенні
+  describeUrl: (url, linkText, context) => ipcRenderer.invoke('describe-url', url, linkText, context),
+  
+  // AI утиліти
+  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args)
 });

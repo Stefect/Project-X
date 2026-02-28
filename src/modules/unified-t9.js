@@ -436,4 +436,218 @@
   };
 
   console.log('[UNIFIED-T9] Autocomplete system ready (VS Code style)');
+
+  // ============================================================
+  // X-RAY: Опис посилань при наведенні мишки
+  // ============================================================
+  (function initXRay() {
+    if (window.__xrayInitialized) return;
+    window.__xrayInitialized = true;
+
+    const XRAY_DELAY = 400;        // Затримка перед запитом (мс)
+    const XRAY_FADE_IN = 150;      // Анімація появи
+    const XRAY_CACHE = new Map();  // Локальний кеш в контексті сторінки
+
+    let xrayTimer = null;
+    let xrayBox = null;
+    let currentLink = null;
+
+    // Створюємо тултіп
+    function createXRayBox() {
+      if (xrayBox) return;
+      const box = document.createElement('div');
+      box.id = 'xray-tooltip';
+      box.style.cssText = `
+        position: fixed;
+        background: linear-gradient(135deg, #1e1f2e 0%, #252736 100%);
+        border: 1px solid rgba(122, 162, 247, 0.3);
+        border-radius: 10px;
+        padding: 10px 14px;
+        z-index: 2147483647;
+        display: none;
+        max-width: 340px;
+        min-width: 180px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(122, 162, 247, 0.1);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity ${XRAY_FADE_IN}ms ease-in-out;
+        backdrop-filter: blur(12px);
+      `;
+      document.body.appendChild(box);
+      xrayBox = box;
+    }
+
+    function showXRay(link, data) {
+      if (!xrayBox || currentLink !== link) return;
+
+      const title = data.title || '';
+      const desc = data.description || '';
+
+      xrayBox.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+          <span style="font-size:12px;opacity:0.6;">🔍</span>
+          <span style="font-size:13px;font-weight:600;color:#7aa2f7;line-height:1.3;">${escapeHtml(title)}</span>
+        </div>
+        <div style="font-size:12px;color:#a9b1d6;line-height:1.4;">${escapeHtml(desc)}</div>
+        <div style="font-size:10px;color:#565f89;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(truncateUrl(link.href))}</div>
+      `;
+
+      // Позиціонуємо біля курсора / посилання
+      const rect = link.getBoundingClientRect();
+      let top = rect.bottom + 6;
+      let left = rect.left;
+
+      // Якщо виходить за нижній край — показуємо зверху
+      xrayBox.style.display = 'block';
+      if (top + xrayBox.offsetHeight > window.innerHeight) {
+        top = rect.top - xrayBox.offsetHeight - 6;
+      }
+      // Якщо виходить за правий край
+      if (left + xrayBox.offsetWidth > window.innerWidth - 10) {
+        left = window.innerWidth - xrayBox.offsetWidth - 10;
+      }
+      if (left < 5) left = 5;
+      if (top < 5) top = 5;
+
+      xrayBox.style.top = top + 'px';
+      xrayBox.style.left = left + 'px';
+
+      // Fade in
+      requestAnimationFrame(() => {
+        if (xrayBox) xrayBox.style.opacity = '1';
+      });
+    }
+
+    function hideXRay() {
+      clearTimeout(xrayTimer);
+      xrayTimer = null;
+      currentLink = null;
+      if (xrayBox) {
+        xrayBox.style.opacity = '0';
+        setTimeout(() => {
+          if (xrayBox) xrayBox.style.display = 'none';
+        }, XRAY_FADE_IN);
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function truncateUrl(url) {
+      try {
+        const u = new URL(url);
+        const path = u.pathname.length > 40 ? u.pathname.substring(0, 40) + '…' : u.pathname;
+        return u.hostname + path;
+      } catch {
+        return url.substring(0, 60);
+      }
+    }
+
+    function isExternalLink(a) {
+      if (!a.href) return false;
+      const href = a.href;
+      if (href.startsWith('javascript:') || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return false;
+      if (href.startsWith('file://')) return false;
+      return true;
+    }
+
+    async function requestDescription(link) {
+      const url = link.href;
+
+      // Кеш?
+      if (XRAY_CACHE.has(url)) {
+        showXRay(link, XRAY_CACHE.get(url));
+        return;
+      }
+
+      // Збираємо контекст зі сторінки
+      const linkText = (link.textContent || link.innerText || '').trim().substring(0, 120);
+      const linkTitle = (link.title || link.getAttribute('aria-label') || '').trim();
+      
+      // Оточуючий текст (батьківський елемент)
+      let surroundingText = '';
+      try {
+        const parent = link.closest('p, li, td, div, article, section, h1, h2, h3, h4, h5, h6');
+        if (parent && parent !== document.body) {
+          surroundingText = (parent.textContent || '').trim().substring(0, 200);
+        }
+      } catch (e) {}
+
+      // Збираємо контекст
+      let context = '';
+      if (linkTitle) context += linkTitle;
+      if (surroundingText && surroundingText !== linkText) {
+        context += (context ? '. ' : '') + surroundingText;
+      }
+      context = context.substring(0, 250);
+
+      // Показуємо "завантаження"
+      showXRay(link, { title: '⏳ Аналіз...', description: 'X-Ray сканує посилання...' });
+
+      try {
+        if (!window.api?.describeUrl) {
+          const domain = new URL(url).hostname;
+          const result = { title: linkText || domain, description: `Перейти на ${domain}` };
+          XRAY_CACHE.set(url, result);
+          showXRay(link, result);
+          return;
+        }
+
+        const result = await Promise.race([
+          window.api.describeUrl(url, linkText, context),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+        ]);
+
+        if (result) {
+          XRAY_CACHE.set(url, result);
+          showXRay(link, result);
+        } else {
+          hideXRay();
+        }
+      } catch (err) {
+        // Таймаут або помилка — просто показуємо домен
+        try {
+          const domain = new URL(url).hostname;
+          const fallback = { title: domain, description: `Перейти на ${domain}` };
+          XRAY_CACHE.set(url, fallback);
+          showXRay(link, fallback);
+        } catch {
+          hideXRay();
+        }
+      }
+    }
+
+    // Делегування подій на document (працює з динамічно створеними посиланнями)
+    document.addEventListener('mouseover', (e) => {
+      const link = e.target.closest('a[href]');
+      if (!link || !isExternalLink(link)) return;
+      if (link === currentLink) return; // Вже обробляємо
+
+      hideXRay(); // Ховаємо попередній
+      currentLink = link;
+      createXRayBox();
+
+      xrayTimer = setTimeout(() => {
+        if (currentLink === link) {
+          requestDescription(link);
+        }
+      }, XRAY_DELAY);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+      const link = e.target.closest('a[href]');
+      if (link && link === currentLink) {
+        hideXRay();
+      }
+    });
+
+    // Ховаємо при скролі
+    window.addEventListener('scroll', hideXRay, { passive: true });
+
+    console.log('[X-RAY] Link preview system ready');
+  })();
 })();
