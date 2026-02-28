@@ -19,7 +19,7 @@
     </div>
     <div class="tabs-container">
       <div class="tab active" data-tab-id="1">
-        <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.style.display='none'">
+        <img class="tab-favicon" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E">
         <span class="tab-title">Нова вкладка</span>
         <span class="tab-close"></span>
       </div>
@@ -700,8 +700,9 @@
           tabElement.className = 'tab';
           tabElement.dataset.tabId = result.id;
           
+          const newTabFavicon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E`;
           tabElement.innerHTML = `
-            <img class="tab-favicon" src="https://www.google.com/favicon.ico" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>[WEB]</text></svg>'">
+            <img class="tab-favicon" src="${newTabFavicon}" onerror="this.src='${newTabFavicon}'">
             <span class="tab-title">${result.title || 'Нова вкладка'}</span>
             <span class="tab-close">×</span>
           `;
@@ -792,8 +793,15 @@
           }
           
           if (faviconElement && url) {
-            const faviconUrl = new URL(url).origin + '/favicon.ico';
-            faviconElement.src = faviconUrl;
+            // Для локальних файлів (newtab тощо) показуємо іконку глобуса
+            if (url.startsWith('file://') || url.includes('newtab.html')) {
+              faviconElement.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E`;
+            } else {
+              try {
+                const faviconUrl = new URL(url).origin + '/favicon.ico';
+                faviconElement.src = faviconUrl;
+              } catch(e) {}
+            }
           }
         }
       });
@@ -846,14 +854,17 @@
         tabElement.dataset.tabId = data.tabId;
         
         // Отримуємо favicon з URL
-        let faviconUrl = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>[WEB]</text></svg>';
+        const globeIcon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E`;
+        let faviconUrl = globeIcon;
         try {
           const urlObj = new URL(data.url);
-          faviconUrl = urlObj.origin + '/favicon.ico';
+          if (urlObj.protocol !== 'file:') {
+            faviconUrl = urlObj.origin + '/favicon.ico';
+          }
         } catch (e) {}
         
         tabElement.innerHTML = `
-          <img class="tab-favicon" src="${faviconUrl}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>[WEB]</text></svg>'">
+          <img class="tab-favicon" src="${faviconUrl}" onerror="this.src='${globeIcon}'">
           <span class="tab-title">${data.title || 'Завантаження...'}</span>
           <span class="tab-close">x</span>
         `;
