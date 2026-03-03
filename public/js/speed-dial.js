@@ -245,7 +245,7 @@ function openModal(index) {
 function closeModal() {
   if (modal) {
     modal.classList.add('hidden');
-    linkUrlInput.style.borderColor = ''; // скидаємо колір рамки
+    if (linkUrlInput) linkUrlInput.style.borderColor = ''; // скидаємо колір рамки
   }
 }
 
@@ -316,14 +316,10 @@ function deleteLink(index) {
 
 // Функція для безпечного відображення HTML
 function escapeHtml(text) {
+  if (!text) return '';
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
-}
-
-// Експорт функції ініціалізації
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { initSpeedDial };
 }
 
 // Автоматична ініціалізація при завантаженні сторінки
