@@ -3,7 +3,7 @@
  * Створення, перемикання, закриття, відновлення сесій
  */
 
-const { BrowserView, Menu, MenuItem } = require('electron');
+const { BrowserView, Menu, MenuItem, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -41,7 +41,8 @@ function createTab(mainWindow, url = null, { storage, themeManager, injectUnifie
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, '..', 'preload.js')
+      preload: path.join(__dirname, '..', 'preload.js'),
+      session: session.defaultSession // Використовуємо дефолтну сесію з Tor проксі
     }
   });
   
@@ -279,9 +280,17 @@ function setupTabEventHandlers(tabOrId, mainWindow, { storage, themeManager, inj
   
   // Помилка завантаження
   browserView.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    // -3 = ERR_ABORTED (користувач скасував завантаження)
+    // -105 = ERR_NAME_NOT_RESOLVED (не вдалося розв'язати DNS)
+    // -106 = ERR_INTERNET_DISCONNECTED (немає інтернету)
+    // -130 = ERR_PROXY_CONNECTION_FAILED (Tor не підключений)
     if (errorCode !== -3) {
       console.error(`[TAB ${id}] Load error: ${errorDescription} (code: ${errorCode})`);
       console.error(`[TAB ${id}] URL: ${validatedURL}`);
+      
+      if (errorCode === -130) {
+        console.error('[TAB] Tor proxy connection failed! Make sure Tor is running.');
+      }
     }
   });
   

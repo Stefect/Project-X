@@ -906,7 +906,7 @@ body:not(.newtab-page) .container {
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   display: none;
-  z-index: 999999;
+  z-index: 2147483647;
   overflow: hidden;
   -webkit-app-region: no-drag;
   overflow-y: auto;
@@ -1558,10 +1558,8 @@ body[class*="mode"] .logo {
   opacity: 0.9;
 }
 .time-widget {
-  position: absolute;
-  top: 30px;
-  left: 30px;
-  text-align: left;
+  text-align: center;
+  margin: 20px 0;
 }
 .time {
   font-size: 64px;
@@ -2033,6 +2031,26 @@ body:not(.newtab-page) #news-sidebar {
   background: rgba(255, 152, 0, 0.2);
   border-color: rgba(255, 152, 0, 0.5);
   transform: translateY(-2px);
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
 }
 @property --tw-rotate-x {
   syntax: "*";
