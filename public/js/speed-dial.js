@@ -110,22 +110,26 @@ function validateAndFormatUrl() {
   }
 }
 
-// Завантаження банеру сайту
+// Завантаження банеру сайту (Open Graph зображення)
 async function fetchBannerUrl(url) {
   try {
-    const encodedUrl = encodeURIComponent(url);
+    // Витягуємо Open Graph image (og:image) через Microlink API
+    // Це зображення, яке сайт готує для соціальних мереж - справжній банер
+    const response = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}`);
+    const data = await response.json();
     
-    // Використовуємо різні сервіси скріншотів
-    const sources = [
-      `https://image.thum.io/get/width/400/crop/300/${url}`, // Thum.io - безкоштовний
-      `https://shot.screenshotapi.net/screenshot?url=${encodedUrl}&width=400&height=300&output=image&file_type=png&wait_for_event=load`, // ScreenshotAPI
-      `https://api.microlink.io/?url=${encodedUrl}&screenshot=true&meta=false&embed=screenshot.url` // Microlink
-    ];
+    if (data.status === 'success' && data.data && data.data.image) {
+      console.log('[Speed Dial] Found Open Graph image:', data.data.image.url);
+      return data.data.image.url;
+    }
     
-    // Спробуємо Thum.io (найпростіший)
+    console.log('[Speed Dial] No Open Graph image found, using screenshot fallback');
+    // Fallback на скріншот якщо og:image не знайдено
     return `https://image.thum.io/get/width/400/crop/300/${url}`;
-  } catch {
-    return null;
+  } catch (error) {
+    console.error('[Speed Dial] Error fetching banner:', error);
+    // Fallback на скріншот при помилці
+    return `https://image.thum.io/get/width/400/crop/300/${url}`;
   }
 }
 
@@ -146,7 +150,7 @@ async function fetchAndPreviewBanner() {
     <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
     </svg>
-    Завантаження скріншоту...
+    Завантаження банеру...
   `;
   
   try {
