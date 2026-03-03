@@ -16,6 +16,7 @@ const availableColors = [
 let savedLinks = JSON.parse(localStorage.getItem('projectX_speedDial')) || [];
 let currentEditingIndex = null;
 let selectedColor = availableColors[4].class; // Дефолтний колір (indigo)
+let currentLogoUrl = null; // Зберігає завантажений логотип
 
 let speedDialContainer;
 let modal;
@@ -26,6 +27,9 @@ let linkUrlInput;
 let linkIconInput;
 let cancelModalBtn;
 let saveLinkBtn;
+let fetchLogoBtn;
+let logoPreview;
+let logoPreviewImg;
 
 // Ініціалізація модуля
 function initSpeedDial() {
@@ -38,6 +42,9 @@ function initSpeedDial() {
   linkIconInput = document.getElementById('link-icon');
   cancelModalBtn = document.getElementById('cancel-modal-btn');
   saveLinkBtn = document.getElementById('save-link-btn');
+  fetchLogoBtn = document.getElementById('fetch-logo-btn');
+  logoPreview = document.getElementById('logo-preview');
+  logoPreviewImg = document.getElementById('logo-preview-img');
 
   if (!speedDialContainer || !modal) {
     console.error('[Speed Dial] Required elements not found');
@@ -82,6 +89,11 @@ function initSpeedDial() {
   // Валідація URL при введенні
   linkUrlInput.addEventListener('blur', validateAndFormatUrl);
 
+  // Завантаження логотипу
+  if (fetchLogoBtn) {
+    fetchLogoBtn.addEventListener('click', fetchAndPreviewLogo);
+  }
+
   renderSpeedDial();
   
   console.log('[Speed Dial] Initialized with', savedLinks.length, 'bookmarks');
@@ -117,6 +129,88 @@ function getFaviconUrl(url) {
   }
 }
 
+// Завантаження логотипу з різних джерел
+async function fetchLogoUrl(url) {
+  try {
+    const domain = new URL(url).hostname;
+    
+    // Спробуємо різні API по черзі
+    const sources = [
+      `https://logo.clearbit.com/${domain}`, // Clearbit - найкраща якість
+      `https://icons.duckduckgo.com/ip3/${domain}.ico`, // DuckDuckGo
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=128` // Google високої якості
+    ];
+    
+    // Перевіряємо кожне джерело
+    for (const logoUrl of sources) {
+      try {
+        const response = await fetch(logoUrl, { method: 'HEAD' });
+        if (response.ok) {
+          return logoUrl;
+        }
+      } catch {
+        continue;
+      }
+    }
+    
+    // Якщо нічого не спрацювало, повертаємо Google favicon як резервний
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+// Завантаження та показ превʼю логотипу
+async function fetchAndPreviewLogo() {
+  const url = linkUrlInput.value.trim();
+  
+  if (!url) {
+    linkUrlInput.focus();
+    linkUrlInput.style.borderColor = '#ef4444';
+    setTimeout(() => linkUrlInput.style.borderColor = '', 2000);
+    return;
+  }
+  
+  // Показуємо індикатор завантаження
+  fetchLogoBtn.disabled = true;
+  fetchLogoBtn.innerHTML = `
+    <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+    Завантаження...
+  `;
+  
+  try {
+    const logoUrl = await fetchLogoUrl(url);
+    
+    if (logoUrl) {
+      currentLogoUrl = logoUrl;
+      logoPreviewImg.src = logoUrl;
+      logoPreview.classList.remove('hidden');
+      logoPreview.classList.add('flex');
+      
+      // Очищаємо текстову іконку
+      linkIconInput.value = '';
+      
+      console.log('[Speed Dial] Logo loaded:', logoUrl);
+    } else {
+      alert('Не вдалось завантажити логотип. Спробуйте використати емодзі або літери.');
+    }
+  } catch (error) {
+    console.error('[Speed Dial] Error fetching logo:', error);
+    alert('Помилка завантаження логотипу');
+  } finally {
+    // Відновлюємо кнопку
+    fetchLogoBtn.disabled = false;
+    fetchLogoBtn.innerHTML = `
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+      Завантажити логотип
+    `;
+  }
+}
+
 // 1. Рендер карток
 function renderSpeedDial() {
   if (!speedDialContainer) return;
@@ -130,11 +224,19 @@ function renderSpeedDial() {
     // Фон з легкою текстурою
     card.style.position = 'relative';
     
-    const faviconUrl = getFaviconUrl(link.url);
-    const iconHtml = faviconUrl && !link.icon.match(/[\u{1F300}-\u{1F9FF}]/u) 
-      ? `<img src="${faviconUrl}" class="w-12 h-12 mb-2 drop-shadow-lg rounded-full bg-white/10 p-2" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-         <div class="text-4xl mb-2 drop-shadow-lg" style="display:none;">${escapeHtml(link.icon || '🌐')}</div>`
-      : `<div class="text-4xl mb-2 drop-shadow-lg">${escapeHtml(link.icon || '🌐')}</div>`;
+    // Визначаємо, що показувати: логотип або іконку
+    let iconHtml;
+    if (link.logoUrl) {
+      // Показуємо логотип
+      iconHtml = `<img src="${escapeHtml(link.logoUrl)}" class="w-16 h-16 mb-2 drop-shadow-lg rounded-lg object-contain bg-white/10 p-2" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+         <div class="text-4xl mb-2 drop-shadow-lg" style="display:none;">${escapeHtml(link.icon || link.title.charAt(0).toUpperCase())}</div>`;
+    } else if (link.icon) {
+      // Показуємо текстову іконку або емодзі
+      iconHtml = `<div class="text-4xl mb-2 drop-shadow-lg">${escapeHtml(link.icon)}</div>`;
+    } else {
+      // Резервний варіант - перша літера назви
+      iconHtml = `<div class="text-4xl mb-2 drop-shadow-lg">${escapeHtml(link.title.charAt(0).toUpperCase())}</div>`;
+    }
     
     card.innerHTML = `
       <a href="${escapeHtml(link.url)}" class="absolute inset-0 flex flex-col items-center justify-center z-10 p-4">
@@ -213,6 +315,7 @@ function renderColorPicker() {
 // 3. Відкриття модального вікна
 function openModal(index) {
   currentEditingIndex = index;
+  currentLogoUrl = null;
   renderColorPicker();
 
   if (index !== null) {
@@ -222,6 +325,18 @@ function openModal(index) {
     linkUrlInput.value = savedLinks[index].url;
     linkIconInput.value = savedLinks[index].icon || '';
     selectedColor = savedLinks[index].bgColor;
+    
+    // Показуємо логотип якщо є
+    if (savedLinks[index].logoUrl) {
+      currentLogoUrl = savedLinks[index].logoUrl;
+      logoPreviewImg.src = savedLinks[index].logoUrl;
+      logoPreview.classList.remove('hidden');
+      logoPreview.classList.add('flex');
+    } else {
+      logoPreview.classList.add('hidden');
+      logoPreview.classList.remove('flex');
+    }
+    
     renderColorPicker();
   } else {
     // Режим додавання (очищаємо поля)
@@ -229,8 +344,12 @@ function openModal(index) {
     linkTitleInput.value = '';
     linkUrlInput.value = '';
     linkIconInput.value = '';
-    linkUrlInput.style.borderColor = ''; // скидаємо колір рамки
+    linkUrlInput.style.borderColor = '';
     selectedColor = availableColors[4].class;
+    
+    // Ховаємо превʼю
+    logoPreview.classList.add('hidden');
+    logoPreview.classList.remove('flex');
   }
 
   modal.classList.remove('hidden');
@@ -246,6 +365,13 @@ function closeModal() {
   if (modal) {
     modal.classList.add('hidden');
     if (linkUrlInput) linkUrlInput.style.borderColor = ''; // скидаємо колір рамки
+    
+    // Очищаємо прев'ю логотипу
+    currentLogoUrl = null;
+    if (logoPreview) {
+      logoPreview.classList.add('hidden');
+      logoPreview.classList.remove('flex');
+    }
   }
 }
 
@@ -253,7 +379,7 @@ function closeModal() {
 function saveLink() {
   const title = linkTitleInput.value.trim();
   let url = linkUrlInput.value.trim();
-  const icon = linkIconInput.value.trim() || title.charAt(0).toUpperCase();
+  const icon = linkIconInput.value.trim() || (title ? title.charAt(0).toUpperCase() : '🌐');
 
   if (!title) {
     linkTitleInput.focus();
@@ -284,7 +410,14 @@ function saveLink() {
     return;
   }
 
-  const newLink = { title, url, icon, bgColor: selectedColor };
+  // Створюємо обєкт закладки
+  const newLink = { 
+    title, 
+    url, 
+    icon, 
+    bgColor: selectedColor,
+    logoUrl: currentLogoUrl // зберігаємо логотип якщо є
+  };
 
   if (currentEditingIndex !== null) {
     savedLinks[currentEditingIndex] = newLink;
