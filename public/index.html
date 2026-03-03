@@ -10,11 +10,6 @@
   <!-- Панель вкладок з кнопками вікна -->
   <div class="tabs-bar" id="tabs-bar">
     <div class="menu-section">
-      <button class="menu-btn" id="menu-btn" title="Меню">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M1 2h14v2H1V2zm0 5h14v2H1V7zm0 5h14v2H1v-2z"/>
-        </svg>
-      </button>
       <span class="logo">BrowserX</span>
     </div>
     <div class="tabs-container">
@@ -72,117 +67,6 @@
       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
         <path d="M3 2h10c.55 0 1 .45 1 1v10c0 .55-.45 1-1 1H3c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1zm0 2v8h10V4H3zm2 2h6v1H5V6zm0 2h6v1H5V8zm0 2h4v1H5v-1z"/>
       </svg>
-    </button>
-  </div>
-
-  <!-- Випадаюче меню -->
-  <div class="dropdown-menu" id="dropdown-menu">
-    <button class="menu-item">
-      <span class="label">Нова вкладка</span>
-      <span class="shortcut">CTRL + T</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Нова вкладка в острові вкладок</span>
-      <span class="shortcut">ALT + T</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Нове вікно</span>
-      <span class="shortcut">CTRL + N</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Нове конфіденційне вікно</span>
-      <span class="shortcut">CTRL + SHIFT + N</span>
-    </button>
-
-    <div class="menu-separator"></div>
-
-    <button class="menu-item has-submenu">
-      <span class="label">Сторінка</span>
-    </button>
-
-    <div class="menu-separator"></div>
-
-    <div class="zoom-controls">
-      <button class="zoom-btn" id="zoom-out">−</button>
-      <div class="zoom-value" id="zoom-value">100%</div>
-      <button class="zoom-btn" id="zoom-in">+</button>
-      <button class="zoom-btn" id="zoom-reset" title="Скинути масштаб">⟲</button>
-      <button class="zoom-btn" id="fullscreen" title="Повноекранний режим"></button>
-    </div>
-
-    <div class="menu-separator"></div>
-
-    <button class="menu-item">
-      <span class="label">Масштаб</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Знайти...</span>
-      <span class="shortcut">CTRL + F</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Вкладки пошуку</span>
-      <span class="shortcut">CTRL + SPACE</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Знімок</span>
-      <span class="shortcut">CTRL + SHIFT + 5</span>
-    </button>
-
-    <div class="menu-separator"></div>
-
-    <button class="menu-item has-submenu" id="history-menu">
-      <span class="label">Журнал (Історія)</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Завантаження</span>
-      <span class="shortcut">CTRL + J</span>
-    </button>
-    <button class="menu-item has-submenu">
-      <span class="label">Закладки</span>
-    </button>
-    <button class="menu-item has-submenu">
-      <span class="label">Розширення</span>
-    </button>
-    <button class="menu-item has-submenu">
-      <span class="label">Новини</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Pinboards</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Увійти в Обліковий запис Opera...</span>
-    </button>
-
-    <div class="menu-separator"></div>
-
-    <button class="menu-item has-submenu">
-      <span class="label">Розробник</span>
-    </button>
-
-    <div class="menu-separator"></div>
-
-    <button class="menu-item" id="customize-menu">
-      <span class="label">Налаштувати вигляд</span>
-      <span class="shortcut">CTRL + SHIFT + Y</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Параметри</span>
-      <span class="shortcut">ALT + P</span>
-    </button>
-    <button class="menu-item has-submenu">
-      <span class="label">Довідка</span>
-    </button>
-    <button class="menu-item has-submenu">
-      <span class="label">Профілі</span>
-    </button>
-    <button class="menu-item">
-      <span class="label">Оновлення та відновлення...</span>
-    </button>
-
-    <div class="menu-separator"></div>
-
-    <button class="menu-item" id="exit-browser">
-      <span class="label">Вийти</span>
     </button>
   </div>
 
@@ -513,7 +397,6 @@
       const notesSidebar = document.getElementById('notes-sidebar');
       const toggleSidebarBtn = document.getElementById('toggle-sidebar');
       const toggleSidebarToolbar = document.getElementById('toggle-sidebar-toolbar');
-      const menuBtn = document.getElementById('menu-btn');
       
       // Вкладки
       const tabsBar = document.getElementById('tabs-bar');
@@ -1820,110 +1703,6 @@
 
     // Simple settings removed — open-settings button deprecated
 
-    // Меню
-    const dropdownMenu = document.getElementById('dropdown-menu');
-    let currentZoom = 100;
-
-    if (menuBtn && dropdownMenu) {
-      // Відкриття/закриття меню
-      menuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isNowOpen = !dropdownMenu.classList.contains('active');
-        dropdownMenu.classList.toggle('active');
-        ipcRenderer.send('menu-toggled', isNowOpen);
-      });
-
-      // Закриття меню при кліку поза ним
-      document.addEventListener('click', (e) => {
-        if (!dropdownMenu.contains(e.target) && !menuBtn.contains(e.target)) {
-          if (dropdownMenu.classList.contains('active')) {
-            dropdownMenu.classList.remove('active');
-            ipcRenderer.send('menu-toggled', false);
-          }
-        }
-      });
-
-      // Закриття меню при натисканні Escape
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && dropdownMenu.classList.contains('active')) {
-          dropdownMenu.classList.remove('active');
-          ipcRenderer.send('menu-toggled', false);
-        }
-      });
-
-      // Масштаб
-      const zoomValue = document.getElementById('zoom-value');
-      const zoomInBtn = document.getElementById('zoom-in');
-      const zoomOutBtn = document.getElementById('zoom-out');
-      const zoomResetBtn = document.getElementById('zoom-reset');
-      const fullscreenBtn = document.getElementById('fullscreen');
-
-      if (zoomInBtn) {
-        zoomInBtn.addEventListener('click', () => {
-          currentZoom = Math.min(currentZoom + 10, 200);
-          zoomValue.textContent = currentZoom + '%';
-          ipcRenderer.send('set-zoom', currentZoom / 100);
-        });
-      }
-
-      if (zoomOutBtn) {
-        zoomOutBtn.addEventListener('click', () => {
-          currentZoom = Math.max(currentZoom - 10, 50);
-          zoomValue.textContent = currentZoom + '%';
-          ipcRenderer.send('set-zoom', currentZoom / 100);
-        });
-      }
-
-      if (zoomResetBtn) {
-        zoomResetBtn.addEventListener('click', () => {
-          currentZoom = 100;
-          zoomValue.textContent = currentZoom + '%';
-          ipcRenderer.send('set-zoom', 1);
-        });
-      }
-
-      if (fullscreenBtn) {
-        fullscreenBtn.addEventListener('click', () => {
-          ipcRenderer.send('toggle-fullscreen');
-          dropdownMenu.classList.remove('active');
-        });
-      }
-
-      // Вихід з браузера
-      const exitBtn = document.getElementById('exit-browser');
-      if (exitBtn) {
-        exitBtn.addEventListener('click', () => {
-          ipcRenderer.send('window-close');
-        });
-      }
-
-      // Обробка кліків на пунктах меню
-      const menuItems = dropdownMenu.querySelectorAll('.menu-item');
-      menuItems.forEach(item => {
-        const label = item.querySelector('.label')?.textContent;
-        
-        item.addEventListener('click', () => {
-          if (label === 'Нова вкладка') {
-            createTab();
-            dropdownMenu.classList.remove('active');
-          } else if (label === 'Нове вікно') {
-            ipcRenderer.send('new-window');
-            dropdownMenu.classList.remove('active');
-          } else if (label === 'Знайти...') {
-            // Можна додати функціонал пошуку
-            dropdownMenu.classList.remove('active');
-          } else if (label === 'Параметри') {
-            // Open the theme/customize side panel instead (settings.html removed)
-            if (typeof openThemePanel === 'function') openThemePanel();
-            dropdownMenu.classList.remove('active');
-          } else if (label === 'Завантаження') {
-            ipcRenderer.send('open-downloads');
-            dropdownMenu.classList.remove('active');
-          }
-        });
-      });
-    }
-
     // Застосування теми
     ipcRenderer.on('theme-changed', (event, theme) => {
       console.log('[THEME] New theme received:', theme.name);
@@ -2466,9 +2245,31 @@
     const torBtn = document.getElementById('tor-btn');
     
     // Функція для показу повідомлень
-    function showTorNotification(message) {
-      console.log('Tor:', message);
-      // Можна додати красиве сповіщення пізніше
+    function showTorNotification(message, isError = false) {
+      console.log('[TOR]', message);
+      
+      // Створюємо toast повідомлення
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: ${isError ? '#dc2626' : '#8b5cf6'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        z-index: 999999;
+        font-size: 14px;
+        animation: slideIn 0.3s ease;
+      `;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
     }
     
     if (torBtn) {
@@ -2506,18 +2307,17 @@
           if (result.status) {
             torBtn.textContent = 'Tor: ON';
             torBtn.style.color = '#8b5cf6';
+            showTorNotification('✓ Tor увімкнено! Перегляд анонімний.');
           } else {
             torBtn.textContent = 'Tor: OFF';
             torBtn.style.color = '#9ca3af';
+            showTorNotification(result.message || 'Tor вимкнено', false);
           }
-          
-          // Показуємо повідомлення
-          showTorNotification(result.message);
         } catch (error) {
           console.error('[ERR] Error toggling Tor:', error);
-          torBtn.textContent = 'Tor: OFF';
+          torBtn.textContent = 'Tor: ERROR';
           torBtn.style.color = '#dc2626';
-          showTorNotification('Помилка підключення Tor');
+          showTorNotification('⚠ Помилка: Tor не запущений або не готовий', true);
         } finally {
           torBtn.disabled = false;
         }

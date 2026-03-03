@@ -10,6 +10,7 @@ const fs = require('fs');
 
 let torProcess = null;
 let isTorActive = false;
+let isTorReady = false; // Прапорець готовності Tor
 
 /**
  * Запускає процес Tor
@@ -64,7 +65,8 @@ function startTor() {
     
     // Перевіряємо чи Tor готовий
     if (output.includes('Bootstrapped 100%')) {
-      console.log('[TOR] Tor successfully connected!');
+      isTorReady = true;
+      console.log('[TOR] ✓ Tor successfully connected and ready!');
     }
   });
   
@@ -78,6 +80,7 @@ function startTor() {
   
   torProcess.on('close', (code) => {
     console.log('[TOR] Tor process exited with code:', code);
+    isTorReady = false;
   });
 }
 
@@ -91,7 +94,7 @@ async function toggleTor(mainWindow) {
     // Вимикаємо Tor - пряме підключення
     await ses.setProxy({ mode: 'direct' });
     isTorActive = false;
-    console.log('Tor disabled - regular connection');
+    console.log('[TOR] Tor disabled - regular connection');
     
     // Оновлюємо placeholder адресної строки
     if (mainWindow) {
@@ -103,13 +106,23 @@ async function toggleTor(mainWindow) {
       message: 'Tor вимкнено. Пошук: Google' 
     };
   } else {
+    // Перевіряємо чи Tor готовий
+    if (!isTorReady) {
+      console.warn('[TOR] Tor is not ready yet. Please wait for connection...');
+      return {
+        status: false,
+        message: 'Tor ще не готовий. Зачекайте підключення...'
+      };
+    }
+    
     // Вмикаємо Tor - SOCKS5 proxy
     await ses.setProxy({
       mode: 'fixed_servers',
-      proxyRules: 'socks5://127.0.0.1:9050'
+      proxyRules: 'socks5://127.0.0.1:9050',
+      proxyBypassRules: '<local>' // Локальні адреси без проксі
     });
     isTorActive = true;
-    console.log('Tor enabled - traffic via SOCKS5 proxy');
+    console.log('[TOR] Tor enabled - traffic via SOCKS5 proxy');
     
     // Оновлюємо placeholder адресної строки
     if (mainWindow) {
@@ -130,7 +143,8 @@ async function toggleTor(mainWindow) {
 function getTorStatus() {
   return { 
     active: isTorActive,
-    processRunning: torProcess !== null && torProcess.exitCode === null
+    processRunning: torProcess !== null && torProcess.exitCode === null,
+    ready: isTorReady
   };
 }
 
@@ -149,6 +163,7 @@ function stopTor() {
     console.log('[TOR] Closing Tor...');
     torProcess.kill();
     torProcess = null;
+    isTorReady = false;
   }
 }
 
