@@ -2096,3 +2096,74 @@ body:not(.newtab-page) #news-sidebar {
     opacity: 0;
   }
 }
+
+/* ============================================
+   SPEED DIAL STYLES - Стилі швидкого доступу
+   ============================================ */
+
+.gx-card {
+  /* Відрізаємо правий нижній кут */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+  border-radius: 12px;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+/* Стиль для активного кольору в модальному вікні */
+.color-btn.ring-2 {
+  transform: scale(1.1);
+}
+
+/* Speed Dial контейнер */
+#speed-dial {
+  margin-top: 2rem;
+  padding: 0 1rem;
+}
+
+/* Модальне вікно Speed Dial */
+#edit-modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  transition: opacity 0.3s ease-in-out;
+}
+
+#edit-modal.hidden {
+  display: none;
+}
+
+/* Анімація для кнопок кольорів */
+.color-btn {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.color-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Адаптивність для Speed Dial */
+@media (max-width: 640px) {
+  #speed-dial {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  #speed-dial {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  #speed-dial {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
