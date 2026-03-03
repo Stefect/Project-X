@@ -17,27 +17,47 @@
 
     <div class="logo">BrowserX</div>
 
-    <div class="shortcuts" id="shortcuts">
-      <a href="https://duckduckgo.com" class="shortcut">
-        <div class="shortcut-icon"></div>
-        <span class="shortcut-name">DuckDuckGo</span>
-      </a>
-      <a href="https://www.youtube.com" class="shortcut">
-        <div class="shortcut-icon"></div>
-        <span class="shortcut-name">YouTube</span>
-      </a>
-      <a href="https://github.com" class="shortcut">
-        <div class="shortcut-icon"></div>
-        <span class="shortcut-name">GitHub</span>
-      </a>
-      <a href="https://chat.openai.com" class="shortcut">
-        <div class="shortcut-icon"></div>
-        <span class="shortcut-name">ChatGPT</span>
-      </a>
-      <a href="https://mail.google.com" class="shortcut">
-        <div class="shortcut-icon"></div>
-        <span class="shortcut-name">Gmail</span>
-      </a>
+    <!-- Speed Dial Section -->
+    <div class="max-w-6xl mx-auto mt-10">
+      <div id="speed-dial" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+        <!-- Speed Dial cards will be dynamically inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Speed Dial Edit Modal -->
+  <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+    <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl w-full max-w-md shadow-2xl">
+      <h2 id="modal-title" class="text-2xl font-bold mb-5 text-gray-100">Додати закладку</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Назва сайту</label>
+          <input type="text" id="link-title" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="Наприклад: YouTube">
+        </div>
+        
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">URL адреса</label>
+          <input type="url" id="link-url" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="https://youtube.com">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Іконка (Емодзі або 1-2 літери)</label>
+          <input type="text" id="link-icon" maxlength="2" class="w-16 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-center text-xl text-white focus:outline-none focus:border-indigo-500" placeholder="▶️">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Колір фону</label>
+          <div id="color-picker" class="flex gap-3">
+            <!-- Color buttons will be dynamically inserted here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 flex justify-end gap-3">
+        <button id="cancel-modal-btn" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-white transition-colors">Скасувати</button>
+        <button id="save-link-btn" class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">Зберегти</button>
+      </div>
     </div>
   </div>
 
@@ -350,6 +370,9 @@
       return div.innerHTML;
     }
   </script>
+
+  <!-- Speed Dial Module -->
+  <script src="../src/modules/speed-dial.js"></script>
 </body>
 </html>
 
