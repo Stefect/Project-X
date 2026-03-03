@@ -2105,13 +2105,31 @@ body:not(.newtab-page) #news-sidebar {
   /* Відрізаємо правий нижній кут */
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
   border-radius: 12px;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.gx-card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* Favicon для карток */
+.speed-dial-favicon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
 }
 
 /* Стиль для активного кольору в модальному вікні */
 .color-btn.ring-2 {
-  transform: scale(1.1);
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
 }
 
 /* Speed Dial контейнер */
@@ -2124,28 +2142,89 @@ body:not(.newtab-page) #news-sidebar {
 #edit-modal {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 50;
-  transition: opacity 0.3s ease-in-out;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 #edit-modal.hidden {
   display: none;
+  opacity: 0;
+}
+
+#edit-modal .bg-gray-800 {
+  animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Анімація для кнопок кольорів */
 .color-btn {
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
 }
 
 .color-btn:hover {
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: scale(1.2);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.color-btn:active {
+  transform: scale(1.05);
+}
+
+/* Покращені input стилі */
+#edit-modal input[type="text"],
+#edit-modal input[type="url"] {
+  transition: all 0.2s ease;
+}
+
+#edit-modal input[type="text"]:focus,
+#edit-modal input[type="url"]:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Покращені кнопки */
+#edit-modal button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  letter-spacing: 0.025em;
+}
+
+#edit-modal button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#edit-modal button:active {
+  transform: translateY(0);
 }
 
 /* Адаптивність для Speed Dial */
@@ -2153,6 +2232,10 @@ body:not(.newtab-page) #news-sidebar {
   #speed-dial {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+  }
+  
+  #edit-modal .bg-gray-800 {
+    margin: 1rem;
   }
 }
 
