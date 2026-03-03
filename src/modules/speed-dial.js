@@ -203,17 +203,12 @@ function renderSpeedDial() {
     }
     
     card.innerHTML = `
-      <a href="${escapeHtml(link.url)}" class="absolute inset-0 flex flex-col items-center justify-center z-10 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent group-hover:from-black/90">
-        <span class="font-bold text-lg tracking-wide drop-shadow-2xl text-center mt-auto mb-2">${escapeHtml(link.title)}</span>
-      </a>
+      <a href="${escapeHtml(link.url)}" class="absolute inset-0 z-10 group-hover:bg-black/20 transition-colors"></a>
       
       <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-        <button class="edit-link-btn p-1.5 bg-black/60 hover:bg-black/80 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Редагувати">✏️</button>
-        <button class="delete-link-btn p-1.5 bg-black/60 hover:bg-red-500/80 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Видалити">🗑️</button>
+        <button class="edit-link-btn p-1.5 bg-black/70 hover:bg-black/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Редагувати">✏️</button>
+        <button class="delete-link-btn p-1.5 bg-black/70 hover:bg-red-500/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Видалити">🗑️</button>
       </div>
-      
-      <!-- Декоративний оверлей при hover -->
-      <div class="absolute inset-0 bg-gradient-to-t from-${link.bgColor?.split(' ')[0]?.replace('bg-gradient-to-br', '') || 'indigo-500'}/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
     `;
     
     const editBtn = card.querySelector('.edit-link-btn');
