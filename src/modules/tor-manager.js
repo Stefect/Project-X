@@ -3,19 +3,88 @@
  * Керує процесом Tor і проксі налаштуваннями
  */
 
-const { spawn } = require('child_process');
-const { session } = require('electron');
+const { spawn, execSync } = require('child_process');
+const { session, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const net = require('net');
+
+// Privacy Guard для блокування витоків
+let privacyGuard = null;
+try {
+  privacyGuard = require('./privacy-guard');
+} catch (err) {
+  console.warn('[TOR] Privacy guard not available:', err.message);
+}
 
 let torProcess = null;
 let isTorActive = false;
-let isTorReady = false; // Прапорець готовності Tor
+let isTorReady = false;
+let pendingExitCountry = null;
+let bootstrapProgress = 0;
+let bootstrapStatus = 'Not started';
+let socksPort = 9050;
+let mainWindowRef = null;
+
+/**
+ * Перевіряє чи порт доступний
+ */
+function checkPortAvailable(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        resolve(false);
+      } else {
+        resolve(true);
+      }
+    });
+    server.once('listening', () => {
+      server.close();
+      resolve(true);
+    });
+    server.listen(port, '127.0.0.1');
+  });
+}
+
+/**
+ * Парсить рядок Bootstrap з логів Tor
+ */
+function parseBootstrapLine(line) {
+  const match = line.match(/Bootstrapped (\d+)%(?:\s*\(([^)]+)\))?:?\s*(.*)/);
+  if (match) {
+    const oldProgress = bootstrapProgress;
+    bootstrapProgress = parseInt(match[1], 10);
+    bootstrapStatus = match[3] || match[2] || 'Connecting...';
+    
+    console.log(`[TOR] Bootstrap: ${bootstrapProgress}% - ${bootstrapStatus}`);
+    
+    // Відправляємо прогрес в UI
+    if (mainWindowRef && mainWindowRef.webContents) {
+      mainWindowRef.webContents.send('tor-bootstrap-progress', {
+        progress: bootstrapProgress,
+        status: bootstrapStatus,
+        ready: bootstrapProgress === 100
+      });
+    }
+    
+    return bootstrapProgress;
+  }
+  return null;
+}
 
 /**
  * Запускає процес Tor
  */
-function startTor() {
+function startTor(exitCountry = null, options = {}) {
+  const { mainWindow } = options;
+  
+  // Зберігаємо посилання на mainWindow
+  if (mainWindow) {
+    mainWindowRef = mainWindow;
+  }
+  
+  pendingExitCountry = exitCountry;
   const isWindows = process.platform === 'win32';
   const torBinary = isWindows ? 'tor.exe' : 'tor';
   const torPath = path.join(__dirname, '..', '..', 'bin', 'tor', torBinary);
@@ -63,10 +132,19 @@ function startTor() {
     const output = data.toString('utf8');
     console.log('Tor:', output);
     
+    // Парсимо Bootstrap прогрес
+    parseBootstrapLine(output);
+    
     // Перевіряємо чи Tor готовий
-    if (output.includes('Bootstrapped 100%')) {
+    if (bootstrapProgress === 100) {
       isTorReady = true;
+      bootstrapStatus = 'Connected';
       console.log('[TOR] ✓ Tor successfully connected and ready!');
+      
+      // Сповіщаємо UI що Tor готовий
+      if (mainWindowRef && mainWindowRef.webContents) {
+        mainWindowRef.webContents.send('tor-ready', true);
+      }
     }
   });
   
@@ -80,7 +158,15 @@ function startTor() {
   
   torProcess.on('close', (code) => {
     console.log('[TOR] Tor process exited with code:', code);
+    
+    if (code === 1) {
+      console.error('[TOR] ❌ Exit code 1: Check DataDirectory permissions or configuration');
+    }
+    
+    torProcess = null;
     isTorReady = false;
+    bootstrapProgress = 0;
+    bootstrapStatus = 'Stopped';
   });
 }
 
@@ -96,9 +182,15 @@ async function toggleTor(mainWindow) {
     isTorActive = false;
     console.log('[TOR] Tor disabled - regular connection');
     
+    // Вимикаємо Privacy Mode
+    if (privacyGuard) {
+      privacyGuard.disablePrivacyMode(mainWindow);
+    }
+    
     // Оновлюємо placeholder адресної строки
     if (mainWindow) {
       mainWindow.webContents.send('update-search-engine', 'Google');
+      mainWindow.webContents.send('tor-active', false); // ВИПРАВЛЕНО: false коли вимикаємо
     }
     
     return { 
@@ -109,30 +201,71 @@ async function toggleTor(mainWindow) {
     // Перевіряємо чи Tor готовий
     if (!isTorReady) {
       console.warn('[TOR] Tor is not ready yet. Please wait for connection...');
+      console.warn(`[TOR] Current bootstrap: ${bootstrapProgress}% - ${bootstrapStatus}`);
       return {
         status: false,
-        message: 'Tor ще не готовий. Зачекайте підключення...'
+        message: `Tor підключається... ${bootstrapProgress}%`,
+        bootstrapProgress: bootstrapProgress,
+        bootstrapStatus: bootstrapStatus
       };
     }
     
-    // Вмикаємо Tor - SOCKS5 proxy
+    // Додаткова перевірка: чи слухається порт 9050
+    const portAvailable = await checkPortAvailable(socksPort);
+    if (portAvailable) {
+      // Порт ВІЛЬНИЙ - це погано, означає що Tor НЕ слухає
+      console.error('[TOR] ❌ SOCKS port is not listening! Tor process may have crashed.');
+      console.error('[TOR] Bootstrap was 100% but port is not responding.');
+      return {
+        status: false,
+        message: 'Помилка: Tor процес не відповідає'
+      };
+    }
+    
+    console.log('[TOR] ✅ Port 9050 is listening (Tor ready)');
+    console.log('[TOR] Applying SOCKS5 proxy configuration...');
+    
+    // Очищаємо кеш та cookies перед підключенням до Tor
+    // Це запобігає fingerprinting та витоку даних з попередньої сесії
+    try {
+      await ses.clearStorageData({
+        storages: ['cookies', 'cachestorage']
+      });
+      console.log('[PRIVACY] ✓ Cleared cookies and cache for Tor session');
+    } catch (err) {
+      console.warn('[PRIVACY] Failed to clear storage:', err.message);
+    }
+    
+    // Вмикаємо Tor - SOCKS5 proxy з DNS через Tor
     await ses.setProxy({
-      mode: 'fixed_servers',
       proxyRules: 'socks5://127.0.0.1:9050',
-      proxyBypassRules: '<local>' // Локальні адреси без проксі
+      proxyBypassRules: '<local>' // Тільки локальні адреси без проксі
     });
+    
+    console.log('[TOR] ✅ SOCKS5 proxy applied: socks5://127.0.0.1:9050');
+    console.log('[TOR] ✅ DNS resolution: Via Tor SOCKS5 (no DNS leak)');
+    
+    // Чекаємо 500ms щоб proxy точно застосувався
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     isTorActive = true;
-    console.log('[TOR] Tor enabled - traffic via SOCKS5 proxy');
+    console.log('[TOR] ✅ Tor enabled successfully');
+    
+    // Вмикаємо Privacy Mode (блокує геолокацію та небезпечні дозволи)
+    if (privacyGuard) {
+      privacyGuard.enablePrivacyMode(mainWindow);
+    }
     
     // Оновлюємо placeholder адресної строки
     if (mainWindow) {
       mainWindow.webContents.send('update-search-engine', 'DuckDuckGo');
-      mainWindow.webContents.send('tor-ready', true);
+      mainWindow.webContents.send('tor-active', true); // ВИПРАВЛЕНО: true коли увімкнено
     }
     
     return { 
       status: true, 
-      message: 'Tor увімкнено! Пошук: DuckDuckGo' 
+      message: 'Tor увімкнено! Пошук: DuckDuckGo',
+      ready: true
     };
   }
 }
@@ -144,7 +277,10 @@ function getTorStatus() {
   return { 
     active: isTorActive,
     processRunning: torProcess !== null && torProcess.exitCode === null,
-    ready: isTorReady
+    ready: isTorReady,
+    bootstrapProgress: bootstrapProgress,
+    bootstrapStatus: bootstrapStatus,
+    exitCountry: pendingExitCountry
   };
 }
 
