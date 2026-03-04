@@ -189,7 +189,7 @@ function renderSpeedDial() {
 
   savedLinks.forEach((link, index) => {
     const card = document.createElement('div');
-    card.className = `gx-card h-32 flex flex-col items-center justify-end text-white hover:-translate-y-1 hover:shadow-lg transition-all duration-200 cursor-pointer relative group overflow-hidden`;
+    card.className = `gx-card aspect-[2/1] flex flex-col items-center justify-end text-white hover:-translate-y-1 hover:shadow-lg transition-all duration-200 cursor-pointer relative group overflow-hidden`;
     
     // Якщо є банер - використовуємо його як фон
     if (link.bannerUrl) {
@@ -209,6 +209,10 @@ function renderSpeedDial() {
         <button class="edit-link-btn p-1.5 bg-black/70 hover:bg-black/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Редагувати">✏️</button>
         <button class="delete-link-btn p-1.5 bg-black/70 hover:bg-red-500/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Видалити">🗑️</button>
       </div>
+      
+      ${!link.bannerUrl ? `<div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10">
+        <p class="text-white text-sm font-semibold truncate">${escapeHtml(link.title)}</p>
+      </div>` : ''}
     `;
     
     const editBtn = card.querySelector('.edit-link-btn');
@@ -235,7 +239,7 @@ function renderSpeedDial() {
 
   // Кнопка "+" для додавання нової закладки
   const addBtn = document.createElement('div');
-  addBtn.className = 'bg-gray-800/40 hover:bg-gray-700/60 border-2 border-dashed border-gray-600/50 gx-card h-32 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 cursor-pointer backdrop-blur-sm';
+  addBtn.className = 'bg-gray-800/40 hover:bg-gray-700/60 border-2 border-dashed border-gray-600/50 gx-card aspect-[2/1] flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 cursor-pointer backdrop-blur-sm';
   addBtn.innerHTML = `
     <div class="flex flex-col items-center gap-2">
       <span class="text-4xl font-light">+</span>
@@ -333,15 +337,8 @@ function closeModal() {
 
 // 5. Збереження
 function saveLink() {
-  const title = linkTitleInput.value.trim();
+  let title = linkTitleInput.value.trim();
   let url = linkUrlInput.value.trim();
-
-  if (!title) {
-    linkTitleInput.focus();
-    linkTitleInput.style.borderColor = '#ef4444';
-    setTimeout(() => linkTitleInput.style.borderColor = '', 2000);
-    return;
-  }
 
   if (!url) {
     linkUrlInput.focus();
@@ -363,6 +360,16 @@ function saveLink() {
     linkUrlInput.focus();
     setTimeout(() => linkUrlInput.style.borderColor = '', 2000);
     return;
+  }
+  
+  // Якщо назва не вказана, використовуємо domain з URL
+  if (!title) {
+    try {
+      const urlObj = new URL(url);
+      title = urlObj.hostname.replace('www.', '');
+    } catch {
+      title = url;
+    }
   }
 
   // Створюємо обєкт закладки
