@@ -7,7 +7,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const { app, BrowserWindow, BrowserView, ipcMain, Menu, session } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain, Menu, session, net } = require('electron');
 const fs = require('fs');
 const Groq = require('groq-sdk');
 
@@ -228,6 +228,102 @@ app.whenReady().then(async () => {
   // Ініціалізуємо захист конфіденційності ПЕРЕД запуском Tor
   privacyGuard.initializePrivacyProtection();
   
+  // Глобальне блокування геолокації для ВСІХ вкладок (BrowserView, webview, etc.)
+  app.on('web-contents-created', (event, contents) => {
+    // Перехоплюємо запити дозволів для кожного нового webContents
+    contents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+      if (permission === 'geolocation') {
+        const isTorEnabled = torManager.isTorEnabled();
+        
+        if (isTorEnabled) {
+          const url = webContents.getURL();
+          console.log(`[PRIVACY] ❌ BLOCKED geolocation request from: ${url}`);
+          console.log('[PRIVACY] Reason: Tor is active, geolocation would reveal real location');
+          callback(false); // Жорстка відмова
+          return;
+        } else {
+          console.log('[PRIVACY] ⚠️ Geolocation request (Tor OFF, allowing)');
+        }
+      }
+      callback(true); // Дозволяємо інші дозволи
+    });
+    
+    // Інжектуємо блокування геолокації через JavaScript для кожної нової вкладки
+    contents.on('did-finish-load', () => {
+      const isTorEnabled = torManager.isTorEnabled();
+      if (isTorEnabled) {
+        const geolocationBlockScript = `
+          (function() {
+            if (window.__geoLocationBlocked) return;
+            window.__geoLocationBlocked = true;
+            
+            const fakeGeolocation = {
+              getCurrentPosition: function(success, error) {
+                console.warn('[PRIVACY GUARD] Geolocation blocked - Tor is active');
+                if (error) {
+                  error({ 
+                    code: 1, 
+                    message: 'User denied Geolocation',
+                    PERMISSION_DENIED: 1
+                  });
+                }
+              },
+              watchPosition: function(success, error) {
+                console.warn('[PRIVACY GUARD] Geolocation watchPosition blocked');
+                if (error) {
+                  error({ 
+                    code: 1, 
+                    message: 'User denied Geolocation',
+                    PERMISSION_DENIED: 1
+                  });
+                }
+                return -1;
+              },
+              clearWatch: function() {}
+            };
+            
+            try {
+              Object.defineProperty(navigator, 'geolocation', {
+                get: () => fakeGeolocation,
+                configurable: false,
+                enumerable: true
+              });
+              console.log('[PRIVACY GUARD] ✓ Geolocation API has been disabled');
+            } catch (e) {
+              console.error('[PRIVACY GUARD] Failed to block geolocation:', e);
+            }
+          })();
+        `;
+        
+        contents.executeJavaScript(geolocationBlockScript)
+          .catch(err => console.error('[PRIVACY] Failed to inject geolocation block:', err.message));
+      }
+    });
+  });
+  
+  console.log('[PRIVACY] ✓ Global web-contents-created handler registered');
+  
+  // Глобальний обробник для ВСІХ нових сесій (включно з кастомними)
+  app.on('session-created', (customSession) => {
+    console.log('[PRIVACY] New session created, applying permission handler...');
+    
+    customSession.setPermissionRequestHandler((webContents, permission, callback) => {
+      if (permission === 'geolocation') {
+        const isTorEnabled = torManager.isTorEnabled();
+        
+        if (isTorEnabled) {
+          const url = webContents.getURL();
+          console.log(`[PRIVACY] ❌ BLOCKED geolocation in custom session from: ${url}`);
+          callback(false);
+          return;
+        }
+      }
+      callback(true);
+    });
+  });
+  
+  console.log('[PRIVACY] ✓ Global session-created handler registered');
+  
   createWindow(); // Створюємо вікно
   
   // Запускаємо Tor з передачею mainWindow для відправки прогресу
@@ -377,11 +473,179 @@ ipcMain.handle('get-reactive-events', () => {
 // ==================== TOR IPC HANDLERS ====================
 
 ipcMain.handle('toggle-tor', async () => {
-  return await torManager.toggleTor(mainWindow);
+  return await torManager.toggleTor(mainWindow, tabManager);
 });
 
 ipcMain.handle('get-tor-status', () => {
   return torManager.getTorStatus();
+});
+
+ipcMain.handle('is-tor-enabled', () => {
+  return torManager.isTorEnabled();
+});
+
+ipcMain.handle('check-ip', async () => {
+  try {
+    const startTime = Date.now();
+    
+    // Використовуємо net.request, який автоматично використовує session проксі
+    const fetchWithProxy = (url, isJson = true) => {
+      return new Promise((resolve, reject) => {
+        const request = net.request({
+          url: url,
+          session: session.defaultSession
+        });
+        
+        let data = '';
+        
+        request.on('response', (response) => {
+          console.log(`[IP CHECK] Response status: ${response.statusCode} for ${url}`);
+          
+          response.on('data', (chunk) => {
+            data += chunk.toString();
+          });
+          
+          response.on('end', () => {
+            try {
+              if (isJson) {
+                const jsonData = JSON.parse(data);
+                resolve(jsonData);
+              } else {
+                resolve(data.trim());
+              }
+            } catch (err) {
+              console.error('[IP CHECK] Parse error:', err.message);
+              console.error('[IP CHECK] Received data:', data.substring(0, 200));
+              reject(new Error(`Parse error: ${err.message}`));
+            }
+          });
+          
+          response.on('error', (err) => {
+            reject(new Error(`Response error: ${err.message}`));
+          });
+        });
+        
+        request.on('error', (err) => {
+          reject(new Error(`Request error: ${err.message}`));
+        });
+        
+        request.end();
+      });
+    };
+    
+    let ip = null;
+    let responseTime = 0;
+    
+    // Спробуємо кілька Tor-friendly API для отримання IP
+    try {
+      // Варіант 1: Tor Project API (найкраще для Tor)
+      const torData = await fetchWithProxy('https://check.torproject.org/api/ip', true);
+      ip = torData.IP;
+      responseTime = Date.now() - startTime;
+      console.log('[IP CHECK] ✓ Got IP from Tor Project API:', ip);
+    } catch (err1) {
+      console.warn('[IP CHECK] Tor Project API failed:', err1.message);
+      
+      try {
+        // Варіант 2: ident.me (текстова відповідь)
+        ip = await fetchWithProxy('https://ident.me/', false);
+        responseTime = Date.now() - startTime;
+        console.log('[IP CHECK] ✓ Got IP from ident.me:', ip);
+      } catch (err2) {
+        console.warn('[IP CHECK] ident.me failed:', err2.message);
+        
+        // Варіант 3: icanhazip.com
+        ip = await fetchWithProxy('https://icanhazip.com/', false);
+        responseTime = Date.now() - startTime;
+        console.log('[IP CHECK] ✓ Got IP from icanhazip.com:', ip);
+      }
+    }
+    
+    if (!ip) {
+      throw new Error('Не вдалося отримати IP адресу');
+    }
+    
+    // Отримуємо геолокацію з graceful fallback
+    const torStatus = torManager.getTorStatus();
+    let geoData = {
+      country_name: torStatus.active ? 'Tor Network' : 'Невідомо',
+      city: torStatus.active ? 'Anonymous' : 'Невідомо',
+      region: '',
+      org: torStatus.active ? 'Tor Exit Node' : 'Невідомо',
+      asn: ''
+    };
+    
+    try {
+      const geoRequest = net.request({
+        url: `https://ipapi.co/${ip}/json/`,
+        session: session.defaultSession
+      });
+      
+      const geoResult = await new Promise((resolve, reject) => {
+        let data = '';
+        let statusCode = 0;
+        
+        geoRequest.on('response', (response) => {
+          statusCode = response.statusCode;
+          console.log(`[IP CHECK] Geo API response status: ${statusCode}`);
+          
+          response.on('data', (chunk) => {
+            data += chunk.toString();
+          });
+          
+          response.on('end', () => {
+            // Перевіряємо чи успішна відповідь (200 OK)
+            if (statusCode === 200) {
+              try {
+                const jsonData = JSON.parse(data);
+                resolve(jsonData);
+              } catch (err) {
+                console.warn('[IP CHECK] Geo API повернув не-JSON:', data.substring(0, 100));
+                resolve(null);
+              }
+            } else {
+              console.warn(`[IP CHECK] Geo API заблокував запит (HTTP ${statusCode})`);
+              if (statusCode === 403) {
+                console.warn('[IP CHECK] Cloudflare блокує Tor трафік - використовуємо дефолтні значення');
+              }
+              resolve(null);
+            }
+          });
+        });
+        
+        geoRequest.on('error', (err) => {
+          console.warn('[IP CHECK] Geo request error:', err.message);
+          resolve(null);
+        });
+        
+        geoRequest.end();
+      });
+      
+      // Якщо отримали геодані, використовуємо їх
+      if (geoResult && geoResult.country_name) {
+        geoData = geoResult;
+        console.log('[IP CHECK] ✓ Got geo data:', geoData.country_name, geoData.city);
+      } else {
+        console.log('[IP CHECK] → Using default geo data for Tor');
+      }
+    } catch (geoErr) {
+      console.warn('[IP CHECK] Geo lookup exception:', geoErr.message);
+      // Лишаємо дефолтні значення
+    }
+    
+    return {
+      ip: ip,
+      responseTime: responseTime,
+      country: geoData.country_name || 'Невідомо',
+      city: geoData.city || 'Невідомо',
+      region: geoData.region || '',
+      org: geoData.org || 'Невідомо',
+      asn: geoData.asn || ''
+    };
+  } catch (error) {
+    console.error('[IP CHECK] Error:', error);
+    throw new Error(`Не вдалося перевірити IP: ${error.message}`);
+  }
 });
 
 // ==================== REGISTER MODULE HANDLERS ====================
