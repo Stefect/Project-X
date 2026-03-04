@@ -48,6 +48,7 @@ function initializePrivacyProtection() {
   });
   
   console.log('[PRIVACY] ✓ Permission handler registered');
+  console.log('[PRIVACY] ℹ️ Global geolocation blocking handled by web-contents-created in main.js');
   
   // 4. Підробляємо геолокацію через preload injection
   setupGeolocationSpoofing();

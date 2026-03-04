@@ -44,5 +44,8 @@ contextBridge.exposeInMainWorld('api', {
   describeUrl: (url, linkText, context) => ipcRenderer.invoke('describe-url', url, linkText, context),
   
   // AI утиліти
-  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args)
+  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+  
+  // Слухаємо події Tor теми
+  onTorTheme: (callback) => ipcRenderer.on('tor-theme', (_event, data) => callback(data))
 });
