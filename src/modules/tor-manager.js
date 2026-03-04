@@ -173,7 +173,7 @@ function startTor(exitCountry = null, options = {}) {
 /**
  * Перемикає Tor режим
  */
-async function toggleTor(mainWindow) {
+async function toggleTor(mainWindow, tabManager = null) {
   const ses = session.defaultSession;
   
   if (isTorActive) {
@@ -225,13 +225,24 @@ async function toggleTor(mainWindow) {
     console.log('[TOR] ✅ Port 9050 is listening (Tor ready)');
     console.log('[TOR] Applying SOCKS5 proxy configuration...');
     
-    // Очищаємо кеш та cookies перед підключенням до Tor
+    // Очищаємо ВСІ типи кешу перед підключенням до Tor
     // Це запобігає fingerprinting та витоку даних з попередньої сесії
+    // КРИТИЧНО: localStorage може містити закешовану геолокацію!
     try {
       await ses.clearStorageData({
-        storages: ['cookies', 'cachestorage']
+        storages: [
+          'appcache',       // Application cache
+          'cookies',        // Cookies
+          'filesystem',     // FileSystem API
+          'indexdb',        // IndexedDB
+          'localstorage',   // LocalStorage (КРИТИЧНО для геолокації!)
+          'shadercache',    // Shader cache
+          'websql',         // WebSQL
+          'serviceworkers', // Service Workers
+          'cachestorage'    // Cache Storage API
+        ]
       });
-      console.log('[PRIVACY] ✓ Cleared cookies and cache for Tor session');
+      console.log('[PRIVACY] ✓ Cleared ALL storage types for Tor session (cookies, localStorage, cache, etc.)');
     } catch (err) {
       console.warn('[PRIVACY] Failed to clear storage:', err.message);
     }

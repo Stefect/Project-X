@@ -2344,6 +2344,7 @@
     // Слухаємо подію коли Tor активний (після toggle)
     ipcRenderer.on('tor-active', (event, active) => {
       console.log('[TOR] Tor active state changed:', active);
+      // Тема інтерфейсу не змінюється - тільки індикатор "Tor: ON/OFF"
     });
     
     if (torBtn) {
@@ -2450,28 +2451,15 @@
           
           document.body.appendChild(resultWindow);
           
-          // Виконуємо fetch через BrowserView контекст
-          const startTime = Date.now();
+          // Виконуємо перевірку через IPC (BrowserView контекст)
+          const ipInfo = await ipcRenderer.invoke('check-ip');
           
-          const response = await fetch('https://api.ipify.org?format=json');
-          const data = await response.json();
-          const ip = data.ip;
-          
-          const responseTime = Date.now() - startTime;
-          
-          // Отримуємо інформацію про геолокацію IP
-          const geoResponse = await fetch(`https://ipapi.co/${ip}/json/`);
-          const geoData = await geoResponse.json();
-          
-          const country = geoData.country_name || 'Невідомо';
-          const city = geoData.city || 'Невідомо';
-          const region = geoData.region || '';
-          const org = geoData.org || 'Невідомо';
+          const { ip, responseTime, country, city, region, org, asn } = ipInfo;
           
           // Перевіряємо чи це Tor вузол
           const isTorExit = org.toLowerCase().includes('tor') || 
                            org.toLowerCase().includes('exit') ||
-                           geoData.asn && (geoData.asn.includes('tor') || geoData.asn.includes('Tor'));
+                           (asn && (asn.includes('tor') || asn.includes('Tor')));
           
           const torStatus = await ipcRenderer.invoke('get-tor-status');
           
