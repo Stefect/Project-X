@@ -7,7 +7,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const { app, BrowserWindow, BrowserView, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain, Menu, session } = require('electron');
 const fs = require('fs');
 const Groq = require('groq-sdk');
 
@@ -20,6 +20,7 @@ const themeManager = require('./modules/theme-manager');
 const tabManager = require('./modules/tab-manager');
 const ipcHandlers = require('./modules/ipc-handlers');
 const aiHandlers = require('./modules/ai-handlers');
+const privacyGuard = require('./modules/privacy-guard');
 
 console.log('[CONSOLE] Starting BrowserX...');
 
@@ -132,7 +133,8 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      session: session.defaultSession // КРИТИЧНО: використовуємо defaultSession з Tor проксі
     }
   });
   
@@ -222,11 +224,15 @@ function restoreSessionSmart() {
 
 // ==================== APP LIFECYCLE ====================
 
-app.whenReady().then(() => {
-  torManager.startTor();
-  reactiveEvents.setupReactiveNetworkEvents(mainWindow);
+app.whenReady().then(async () => {
+  // Ініціалізуємо захист конфіденційності ПЕРЕД запуском Tor
+  privacyGuard.initializePrivacyProtection();
   
-  createWindow();
+  createWindow(); // Створюємо вікно
+  
+  // Запускаємо Tor з передачею mainWindow для відправки прогресу
+  await torManager.startTor('DE', { mainWindow });
+  reactiveEvents.setupReactiveNetworkEvents(mainWindow);
   
   // Відновлюємо сесію
   mainWindow.webContents.once('did-finish-load', () => {
