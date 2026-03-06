@@ -7,7 +7,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const { app, BrowserWindow, BrowserView, ipcMain, Menu, session, net } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, session, net } = require('electron');
 const fs = require('fs');
 const Groq = require('groq-sdk');
 
@@ -31,9 +31,7 @@ const config = require('./config');
 // Глобальні змінні
 let mainWindow;
 let splashWindow; // Вікно заставки
-let browserView;
 let groqClient;
-let sidebarWidth = 260; // Sidebar відкритий за замовчуванням (250px панель + 0px відступ)
 let splashStartTime = 0; // Час показу splash
 
 /**
@@ -71,21 +69,12 @@ function createSplashWindow() {
 }
 
 /**
- * Інжектує unified-t9 скрипт у BrowserView
+ * Інжектує unified-t9 скрипт у webview (викликається з renderer process)
  */
-function injectUnifiedT9(targetBrowserView = browserView) {
-  try {
-    const unifiedT9Script = fs.readFileSync(
-      path.join(__dirname, 'modules', 'unified-t9.js'), 
-      'utf8'
-    );
-    
-    targetBrowserView.webContents.executeJavaScript(unifiedT9Script)
-      .then(() => console.log('[T9] Autocomplete ready'))
-      .catch(err => console.error('[T9] Injection error:', err));
-  } catch (error) {
-    console.error('[T9] Failed to read unified-t9.js:', error);
-  }
+function injectUnifiedT9(webviewId) {
+  // Для webview інжекція відбувається через renderer process
+  // Ця функція залишена для сумісності
+  console.log('[T9] Injection requested for webview:', webviewId);
 }
 
 /**
@@ -121,7 +110,8 @@ function createWindow() {
     backgroundColor: '#1a1b26', // Фон щоб не було білого спалаху
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
+      webviewTag: true // КРИТИЧНО: без цього <webview> теги не працюють
     }
   });
 
@@ -189,16 +179,11 @@ function createWindow() {
           }
         },
         {
-          label: 'Toggle BrowserView DevTools',
+          label: 'Toggle WebView DevTools',
           accelerator: 'Ctrl+Shift+I',
           click: () => {
-            if (browserView && browserView.webContents) {
-              if (browserView.webContents.isDevToolsOpened()) {
-                browserView.webContents.closeDevTools();
-              } else {
-                browserView.webContents.openDevTools({ mode: 'detach' });
-              }
-            }
+            // DevTools для webview відкриваються через renderer process
+            mainWindow.webContents.send('toggle-webview-devtools');
           }
         },
         { type: 'separator' },
@@ -213,58 +198,11 @@ function createWindow() {
   // Завантажуємо UI
   mainWindow.loadFile(path.join(__dirname, '..', 'public', 'index.html'));
 
-  // Створюємо BrowserView
-  browserView = new BrowserView({
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
-      session: session.defaultSession // КРИТИЧНО: використовуємо defaultSession з Tor проксі
-    }
-  });
+  // Ініціалізуємо систему вкладок (webview)
+  tabManager.init(mainWindow);
   
-  tabManager.registerWindowOpenHandler(browserView, mainWindow);
-  mainWindow.setBrowserView(browserView);
-  browserView.setBackgroundColor('#ffffff');
-  
-  // Позіціонуємо BrowserView
-  const bounds = mainWindow.getContentBounds();
-  browserView.setBounds({ 
-    x: sidebarWidth, // Залишаємо місце для sidebar
-    y: 100,
-    width: bounds.width - sidebarWidth,
-    height: bounds.height - 100 
-  });
-  
-  browserView.setAutoResize({ 
-    width: false,
-    height: true 
-  });
-
-  // Завантажуємо стартову сторінку
-  const startUrl = `file://${path.join(__dirname, '..', 'public', 'newtab.html')}`;
-  browserView.webContents.loadURL(startUrl);
-  
-  // Ініціалізуємо першу вкладку
-  tabManager.initFirstTab(browserView, startUrl);
-
-  // Налаштовуємо обробники для першої вкладки
-  tabManager.setupTabEventHandlers(
-    { id: 1, browserView }, 
-    mainWindow, 
-    { 
-      storage, 
-      themeManager, 
-      injectUnifiedT9, 
-      emitReactiveEvent: (payload) => reactiveEvents.emitReactiveEvent(payload, mainWindow),
-      formatUrlLabel: reactiveEvents.formatUrlLabel 
-    }
-  );
-
-  // Оновлюємо розміри при зміні вікна
-  mainWindow.on('resize', () => updateBrowserViewBounds());
-  mainWindow.on('maximize', () => updateBrowserViewBounds());
-  mainWindow.on('unmaximize', () => updateBrowserViewBounds());
+  // Webview обробники налаштовуються в renderer process (index.html)
+  // Перша вкладка створюється в restoreSessionSmart() після завантаження renderer
 
   // Автозбереження сесії при закритті
   mainWindow.on('close', () => {
@@ -277,10 +215,6 @@ function createWindow() {
     storage.saveSession(sessionTabs, activeTabId);
     console.log('[SESSION] Auto-saved on close');
   });
-
-  function updateBrowserViewBounds() {
-    tabManager.updateActiveTabBounds(mainWindow, sidebarWidth);
-  }
 }
 
 /**
@@ -298,8 +232,7 @@ function restoreSessionSmart() {
         themeManager, 
         injectUnifiedT9, 
         emitReactiveEvent: (payload) => reactiveEvents.emitReactiveEvent(payload, mainWindow),
-        formatUrlLabel: reactiveEvents.formatUrlLabel,
-        sidebarWidth 
+        formatUrlLabel: reactiveEvents.formatUrlLabel
       }
     );
   } catch (error) {
@@ -473,39 +406,30 @@ ipcMain.on('apply-theme', (event, theme) => {
 ipcMain.on('update-theme-settings', (event, settings) => {
   themeManager.updateThemeSettings(settings);
   
-  // Оновлюємо всі newtab сторінки
-  tabManager.getAllTabs().forEach(tab => {
-    const url = tab.browserView.webContents.getURL();
-    if (url.includes('newtab.html')) {
-      themeManager.injectThemeToNewtab(tab.browserView);
-    }
-  });
+  // Надсилаємо команду в renderer process для оновлення тем у всіх webview з newtab.html
+  if (mainWindow) {
+    mainWindow.webContents.send('update-newtab-themes', settings);
+  }
 });
 
 // ==================== UI LAYOUT IPC HANDLERS ====================
 
 ipcMain.on('sidebar-toggled', (event, isCollapsed) => {
-  sidebarWidth = isCollapsed ? 0 : 260; // 0px коли закритий (сайдбар поза екраном), 260px коли відкритий
-  tabManager.updateActiveTabBounds(mainWindow, sidebarWidth);
-  console.log(`[UI] Sidebar ${isCollapsed ? 'collapsed' : 'expanded'}, width: ${sidebarWidth}`);
+  // Webview керується CSS, не потрібні bounds оновлення
+  console.log(`[UI-WEBVIEW] Sidebar ${isCollapsed ? 'collapsed' : 'expanded'}`);
 });
 
 ipcMain.on('menu-toggled', (event, isOpen) => {
-  const offset = isOpen ? 330 : 0;
-  tabManager.updateActiveTabBounds(mainWindow, sidebarWidth, offset);
-  console.log(`[UI] Menu ${isOpen ? 'opened' : 'closed'}`);
+  console.log(`[UI-WEBVIEW] Menu ${isOpen ? 'opened' : 'closed'}`);
 });
 
 ipcMain.on('settings-panel-toggled', (event, isOpen) => {
-  const offset = isOpen ? 400 : 0;
-  tabManager.updateActiveTabBounds(mainWindow, sidebarWidth, offset);
-  console.log(`[UI] Settings panel ${isOpen ? 'opened' : 'closed'}`);
+  console.log(`[UI-WEBVIEW] Settings panel ${isOpen ? 'opened' : 'closed'}`);
 });
 
 ipcMain.on('topbar-height-changed', (event, height) => {
   tabManager.setTopbarHeight(height);
-  tabManager.updateActiveTabBounds(mainWindow, sidebarWidth);
-  console.log(`[UI] Topbar height changed to: ${height}px`);
+  console.log(`[UI-WEBVIEW] Topbar height changed to: ${height}px`);
 });
 
 // ==================== TAB IPC HANDLERS ====================
@@ -516,13 +440,12 @@ ipcMain.handle('create-tab', async (event, url = null) => {
     themeManager,
     injectUnifiedT9,
     emitReactiveEvent: (payload) => reactiveEvents.emitReactiveEvent(payload, mainWindow),
-    formatUrlLabel: reactiveEvents.formatUrlLabel,
-    sidebarWidth
+    formatUrlLabel: reactiveEvents.formatUrlLabel
   });
 });
 
 ipcMain.on('switch-tab', (event, tabId) => {
-  tabManager.switchTab(tabId, mainWindow, sidebarWidth);
+  tabManager.switchTab(tabId, mainWindow, 0);
 });
 
 ipcMain.on('close-tab', (event, tabId) => {
