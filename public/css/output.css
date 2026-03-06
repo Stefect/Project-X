@@ -296,6 +296,9 @@
   .block {
     display: block;
   }
+  .block\! {
+    display: block !important;
+  }
   .contents {
     display: contents;
   }
@@ -341,6 +344,9 @@
   .flex-shrink {
     flex-shrink: 1;
   }
+  .flex-grow {
+    flex-grow: 1;
+  }
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
   }
@@ -349,9 +355,6 @@
   }
   .cursor-pointer {
     cursor: pointer;
-  }
-  .resize {
-    resize: both;
   }
   .grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -871,12 +874,13 @@ body, html {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #000;
+  background: #1a1b26;
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
   flex-direction: column;
+  height: 100vh;
   background: #1a1b26;
   transition: background-color 0.3s ease;
 }
@@ -1303,6 +1307,7 @@ body:not(.newtab-page) .container {
 }
 .toolbar {
   height: 60px;
+  flex-shrink: 0;
   background: #24283b;
   display: flex;
   align-items: center;
@@ -1454,6 +1459,7 @@ body:not(.newtab-page) .container {
 }
 .tabs-bar {
   height: 40px;
+  flex-shrink: 0;
   background: #1f2335;
   display: flex;
   align-items: flex-end;
@@ -2087,21 +2093,26 @@ body.dark-mode {
 }
 body[class*="mode"] {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  min-height: 100vh;
-  background: var(--bg-color, #1a1b26);
-  background-image: var(--bg-image, none);
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom right, #b44a72, #d88156, #e6b952);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transition: background 0.3s ease;
-  color: var(--text-color, #c0caf5);
+  color: white;
+  overflow: hidden;
 }
 body[class*="mode"] .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
   padding: 40px 20px;
   width: 100%;
   max-width: none;
@@ -2770,12 +2781,23 @@ body:not(.newtab-page) #news-sidebar {
   }
 }
 #webview-container {
-  position: absolute !important;
-  top: 0;
-  left: 0;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 1;
+  flex-grow: 1;
+  display: flex;
+  position: relative;
+  width: 100%;
+  background: #1a1b26;
+  overflow: hidden;
+}
+webview {
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  display: none;
+  background: transparent;
+  border: none;
+}
+webview.active {
+  display: flex;
 }
 #side-toolbar {
   position: fixed;
