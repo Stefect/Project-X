@@ -44,6 +44,29 @@
       transition: background-color 0.3s ease;
     }
 
+    /* ЖОРСТКО ЗМУШУЄМО НОВУ ВКЛАДКУ БУТИ ПРОЗОРОЮ НА ВЕСЬ ЕКРАН */
+    .newtab-page,
+    .newtab-page html {
+      width: 100vw !important;
+      height: 100vh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+      color: white;
+    }
+
+    /* Всі контейнери всередині newtab теж прозорі */
+    .newtab-page .container,
+    .newtab-page div {
+      background-color: transparent !important;
+    }
+
     /* Main browser container (not for newtab page) */
     body:not(.newtab-page) .container {
       display: flex;
@@ -1454,6 +1477,11 @@ body[class*="mode"] {
   overflow: hidden;
 }
 
+/* ПРОЗОРІСТЬ ДЛЯ NEWTAB - перебиваємо градієнт */
+body.newtab-page[class*="mode"] {
+  background: transparent !important;
+}
+
 /* Newtab container (different from main browser container) */
 body[class*="mode"] .container {
   display: flex;
@@ -1463,6 +1491,9 @@ body[class*="mode"] .container {
   padding: 40px 20px;
   width: 100%;
   max-width: none;
+  min-height: 100vh; /* КРИТИЧНО: задаємо мінімальну висоту для віконного режиму */
+  box-sizing: border-box;
+  background: transparent !important; /* Прозорий контейнер */
 }
 
 /* Newtab logo (different from sidebar logo) */
@@ -1859,7 +1890,7 @@ body:not(.newtab-page) #news-sidebar {
 .news-fab {
   position: fixed;
   right: 30px;
-  bottom: 30px;
+  bottom: 20px; /* Переміщено нижче для кращого вигляду */
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -2272,23 +2303,23 @@ body:not(.newtab-page) #news-sidebar {
 
 /* =================== PREMIUM SIDEBAR + WEBVIEW LAYOUT =================== */
 
-/* Контейнер для webview вкладок - FLEXBOX магія! */
+/* Контейнер для webview вкладок - ЖОРСТКА ВИСОТА для Chromium */
 #webview-container {
-  flex-grow: 1; /* FLEXBOX: займає ВСЮ вільну висоту під toolbar */
-  display: flex; /* КРИТИЧНО: без цього webview не розтягнеться! */
-  position: relative; /* Відносне позиціонування для webview всередині */
-  width: 100%;
-  background: #1a1b26;
+  display: flex;
+  position: relative;
+  width: 100vw;
+  /* КРИТИЧНО: Жорстко задаємо висоту = висота екрану МІНУС панелі (40px tabs + 60px toolbar = 100px) */
+  height: calc(100vh - 100px);
+  background: transparent !important; /* Прозорий фон для просвічування шпалер */
   overflow: hidden;
 }
 
 /* Стилі для webview тегів */
 webview {
-  flex-grow: 1; /* КРИТИЧНО: розтягуємо на всю висоту контейнера! */
   width: 100%;
-  height: 100%;
+  height: 100%; /* Тепер 100% від жорстко заданого батька! */
   display: none; /* За замовчуванням сховані */
-  background: transparent;
+  background: transparent !important; /* Прозорий фон для просвічування шпалер */
   border: none;
 }
 

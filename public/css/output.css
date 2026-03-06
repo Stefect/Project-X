@@ -884,6 +884,25 @@ body {
   background: #1a1b26;
   transition: background-color 0.3s ease;
 }
+.newtab-page,
+    .newtab-page html {
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  color: white;
+}
+.newtab-page .container,
+    .newtab-page div {
+  background-color: transparent !important;
+}
 body:not(.newtab-page) .container {
   display: flex;
   height: calc(100vh - 100px);
@@ -2108,6 +2127,9 @@ body[class*="mode"] {
   color: white;
   overflow: hidden;
 }
+body.newtab-page[class*="mode"] {
+  background: transparent !important;
+}
 body[class*="mode"] .container {
   display: flex;
   flex-direction: column;
@@ -2116,6 +2138,9 @@ body[class*="mode"] .container {
   padding: 40px 20px;
   width: 100%;
   max-width: none;
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: transparent !important;
 }
 body[class*="mode"] .logo {
   font-size: 72px;
@@ -2445,7 +2470,7 @@ body:not(.newtab-page) #news-sidebar {
 .news-fab {
   position: fixed;
   right: 30px;
-  bottom: 30px;
+  bottom: 20px;
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -2781,19 +2806,18 @@ body:not(.newtab-page) #news-sidebar {
   }
 }
 #webview-container {
-  flex-grow: 1;
   display: flex;
   position: relative;
-  width: 100%;
-  background: #1a1b26;
+  width: 100vw;
+  height: calc(100vh - 100px);
+  background: transparent !important;
   overflow: hidden;
 }
 webview {
-  flex-grow: 1;
   width: 100%;
   height: 100%;
   display: none;
-  background: transparent;
+  background: transparent !important;
   border: none;
 }
 webview.active {
