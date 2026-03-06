@@ -39,8 +39,8 @@
   <!-- Webview container (BrowserView керується з main.js) -->
   <div id="webview-container" style="width: 100vw; height: calc(100vh - 40px); position: absolute; top: 40px; left: 0;"></div>
 
-  <!-- Glassmorphism Sidebar (закритий за замовчуванням) -->
-  <div id="side-toolbar" class="sidebar">
+  <!-- Glassmorphism Sidebar (відкритий за замовчуванням) -->
+  <div id="side-toolbar" class="sidebar open">
     <div class="sidebar-content">
       <input type="text" id="url" class="sidebar-input" placeholder="Пошук або адреса...">
       
@@ -64,7 +64,7 @@
   </div>
 
   <!-- Стрілка для відкриття/закриття sidebar (окремий елемент) -->
-  <button id="sidebar-toggle" class="arrow-btn" title="Відкрити панель">▶</button>
+  <button id="sidebar-toggle" class="arrow-btn" title="Закрити панель">◀</button>
 
   <!-- Overlay для панелі -->
   <div class="panel-overlay" id="panel-overlay"></div>
@@ -2450,6 +2450,7 @@
     console.log('[DEBUG] IP button found:', !!checkIpBtn);
     
     if (checkIpBtn) {
+      console.log('[IP] Attaching event listener to IP button');
       checkIpBtn.addEventListener('click', async () => {
         console.log('[IP] Check IP button clicked!');
         const originalText = checkIpBtn.textContent;
@@ -2457,23 +2458,25 @@
         checkIpBtn.disabled = true;
         
         try {
+          console.log('[IP] Creating result window...');
           // Створюємо інформаційне вікно для результатів
           const resultWindow = document.createElement('div');
+          resultWindow.id = 'ip-result-window';
           resultWindow.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(17, 24, 39, 0.98);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            z-index: 999999;
-            min-width: 350px;
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            background: rgba(17, 24, 39, 0.98) !important;
+            backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(139, 92, 246, 0.3) !important;
+            padding: 25px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
+            z-index: 999999 !important;
+            min-width: 350px !important;
+            color: white !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
           `;
           
           resultWindow.innerHTML = `
@@ -2483,10 +2486,14 @@
             </div>
           `;
           
+          console.log('[IP] Appending result window to body');
           document.body.appendChild(resultWindow);
+          console.log('[IP] Result window appended, element:', resultWindow);
           
-          // Виконуємо перевірку через IPC (BrowserView контекст)
+          // Виконуємо перевірку через IPC
+          console.log('[IP] Invoking check-ip...');
           const ipInfo = await ipcRenderer.invoke('check-ip');
+          console.log('[IP] Received IP info:', ipInfo);
           
           const { ip, responseTime, country, city, region, org, asn } = ipInfo;
           
@@ -2543,21 +2550,25 @@
           `;
           
           // Додаємо overlay для темного фону
+          console.log('[IP] Creating overlay...');
           const overlay = document.createElement('div');
+          overlay.id = 'ip-overlay';
           overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 999998;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: rgba(0,0,0,0.6) !important;
+            z-index: 999998 !important;
           `;
           document.body.appendChild(overlay);
+          console.log('[IP] Overlay appended');
           
           // Обробник закриття
           const closeBtn = resultWindow.querySelector('#close-ip-result');
           const closeWindow = () => {
+            console.log('[IP] Closing result window');
             resultWindow.remove();
             overlay.remove();
           };

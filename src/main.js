@@ -33,7 +33,7 @@ let mainWindow;
 let splashWindow; // Вікно заставки
 let browserView;
 let groqClient;
-let sidebarWidth = 40; // Завжди залишаємо 40px для стрілки
+let sidebarWidth = 260; // Sidebar відкритий за замовчуванням (220px + 40px стрілка)
 let splashStartTime = 0; // Час показу splash
 
 /**
