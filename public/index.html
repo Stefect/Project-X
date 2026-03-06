@@ -36,22 +36,20 @@
     </div>
   </div>
 
+  <!-- Toolbar з навігацією та пошуком -->
+  <div class="toolbar">
+    <button id="back" class="nav-button" title="Назад">◀</button>
+    <button id="forward" class="nav-button" title="Вперед">▶</button>
+    <button id="reload" class="nav-button" title="Оновити">↻</button>
+    <input type="text" id="url" class="address-bar" placeholder="Пошук або адреса...">
+  </div>
+
   <!-- Webview container (BrowserView керується з main.js) -->
-  <div id="webview-container" style="width: 100vw; height: calc(100vh - 40px); position: absolute; top: 40px; left: 0;"></div>
+  <div id="webview-container"></div>
 
   <!-- Glassmorphism Sidebar (відкритий за замовчуванням) -->
   <div id="side-toolbar" class="sidebar open">
     <div class="sidebar-content">
-      <input type="text" id="url" class="sidebar-input" placeholder="Пошук або адреса...">
-      
-      <div class="nav-buttons">
-        <button id="back" class="sidebar-btn" title="Назад">◀</button>
-        <button id="forward" class="sidebar-btn" title="Вперед">▶</button>
-        <button id="reload" class="sidebar-btn" title="Оновити">↻</button>
-      </div>
-      
-      <hr class="divider">
-      
       <button id="tor-btn" class="sidebar-btn" title="Перемкнути Tor">Tor: OFF</button>
       <button id="check-ip-btn" class="sidebar-btn" title="Швидка перевірка IP">🔍 IP</button>
       
@@ -61,10 +59,10 @@
       <button id="toggle-sidebar-toolbar" class="sidebar-btn" title="Показати/сховати конспект">📝 Нотатки</button>
       <button id="organize-tabs-btn" class="sidebar-btn" title="Організація вкладок">📑 Групи</button>
     </div>
+    
+    <!-- Стрілка для відкриття/закриття sidebar -->
+    <button id="sidebar-toggle" title="Закрити панель">◀</button>
   </div>
-
-  <!-- Стрілка для відкриття/закриття sidebar (окремий елемент) -->
-  <button id="sidebar-toggle" class="arrow-btn" title="Закрити панель">◀</button>
 
   <!-- Overlay для панелі -->
   <div class="panel-overlay" id="panel-overlay"></div>
