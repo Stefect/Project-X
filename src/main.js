@@ -33,7 +33,7 @@ let mainWindow;
 let splashWindow; // Вікно заставки
 let browserView;
 let groqClient;
-let sidebarWidth = 260; // Sidebar відкритий за замовчуванням (220px + 40px стрілка)
+let sidebarWidth = 260; // Sidebar відкритий за замовчуванням (250px панель + 0px відступ)
 let splashStartTime = 0; // Час показу splash
 
 /**
@@ -485,7 +485,7 @@ ipcMain.on('update-theme-settings', (event, settings) => {
 // ==================== UI LAYOUT IPC HANDLERS ====================
 
 ipcMain.on('sidebar-toggled', (event, isCollapsed) => {
-  sidebarWidth = isCollapsed ? 40 : 260; // 40px для стрілки, 260px для відкритого sidebar
+  sidebarWidth = isCollapsed ? 0 : 260; // 0px коли закритий (сайдбар поза екраном), 260px коли відкритий
   tabManager.updateActiveTabBounds(mainWindow, sidebarWidth);
   console.log(`[UI] Sidebar ${isCollapsed ? 'collapsed' : 'expanded'}, width: ${sidebarWidth}`);
 });
