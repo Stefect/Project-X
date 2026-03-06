@@ -10,6 +10,7 @@
   <!-- Панель вкладок з кнопками вікна -->
   <div class="tabs-bar" id="tabs-bar">
     <div class="menu-section">
+      <img src="../build/icon.ico" alt="BrowserX" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;">
       <span class="logo">BrowserX</span>
     </div>
     <div class="tabs-container">
@@ -35,43 +36,35 @@
     </div>
   </div>
 
-  <div class="toolbar">
-    <button class="nav-button" id="back" title="Назад">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M10 14L4 8l6-6"/>
-      </svg>
-    </button>
-    <button class="nav-button" id="forward" title="Вперед">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M6 14l6-6-6-6"/>
-      </svg>
-    </button>
-    <button class="nav-button" id="reload" title="Оновити">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M13 8c0-2.76-2.24-5-5-5-1.5 0-2.85.66-3.77 1.7L2 2v5h5L4.5 4.5C5.2 3.6 6.5 3 8 3c2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.11 0-2.11-.45-2.83-1.17L3.76 11.24C4.82 12.3 6.33 13 8 13c2.76 0 5-2.24 5-5z"/>
-      </svg>
-    </button>
-    <input type="text" class="address-bar" id="url" placeholder="Google пошук або введіть адресу">
-    <button class="organize-btn" id="organize-tabs-btn" title="Організація вкладок за доменами">Групи</button>
-    <button class="nav-button" id="tor-btn" title="Перемкнути Tor" style="font-weight: 600; color: #9ca3af;">
-      Tor: OFF
-    </button>
-    <button class="nav-button" id="check-ip-btn" title="Швидка перевірка IP" style="font-size: 11px; padding: 6px 10px; color: #6b7280; background: rgba(107, 114, 128, 0.1); border: 1px solid rgba(107, 114, 128, 0.2); border-radius: 4px; cursor: pointer;">
-      🔍 IP
-    </button>
-    <!-- Settings button removed (Simple Settings UI deprecated) -->
-    <button class="smart-search-btn" id="theme-settings-btn" title="Налаштувати вигляд" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 50%;">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
-        <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 13A6 6 0 0 1 8 2a6 6 0 0 1 0 12z"/>
-        <circle cx="8" cy="8" r="3" fill="white"/>
-      </svg>
-    </button>
-    <button class="smart-search-btn" id="toggle-sidebar-toolbar" title="Показати/сховати конспект (Ctrl+B)">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M3 2h10c.55 0 1 .45 1 1v10c0 .55-.45 1-1 1H3c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1zm0 2v8h10V4H3zm2 2h6v1H5V6zm0 2h6v1H5V8zm0 2h4v1H5v-1z"/>
-      </svg>
-    </button>
+  <!-- Webview container (BrowserView керується з main.js) -->
+  <div id="webview-container" style="width: 100vw; height: calc(100vh - 40px); position: absolute; top: 40px; left: 0;"></div>
+
+  <!-- Glassmorphism Sidebar (закритий за замовчуванням) -->
+  <div id="side-toolbar" class="sidebar">
+    <div class="sidebar-content">
+      <input type="text" id="url" class="sidebar-input" placeholder="Пошук або адреса...">
+      
+      <div class="nav-buttons">
+        <button id="back" class="sidebar-btn" title="Назад">◀</button>
+        <button id="forward" class="sidebar-btn" title="Вперед">▶</button>
+        <button id="reload" class="sidebar-btn" title="Оновити">↻</button>
+      </div>
+      
+      <hr class="divider">
+      
+      <button id="tor-btn" class="sidebar-btn" title="Перемкнути Tor">Tor: OFF</button>
+      <button id="check-ip-btn" class="sidebar-btn" title="Швидка перевірка IP">🔍 IP</button>
+      
+      <hr class="divider">
+      
+      <button id="theme-settings-btn" class="sidebar-btn" title="Налаштувати вигляд">🎨 Теми</button>
+      <button id="toggle-sidebar-toolbar" class="sidebar-btn" title="Показати/сховати конспект">📝 Нотатки</button>
+      <button id="organize-tabs-btn" class="sidebar-btn" title="Організація вкладок">📑 Групи</button>
+    </div>
   </div>
+
+  <!-- Стрілка для відкриття/закриття sidebar (окремий елемент) -->
+  <button id="sidebar-toggle" class="arrow-btn" title="Відкрити панель">▶</button>
 
   <!-- Overlay для панелі -->
   <div class="panel-overlay" id="panel-overlay"></div>
@@ -257,6 +250,44 @@
           ipcRenderer.send('window-close');
         });
       }
+
+      // ========== Glassmorphism Sidebar Toggle ==========
+      const sideToolbar = document.getElementById('side-toolbar');
+      const sidebarToggle = document.getElementById('sidebar-toggle');
+
+      console.log('[DEBUG] Sidebar elements:', { 
+        sideToolbar: !!sideToolbar, 
+        sidebarToggle: !!sidebarToggle 
+      });
+
+      if (sidebarToggle && sideToolbar) {
+        sidebarToggle.addEventListener('click', () => {
+          console.log('[SIDEBAR] Toggle clicked!');
+          sideToolbar.classList.toggle('open');
+          
+          const isCollapsed = !sideToolbar.classList.contains('open');
+          
+          // Міняємо іконку стрілки залежно від стану
+          if (sideToolbar.classList.contains('open')) {
+            sidebarToggle.innerText = '◀';
+            sidebarToggle.title = 'Закрити панель';
+          } else {
+            sidebarToggle.innerText = '▶';
+            sidebarToggle.title = 'Відкрити панель';
+          }
+          
+          // Повідомляємо main process про зміну розміру
+          ipcRenderer.send('sidebar-toggled', isCollapsed);
+          console.log('[UI] Sidebar toggled, collapsed:', isCollapsed);
+        });
+        console.log('[OK] Sidebar toggle initialized');
+      } else {
+        console.error('[ERROR] Sidebar elements not found:', { 
+          sideToolbar, 
+          sidebarToggle 
+        });
+      }
+      // ========== END Sidebar Toggle ==========
       
       const backBtn = document.getElementById('back');
       const forwardBtn = document.getElementById('forward');
@@ -1392,7 +1423,7 @@
       toggleSidebarBtn.title = 'Згорнути панель';
     }
 
-    // Функція toggle для використання всюди
+    // Функція toggle для використання всюди (стара система notes-sidebar)
     function toggleSidebar() {
       isSidebarCollapsed = !isSidebarCollapsed;
       
@@ -1414,10 +1445,10 @@
       toggleSidebarBtn.textContent = isSidebarCollapsed ? '' : '';
       toggleSidebarBtn.title = isSidebarCollapsed ? 'Показати панель' : 'Згорнути панель';
       localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
-      ipcRenderer.send('sidebar-toggled', isSidebarCollapsed);
+      // ipcRenderer.send('sidebar-toggled', isSidebarCollapsed); // Закоментовано - використовується нова система
     }
 
-    // Кнопка в toolbar - використовуємо вже оголошену змінну
+    // Кнопка в toolbar - тепер відкриває праву панель нотаток
     if (toggleSidebarToolbar) {
       toggleSidebarToolbar.addEventListener('click', toggleSidebar);
     }
@@ -2416,8 +2447,11 @@
     
     // ===================== IP CHECK BUTTON =====================
     const checkIpBtn = document.getElementById('check-ip-btn');
+    console.log('[DEBUG] IP button found:', !!checkIpBtn);
+    
     if (checkIpBtn) {
       checkIpBtn.addEventListener('click', async () => {
+        console.log('[IP] Check IP button clicked!');
         const originalText = checkIpBtn.textContent;
         checkIpBtn.textContent = '⏳';
         checkIpBtn.disabled = true;
