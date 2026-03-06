@@ -32,13 +32,14 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background: #000; /* Фон на випадок, якщо щось вантажиться */
+      background: #1a1b26;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       display: flex;
-      flex-direction: column;
+      flex-direction: column; /* Flexbox: елементи зверху вниз */
+      height: 100vh; /* КРИТИЧНО: фіксуємо висоту */
       background: #1a1b26;
       transition: background-color 0.3s ease;
     }
@@ -526,6 +527,7 @@
 
     .toolbar {
       height: 60px;
+      flex-shrink: 0; /* FLEXBOX: забороняємо стискатися */
       background: #24283b;
       display: flex;
       align-items: center;
@@ -697,6 +699,7 @@
     /* ╨Я╨░╨╜╨╡╨╗╤М ╨▓╨║╨╗╨░╨┤╨╛╨║ (╨╖ ╨║╨╜╨╛╨┐╨║╨░╨╝╨╕ ╨▓╤Ц╨║╨╜╨░, ╤П╨║ Chrome) */
     .tabs-bar {
       height: 40px;
+      flex-shrink: 0; /* FLEXBOX: забороняємо стискатися */
       background: #1f2335;
       display: flex;
       align-items: flex-end;
@@ -1429,17 +1432,26 @@ body.dark-mode {
   --accent-color: #3b82f6;
 }
 
-/* Newtab specific body styles */
+/* Newtab specific body styles - FLEXBOX CENTER! */
 body[class*="mode"] {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  min-height: 100vh;
-  background: var(--bg-color, #1a1b26);
-  background-image: var(--bg-image, none);
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh; /* Жорстка висота на весь екран */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Центруємо по горизонталі */
+  justify-content: center; /* Центруємо по вертикалі - ОСНОВНЕ! */
+  
+  /* Красивий теплий градієнт замість темного фону */
+  background: linear-gradient(to bottom right, #b44a72, #d88156, #e6b952);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transition: background 0.3s ease;
-  color: var(--text-color, #c0caf5);
+  
+  color: white;
+  overflow: hidden;
 }
 
 /* Newtab container (different from main browser container) */
@@ -1448,7 +1460,6 @@ body[class*="mode"] .container {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
   padding: 40px 20px;
   width: 100%;
   max-width: none;
@@ -2259,19 +2270,34 @@ body:not(.newtab-page) #news-sidebar {
   }
 }
 
-/* =================== PREMIUM SIDEBAR (без glassmorphism через BrowserView) =================== */
+/* =================== PREMIUM SIDEBAR + WEBVIEW LAYOUT =================== */
 
-/* Базові налаштування для webview */
+/* Контейнер для webview вкладок - FLEXBOX магія! */
 #webview-container {
-  position: absolute !important;
-  top: 0;
-  left: 0;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 1;
+  flex-grow: 1; /* FLEXBOX: займає ВСЮ вільну висоту під toolbar */
+  display: flex; /* КРИТИЧНО: без цього webview не розтягнеться! */
+  position: relative; /* Відносне позиціонування для webview всередині */
+  width: 100%;
+  background: #1a1b26;
+  overflow: hidden;
 }
 
-/* Сам сайдбар "плаває" зліва */
+/* Стилі для webview тегів */
+webview {
+  flex-grow: 1; /* КРИТИЧНО: розтягуємо на всю висоту контейнера! */
+  width: 100%;
+  height: 100%;
+  display: none; /* За замовчуванням сховані */
+  background: transparent;
+  border: none;
+}
+
+/* Активний webview */
+webview.active {
+  display: flex; /* Показуємо як flex-елемент */
+}
+
+/* Сам сайдбар "плаває" зліва поверх webview */
 #side-toolbar {
   position: fixed;
   top: 50%;

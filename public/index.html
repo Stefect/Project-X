@@ -44,7 +44,7 @@
     <input type="text" id="url" class="address-bar" placeholder="Пошук або адреса...">
   </div>
 
-  <!-- Webview container (BrowserView керується з main.js) -->
+  <!-- Webview контейнер для вкладок (кожна вкладка = окремий <webview> тег) -->
   <div id="webview-container"></div>
 
   <!-- Glassmorphism Sidebar (відкритий за замовчуванням) -->
@@ -2611,6 +2611,243 @@
     });
     
     // ===================== END TOR INTEGRATION =====================
+    
+    // ==================== WEBVIEW MANAGEMENT ====================
+    
+    const webviewContainer = document.getElementById('webview-container');
+    
+    // IPC: Створення webview елемента
+    ipcRenderer.on('create-webview', (event, { tabId, html, url }) => {
+      console.log(`[WEBVIEW] Creating webview for tab ${tabId}, url: ${url}`);
+      
+      // Використовуємо готовий HTML з main process
+      webviewContainer.insertAdjacentHTML('beforeend', html);
+      
+      // Отримуємо створений елемент
+      const webview = document.getElementById(`webview-${tabId}`);
+      if (!webview) {
+        console.error(`[WEBVIEW] Failed to create webview-${tabId}`);
+        return;
+      }
+      
+      // Налаштовуємо обробники подій webview
+      setupWebviewHandlers(webview, tabId);
+      
+      console.log(`[WEBVIEW] Created and configured webview-${tabId}`);
+    });
+    
+    // IPC: Перемикання webview
+    ipcRenderer.on('switch-webview', (event, { tabId }) => {
+      console.log(`[WEBVIEW] Switching to webview-${tabId}`);
+      
+      // Ховаємо всі webview
+      const allWebviews = document.querySelectorAll('webview');
+      allWebviews.forEach(wv => {
+        wv.style.display = 'none';
+        wv.classList.remove('active');
+      });
+      
+      // Показуємо активний з flex-display
+      const activeWebview = document.getElementById(`webview-${tabId}`);
+      if (activeWebview) {
+        activeWebview.style.display = 'flex'; // Flex замість block!
+        activeWebview.classList.add('active');
+      }
+    });
+    
+    // IPC: Видалення webview
+    ipcRenderer.on('remove-webview', (event, { tabId }) => {
+      console.log(`[WEBVIEW] Removing webview-${tabId}`);
+      const webview = document.getElementById(`webview-${tabId}`);
+      if (webview) {
+        webview.remove();
+      }
+    });
+    
+    // IPC: Навігація webview
+    ipcRenderer.on('webview-navigate', (event, { tabId, url }) => {
+      console.log(`[WEBVIEW] Navigate webview-${tabId} to: ${url}`);
+      const webview = document.getElementById(`webview-${tabId}`);
+      if (webview) {
+        webview.loadURL(url);
+      }
+    });
+    
+    // IPC: Назад
+    ipcRenderer.on('webview-go-back', (event, { tabId }) => {
+      const webview = document.getElementById(`webview-${tabId}`);
+      if (webview && webview.canGoBack()) {
+        webview.goBack();
+      }
+    });
+    
+    // IPC: Вперед
+    ipcRenderer.on('webview-go-forward', (event, { tabId }) => {
+      const webview = document.getElementById(`webview-${tabId}`);
+      if (webview && webview.canGoForward()) {
+        webview.goForward();
+      }
+    });
+    
+    // IPC: Перезавантаження
+    ipcRenderer.on('webview-reload', (event, { tabId }) => {
+      const webview = document.getElementById(`webview-${tabId}`);
+      if (webview) {
+        webview.reload();
+      }
+    });
+    
+    // IPC: Toggle DevTools
+    ipcRenderer.on('toggle-webview-devtools', () => {
+      const activeWebview = document.querySelector('webview.active');
+      if (activeWebview) {
+        if (activeWebview.isDevToolsOpened()) {
+          activeWebview.closeDevTools();
+        } else {
+          activeWebview.openDevTools();
+        }
+      }
+    });
+    
+    /**
+     * Налаштовує обробники подій для webview елемента
+     */
+    function setupWebviewHandlers(webview, tabId) {
+      // Завантаження почалося
+      webview.addEventListener('did-start-loading', () => {
+        console.log(`[WEBVIEW-${tabId}] Loading started`);
+      });
+      
+      // Завантаження завершено
+      webview.addEventListener('did-finish-load', () => {
+        const url = webview.getURL();
+        const title = webview.getTitle();
+        console.log(`[WEBVIEW-${tabId}] Loaded: ${url}`);
+        
+        // Оновлюємо інформацію про вкладку в UI
+        const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
+        if (tab) {
+          const titleSpan = tab.querySelector('.tab-title');
+          if (titleSpan) titleSpan.textContent = title || 'Нова вкладка';
+        }
+        
+        // Оновлюємо URL bar якщо це активна вкладка
+        if (webview.classList.contains('active')) {
+          const urlInput = document.getElementById('url');
+          if (urlInput) {
+            // Ховаємо file:/// URL для локальних сторінок
+            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html')) {
+              urlInput.value = '';
+            } else {
+              urlInput.value = url;
+            }
+          }
+        }
+      });
+      
+      // Навігація
+      webview.addEventListener('did-navigate', (e) => {
+        const url = e.url;
+        console.log(`[WEBVIEW-${tabId}] Navigate to: ${url}`);
+        
+        // Оновлюємо URL bar якщо це активна вкладка
+        if (webview.classList.contains('active')) {
+          const urlInput = document.getElementById('url');
+          if (urlInput) {
+            // Ховаємо file:/// URL для локальних сторінок (newtab, history, тощо)
+            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html')) {
+              urlInput.value = ''; // Очищаємо рядок для локальних сторінок
+            } else {
+              urlInput.value = url;
+            }
+          }
+        }
+      });
+      
+      // Навігація всередині сторінки
+      webview.addEventListener('did-navigate-in-page', (e) => {
+        const url = e.url;
+        if (webview.classList.contains('active')) {
+          const urlInput = document.getElementById('url');
+          if (urlInput) {
+            // Також ховаємо file:/// для локальних сторінок
+            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html')) {
+              urlInput.value = '';
+            } else {
+              urlInput.value = url;
+            }
+          }
+        }
+      });
+      
+      // Оновлення заголовку
+      webview.addEventListener('page-title-updated', (e) => {
+        const title = e.title;
+        const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
+        if (tab) {
+          const titleSpan = tab.querySelector('.tab-title');
+          if (titleSpan) titleSpan.textContent = title;
+        }
+      });
+      
+      // Favicon оновлено
+      webview.addEventListener('page-favicon-updated', (e) => {
+        if (e.favicons && e.favicons.length > 0) {
+          const favicon = e.favicons[0];
+          const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
+          if (tab) {
+            const faviconImg = tab.querySelector('.tab-favicon');
+            if (faviconImg) faviconImg.src = favicon;
+          }
+        }
+      });
+      
+      // Помилка завантаження
+      webview.addEventListener('did-fail-load', (e) => {
+        if (e.errorCode !== -3) { // -3 = ERR_ABORTED
+          console.error(`[WEBVIEW-${tabId}] Load failed:`, e.errorDescription);
+        }
+      });
+      
+      // Нове вікно (контролюємо відкриття нових вкладок)
+      webview.addEventListener('new-window', (e) => {
+        e.preventDefault();
+        console.log(`[WEBVIEW-${tabId}] New window requested:`, e.url);
+        // Відкриваємо в новій вкладці
+        createTab(e.url);
+      });
+      
+      // Console messages з webview
+      webview.addEventListener('console-message', (e) => {
+        if (e.level >= 1) { // Warnings and errors
+          console.log(`[WEBVIEW-${tabId}] [${e.level === 1 ? 'WARN' : 'ERROR'}] ${e.message}`);
+        }
+      });
+    }
+    
+    // IPC: Оновлення тем для всіх newtab webview
+    ipcRenderer.on('update-newtab-themes', (event, settings) => {
+      console.log('[WEBVIEW] Updating themes for all newtab pages');
+      
+      const allWebviews = document.querySelectorAll('webview');
+      allWebviews.forEach(webview => {
+        try {
+          const url = webview.getURL();
+          if (url && url.includes('newtab.html')) {
+            // Надсилаємо тему в webview через executeJavaScript
+            webview.executeJavaScript(`
+              if (window.applyTheme && window.currentTheme) {
+                window.applyTheme(window.currentTheme);
+              }
+            `);
+          }
+        } catch (err) {
+          console.error('[WEBVIEW] Error updating theme:', err);
+        }
+      });
+    });
+    
+    // ==================== END WEBVIEW MANAGEMENT ====================
     
   } catch (error) {
     console.error('🚨 CRITICAL ERROR in index.html:', error);
