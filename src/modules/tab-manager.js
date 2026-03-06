@@ -26,7 +26,7 @@ function init(mainWindow) {
  * Створює HTML елемент <webview> для вкладки
  */
 function createWebviewElement(tabId, url) {
-  const startUrl = url || `file://${path.join(__dirname, '..', '..', 'public', 'newtab.html')}`;
+  const startUrl = url || 'about:blank';
   
   // Визначаємо inline стилі залежно від того, чи це активна вкладка
   const isActive = tabId === activeTabId;
@@ -73,7 +73,7 @@ function initFirstTab(browserView, startUrl) {
  * Створює нову вкладку
  */
 function createTab(mainWindow, url = null, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel, sidebarWidth }) {
-  const targetUrl = url || `file://${path.join(__dirname, '..', '..', 'public', 'newtab.html')}`;
+  const targetUrl = url || 'about:blank';
   
   const newTab = {
     id: nextTabId,
@@ -300,7 +300,7 @@ function getSessionData() {
       navigationHistory: tab.navigationHistory || [],
       currentIndex: tab.currentIndex || 0
     }))
-    .filter(tab => tab.url && !tab.url.includes('newtab.html'));
+    .filter(tab => tab.url && tab.url !== 'about:blank' && !tab.url.startsWith('file://'));
 }
 
 /**
@@ -314,10 +314,8 @@ function restoreSession(sessionData, mainWindow, { storage, themeManager, inject
   
   if (sessionTabs.length === 0) {
     console.log('[TAB-WEBVIEW SESSION] No tabs to restore, creating first tab');
-    // Створюємо першу вкладку з newtab.html
-    const path = require('path');
-    const startUrl = `file://${path.join(__dirname, '..', '..', 'public', 'newtab.html')}`;
-    createTab(mainWindow, startUrl, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel });
+    // Створюємо першу вкладку з about:blank (показується native new tab)
+    createTab(mainWindow, null, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel });
     return;
   }
   

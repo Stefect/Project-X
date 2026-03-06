@@ -44,8 +44,76 @@
     <input type="text" id="url" class="address-bar" placeholder="Пошук або адреса...">
   </div>
 
-  <!-- Webview контейнер для вкладок (кожна вкладка = окремий <webview> тег) -->
-  <div id="webview-container"></div>
+  <!-- Нативна нова вкладка (показується, коли немає активного сайту) -->
+  <div id="native-new-tab" class="native-new-tab">
+    <div class="greeting" id="greeting">Привіт!</div>
+    <div class="time-display" id="clock">00:00</div>
+    <div class="date-display" id="date">п'ятниця, 6 березня</div>
+    <div class="brand-logo">BrowserX</div>
+    
+    <!-- Speed Dial Container -->
+    <div class="max-w-6xl mx-auto mt-10">
+      <div id="speed-dial" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+        <!-- Speed Dial cards will be dynamically inserted here -->
+      </div>
+    </div>
+  </div>
+  
+  <!-- News FAB Button -->
+  <button id="news-fab" class="news-fab" title="Відкрити стрічку новин">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+    </svg>
+  </button>
+  
+  <!-- Webview елементи будуть додані сюди динамічно через JavaScript -->
+
+  <!-- Speed Dial Edit Modal -->
+  <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+    <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl w-full max-w-md shadow-2xl">
+      <h2 id="modal-title" class="text-2xl font-bold mb-5 text-gray-100">Додати закладку</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">Назва сайту <span class="text-gray-500 text-xs">(необов'язково)</span></label>
+          <input type="text" id="link-title" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="Автоматично визначиться з URL">
+        </div>
+        
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">URL адреса</label>
+          <input type="url" id="link-url" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="https://youtube.com">
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Банер сайту</label>
+          <div class="space-y-3">
+            <button type="button" id="fetch-banner-btn" class="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium transition-all flex items-center justify-center gap-2 shadow-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Завантажити банер сайту
+            </button>
+            <div id="banner-preview" class="hidden w-full rounded-lg overflow-hidden border-2 border-gray-600 shadow-xl">
+              <img id="banner-preview-img" class="w-full h-32 object-cover" alt="Banner Preview">
+            </div>
+            <p class="text-xs text-gray-500 text-center">Автоматично завантажиться скріншот сайту</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm text-gray-400 mb-2">Колір фону</label>
+          <div id="color-picker" class="flex gap-3">
+            <!-- Color buttons will be dynamically inserted here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 flex justify-end gap-3">
+        <button id="cancel-modal-btn" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-white transition-colors">Скасувати</button>
+        <button id="save-link-btn" class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">Зберегти</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Glassmorphism Sidebar (відкритий за замовчуванням) -->
   <div id="side-toolbar" class="sidebar open">
@@ -2170,6 +2238,11 @@
     const wallpaperFileInput = document.getElementById('wallpaper-file-input');
 
     let currentWallpaper = localStorage.getItem('wallpaper') || 'none';
+    
+    // Застосовуємо збережені шпалери при завантаженні
+    if (currentWallpaper && currentWallpaper !== 'none') {
+      applyWallpaper(currentWallpaper);
+    }
 
     // Функція для надсилання налаштувань теми в main process
     function sendThemeSettings() {
@@ -2186,9 +2259,33 @@
       if (!wallpaperData || wallpaperData === 'none') {
         localStorage.removeItem('wallpaper');
         currentWallpaper = 'none';
+        // Очищуємо шпалери з body
+        document.body.style.backgroundImage = 'none';
+        document.body.style.backgroundColor = '#1a1b26';
       } else {
         localStorage.setItem('wallpaper', wallpaperData);
         currentWallpaper = wallpaperData;
+        
+        // Застосовуємо шпалери до body
+        const wallpaperGradients = {
+          'abstract1': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          'abstract2': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+          'abstract3': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+          'abstract4': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+          'abstract5': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+          'abstract6': 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
+        };
+        
+        if (wallpaperData.startsWith('data:') || wallpaperData.startsWith('http')) {
+          document.body.style.backgroundImage = `url(${wallpaperData})`;
+        } else if (wallpaperGradients[wallpaperData]) {
+          document.body.style.backgroundImage = wallpaperGradients[wallpaperData];
+        }
+        
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundAttachment = 'fixed';
       }
 
       // Оновлюємо активний стан карток в панелі
@@ -2614,14 +2711,17 @@
     
     // ==================== WEBVIEW MANAGEMENT ====================
     
-    const webviewContainer = document.getElementById('webview-container');
-    
     // IPC: Створення webview елемента
     ipcRenderer.on('create-webview', (event, { tabId, html, url }) => {
       console.log(`[WEBVIEW] Creating webview for tab ${tabId}, url: ${url}`);
       
-      // Використовуємо готовий HTML з main process
-      webviewContainer.insertAdjacentHTML('beforeend', html);
+      // Додаємо webview прямо в body (перед sidebar)
+      const sidebar = document.getElementById('side-toolbar');
+      if (sidebar) {
+        sidebar.insertAdjacentHTML('beforebegin', html);
+      } else {
+        document.body.insertAdjacentHTML('beforeend', html);
+      }
       
       // Отримуємо створений елемент
       const webview = document.getElementById(`webview-${tabId}`);
@@ -2649,9 +2749,24 @@
       
       // Показуємо активний з flex-display
       const activeWebview = document.getElementById(`webview-${tabId}`);
+      const newsFabBtn = document.getElementById('news-fab');
+      
       if (activeWebview) {
-        activeWebview.style.display = 'flex'; // Flex замість block!
-        activeWebview.classList.add('active');
+        // Перевіряємо чи це нова порожня вкладка
+        const src = activeWebview.getAttribute('src');
+        const isNewTab = !src || src === 'about:blank' || src === '';
+        
+        if (!isNewTab) {
+          // Для реальних сайтів показуємо webview поверх native new tab
+          activeWebview.style.display = 'flex';
+          activeWebview.classList.add('active');
+          // Ховаємо FAB коли відкритий сайт
+          if (newsFabBtn) newsFabBtn.classList.add('hidden');
+        } else {
+          // Для about:blank показуємо native new tab та FAB
+          if (newsFabBtn) newsFabBtn.classList.remove('hidden');
+        }
+        // Для about:blank не показуємо webview, залишається видимим native new tab знизу
       }
     });
     
@@ -2849,11 +2964,111 @@
     
     // ==================== END WEBVIEW MANAGEMENT ====================
     
+    // ==================== NATIVE NEW TAB LOGIC ====================
+    const nativeNewTab = document.getElementById('native-new-tab');
+    const clockElement = document.getElementById('clock');
+    const greetingElement = document.getElementById('greeting');
+    const dateElement = document.getElementById('date');
+    
+    // Функція оновлення часу
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      
+      if (clockElement) {
+        clockElement.textContent = `${hours}:${minutes}`;
+      }
+      
+      // Оновлення дати
+      if (dateElement) {
+        const days = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п\'ятниця', 'субота'];
+        const months = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
+        const dayName = days[now.getDay()];
+        const day = now.getDate();
+        const month = months[now.getMonth()];
+        dateElement.textContent = `${dayName}, ${day} ${month}`;
+      }
+      
+      // Оновлення привітання
+      if (greetingElement) {
+        const hour = now.getHours();
+        let greeting = 'Привіт!';
+        if (hour >= 5 && hour < 12) greeting = 'Доброго ранку!';
+        else if (hour >= 12 && hour < 17) greeting = 'Доброго дня!';
+        else if (hour >= 17 && hour < 23) greeting = 'Доброго вечора!';
+        else greeting = 'Доброї ночі!';
+        greetingElement.textContent = greeting;
+      }
+    }
+    
+    // Запускаємо годинник
+    updateClock();
+    setInterval(updateClock, 1000);
+    
+    // Обробник кнопки "Закладки" - відкриває повний newtab.html
+    const openBookmarksBtn = document.getElementById('open-bookmarks-btn');
+    if (openBookmarksBtn) {
+      openBookmarksBtn.addEventListener('click', () => {
+        console.log('[NATIVE NEW TAB] Opening bookmarks page');
+        // Використовуємо відносний шлях від index.html
+        const newtabPath = new URL('newtab.html', window.location.href).href;
+        
+        // Отримуємо активний webview або шукаємо будь-який
+        let activeWebview = document.querySelector('webview.active');
+        if (!activeWebview) {
+          activeWebview = document.querySelector('webview');
+        }
+        
+        if (activeWebview) {
+          activeWebview.src = newtabPath;
+        } else {
+          console.error('[NATIVE NEW TAB] No webview found');
+        }
+      });
+    }
+    
+    // Обробник кнопки новин FAB
+    const newsFab = document.getElementById('news-fab');
+    if (newsFab) {
+      newsFab.addEventListener('click', () => {
+        console.log('[NATIVE NEW TAB] Opening news feed');
+        const feedPath = new URL('feed.html', window.location.href).href;
+        
+        // Отримуємо активний webview або шукаємо будь-який
+        let activeWebview = document.querySelector('webview.active');
+        if (!activeWebview) {
+          activeWebview = document.querySelector('webview');
+        }
+        
+        if (activeWebview) {
+          // Встановлюємо src для завантаження feed.html
+          activeWebview.src = feedPath;
+          
+          // Показуємо webview поверх native new tab
+          activeWebview.style.display = 'flex';
+          activeWebview.classList.add('active');
+          
+          // Приховуємо кнопку новин
+          newsFab.classList.add('hidden');
+          
+          console.log('[NATIVE NEW TAB] News feed loaded in webview');
+        } else {
+          console.error('[NATIVE NEW TAB] No webview found');
+        }
+      });
+    }
+    
+    // ==================== END NATIVE NEW TAB LOGIC ====================
+    
   } catch (error) {
     console.error('🚨 CRITICAL ERROR in index.html:', error);
     alert('Помилка завантаження браузера: ' + error.message);
   }
   </script>
+  
+  <!-- Speed Dial Module -->
+  <script src="../src/modules/speed-dial.js"></script>
 </body>
 </html>
 
