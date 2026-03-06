@@ -30,9 +30,45 @@ const config = require('./config');
 
 // Глобальні змінні
 let mainWindow;
+let splashWindow; // Вікно заставки
 let browserView;
 let groqClient;
-let sidebarWidth = 0;
+let sidebarWidth = 40; // Завжди залишаємо 40px для стрілки
+let splashStartTime = 0; // Час показу splash
+
+/**
+ * Створює splash screen (заставку при завантаженні)
+ */
+function createSplashWindow() {
+  console.log('[SPLASH] Creating splash window...');
+  splashStartTime = Date.now(); // Запам’ятовуємо час старту
+  
+  splashWindow = new BrowserWindow({
+    width: 500,
+    height: 350,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+  
+  const splashPath = path.join(__dirname, '..', 'public', 'splash.html');
+  console.log('[SPLASH] Loading splash from:', splashPath);
+  
+  splashWindow.loadFile(splashPath);
+  splashWindow.center();
+  
+  splashWindow.once('ready-to-show', () => {
+    console.log('[SPLASH] Splash window ready to show');
+    splashWindow.show();
+  });
+  
+  console.log('[SPLASH] Splash screen created');
+}
 
 /**
  * Інжектує unified-t9 скрипт у BrowserView
@@ -75,16 +111,65 @@ function createWindow() {
   // Реєструємо AI handlers після ініціалізації groqClient
   aiHandlers.registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
 
-  // Створюємо вікно (frameless)
+  // Створюємо вікно (frameless, але спочатку невидиме)
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     frame: false,
     titleBarStyle: 'hidden',
+    show: false, // ВАЖЛИВО: ховаємо до повного завантаження
+    backgroundColor: '#1a1b26', // Фон щоб не було білого спалаху
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     }
+  });
+
+  // Коли головне вікно готове - закриваємо splash і показуємо браузер
+  mainWindow.once('ready-to-show', () => {
+    console.log('[MAIN] Main window ready');
+    
+    // Визначаємо скільки часу минуло з показу splash
+    const splashElapsed = Date.now() - splashStartTime;
+    const minSplashDuration = 2000; // 2 секунди мінімум
+    const remainingTime = Math.max(0, minSplashDuration - splashElapsed);
+    
+    console.log(`[MAIN] Splash shown for ${splashElapsed}ms, waiting ${remainingTime}ms more`);
+    
+    // Чекаємо мінімальний час показу
+    setTimeout(() => {
+      console.log('[MAIN] Closing splash and showing main window');
+      
+      // Плавне закриття splash
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.close();
+        splashWindow = null;
+      }
+      
+      // Показуємо головне вікно
+      mainWindow.show();
+      mainWindow.focus();
+    }, remainingTime);
+  });
+
+  // Обробник закриття головного вікна
+  mainWindow.on('closed', () => {
+    // Якщо splash чомусь ще відкритий - закриваємо його
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+      splashWindow = null;
+    }
+    mainWindow = null;
+  });
+
+  // На випадок помилки завантаження - все одно закриваємо splash
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('[ERROR] Main window failed to load:', errorDescription);
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.close();
+      splashWindow = null;
+    }
+    mainWindow.show(); // Показуємо навіть з помилкою
   });
 
   // Створюємо меню (F12 для DevTools)
@@ -145,9 +230,9 @@ function createWindow() {
   // Позіціонуємо BrowserView
   const bounds = mainWindow.getContentBounds();
   browserView.setBounds({ 
-    x: 0, 
+    x: sidebarWidth, // Залишаємо місце для sidebar
     y: 100,
-    width: bounds.width,
+    width: bounds.width - sidebarWidth,
     height: bounds.height - 100 
   });
   
@@ -225,6 +310,12 @@ function restoreSessionSmart() {
 // ==================== APP LIFECYCLE ====================
 
 app.whenReady().then(async () => {
+  // Спочатку показуємо splash screen
+  createSplashWindow();
+  
+  // Невелика затримка перед ініціалізацією важких компонентів
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
   // Ініціалізуємо захист конфіденційності ПЕРЕД запуском Tor
   privacyGuard.initializePrivacyProtection();
   
@@ -394,9 +485,9 @@ ipcMain.on('update-theme-settings', (event, settings) => {
 // ==================== UI LAYOUT IPC HANDLERS ====================
 
 ipcMain.on('sidebar-toggled', (event, isCollapsed) => {
-  sidebarWidth = isCollapsed ? 0 : 320;
+  sidebarWidth = isCollapsed ? 40 : 260; // 40px для стрілки, 260px для відкритого sidebar
   tabManager.updateActiveTabBounds(mainWindow, sidebarWidth);
-  console.log(`[UI] Sidebar ${isCollapsed ? 'collapsed' : 'expanded'}`);
+  console.log(`[UI] Sidebar ${isCollapsed ? 'collapsed' : 'expanded'}, width: ${sidebarWidth}`);
 });
 
 ipcMain.on('menu-toggled', (event, isOpen) => {

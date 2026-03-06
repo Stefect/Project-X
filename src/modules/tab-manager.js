@@ -614,7 +614,7 @@ function updateActiveTabBounds(mainWindow, sidebarWidth, offsetRight = 0) {
   
   const bounds = mainWindow.getContentBounds();
   activeTab.browserView.setBounds({
-    x: 0,
+    x: sidebarWidth, // Залишаємо місце для sidebar зліва
     y: topbarHeight,
     width: bounds.width - sidebarWidth - offsetRight,
     height: bounds.height - topbarHeight
