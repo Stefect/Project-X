@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+release/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+
+# Environment
+.env
+.env.local
+.env.*.local
+src/config.js
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Documentation (опціонально - можна закоментувати якщо треба в контейнері)
+# docs/
+# README.md
+
+# Examples (не потрібні в production)
+examples/
+
+# Tor data (буде створено в рантаймі)
+bin/tor/data/cached-*
+bin/tor/data/lock
+bin/tor/data/state
+bin/tor/data/control_auth_cookie
+
+# OS specific
+Thumbs.db
+Desktop.ini
