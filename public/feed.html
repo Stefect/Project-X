@@ -665,8 +665,15 @@
     </div>
 
     <script>
-        // Визначаємо API - якщо в iframe, використовуємо parent API
-        const api = (window.parent && window.parent !== window && window.parent.api) ? window.parent.api : window.api;
+        // API вже доступне через preload.js як window.api
+        const api = window.api;
+        
+        console.log('[FEED] Initializing feed page...');
+        console.log('[FEED] API available:', !!api);
+        
+        if (!api) {
+            console.error('[FEED] API not available! Check preload.js');
+        }
         
         const btnStart = document.getElementById('btn-start');
         const btnStop = document.getElementById('btn-stop');
@@ -687,16 +694,10 @@
         // Обробник кнопки закриття панелі
         if (btnCloseFeed) {
             btnCloseFeed.addEventListener('click', () => {
-                // Якщо в iframe, закриваємо overlay в parent
-                if (window.parent && window.parent !== window) {
-                    const feedOverlay = window.parent.document.getElementById('feed-overlay');
-                    if (feedOverlay) {
-                        feedOverlay.style.display = 'none';
-                    }
-                } else {
-                    // Якщо автономно, повертаємося на newtab
-                    window.location.href = 'newtab.html';
-                }
+                console.log('[FEED] Close button clicked');
+                // Просто змінюємо location на about:blank
+                // Це спрацює і викличе обробник did-navigate в index.html
+                window.location.href = 'about:blank';
             });
         }
 
@@ -1076,8 +1077,10 @@
 
         // Обробник кнопки Start
         btnStart.addEventListener('click', async () => {
+            console.log('[FEED] Start button clicked');
+            
             if (!api) {
-                console.error('API not available');
+                console.error('[FEED] API not available');
                 alert('[ERR] API не доступне! Перезавантажте сторінку.');
                 return;
             }
@@ -1100,6 +1103,7 @@
                 }
                 
                 console.log('[START FEED] Passing sources:', sourcesToUse.map(s => s.name || s).join(', '));
+                console.log('[START FEED] Calling api.startFeed...');
                 
                 if (sourcesToUse.length === 0) {
                     alert('No sources available. Please add sources first!');

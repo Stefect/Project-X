@@ -2865,12 +2865,29 @@
         const url = e.url;
         console.log(`[WEBVIEW-${tabId}] Navigate to: ${url}`);
         
+        // Перевіряємо чи повернулись на about:blank (закриття feed)
+        const nativeNewTab = document.getElementById('native-new-tab');
+        const newsFab = document.getElementById('news-fab');
+        
+        if (url === 'about:blank' || url === '') {
+          console.log(`[WEBVIEW-${tabId}] Returning to about:blank, showing native new tab`);
+          // Показуємо native new tab та FAB
+          if (webview.classList.contains('active')) {
+            webview.style.display = 'none';
+            webview.classList.remove('active');
+            if (newsFab) {
+              newsFab.classList.remove('hidden');
+              console.log('[FAB] Showing news FAB');
+            }
+          }
+        }
+        
         // Оновлюємо URL bar якщо це активна вкладка
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
           if (urlInput) {
             // Ховаємо file:/// URL для локальних сторінок (newtab, history, тощо)
-            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html')) {
+            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html') || url === 'about:blank' || url === '') {
               urlInput.value = ''; // Очищаємо рядок для локальних сторінок
             } else {
               urlInput.value = url;
@@ -2882,11 +2899,25 @@
       // Навігація всередині сторінки
       webview.addEventListener('did-navigate-in-page', (e) => {
         const url = e.url;
+        
+        // Перевіряємо чи повернулись на about:blank
+        const nativeNewTab = document.getElementById('native-new-tab');
+        const newsFab = document.getElementById('news-fab');
+        
+        if (url === 'about:blank' || url === '') {
+          // Показуємо native new tab та FAB
+          if (webview.classList.contains('active')) {
+            webview.style.display = 'none';
+            webview.classList.remove('active');
+            if (newsFab) newsFab.classList.remove('hidden');
+          }
+        }
+        
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
           if (urlInput) {
             // Також ховаємо file:/// для локальних сторінок
-            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html')) {
+            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html') || url === 'about:blank') {
               urlInput.value = '';
             } else {
               urlInput.value = url;
@@ -3031,30 +3062,20 @@
     // Обробник кнопки новин FAB
     const newsFab = document.getElementById('news-fab');
     if (newsFab) {
-      newsFab.addEventListener('click', () => {
+      newsFab.addEventListener('click', async () => {
         console.log('[NATIVE NEW TAB] Opening news feed');
         const feedPath = new URL('feed.html', window.location.href).href;
         
-        // Отримуємо активний webview або шукаємо будь-який
-        let activeWebview = document.querySelector('webview.active');
-        if (!activeWebview) {
-          activeWebview = document.querySelector('webview');
-        }
-        
-        if (activeWebview) {
-          // Встановлюємо src для завантаження feed.html
-          activeWebview.src = feedPath;
-          
-          // Показуємо webview поверх native new tab
-          activeWebview.style.display = 'flex';
-          activeWebview.classList.add('active');
+        try {
+          // Використовуємо IPC для навігації через систему вкладок
+          await ipcRenderer.invoke('navigate-url', feedPath);
           
           // Приховуємо кнопку новин
           newsFab.classList.add('hidden');
           
-          console.log('[NATIVE NEW TAB] News feed loaded in webview');
-        } else {
-          console.error('[NATIVE NEW TAB] No webview found');
+          console.log('[NATIVE NEW TAB] News feed navigation requested');
+        } catch (error) {
+          console.error('[NATIVE NEW TAB] Failed to open feed:', error);
         }
       });
     }
