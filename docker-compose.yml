@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  browserx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: browserx
+    image: browserx:latest
+    
+    # Порти
+    ports:
+      - "5900:5900"  # VNC сервер для GUI доступу
+    
+    # Змінні середовища
+    environment:
+      - DISPLAY=:99
+      - NODE_ENV=production
+      # Groq API Key (замініть на свій або використовуйте .env файл)
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    
+    # Монтуємо volumes для збереження даних
+    volumes:
+      # Tor data (кеш, стан)
+      - tor-data:/app/bin/tor/data
+      # Speed Dial та налаштування (localStorage в Electron)
+      - app-data:/root/.config/BrowserX
+    
+    # Обмеження ресурсів (опціонально)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    
+    # Restart політика
+    restart: unless-stopped
+    
+    # Додаткові можливості для Electron
+    cap_add:
+      - SYS_ADMIN  # Потрібно для Chrome sandbox
+    
+    # Security options
+    security_opt:
+      - seccomp:unconfined  # Вимкнути seccomp для Electron
+    
+    # Налаштування shm_size для Chrome
+    shm_size: '2gb'
+
+# Volumes для збереження даних між перезапусками
+volumes:
+  tor-data:
+    driver: local
+  app-data:
+    driver: local
+
+# Networks (опціонально - для майбутнього розширення)
+networks:
+  default:
+    name: browserx-network

@@ -37,7 +37,25 @@ cp config.js.example src/config.js
 npm start
 ```
 
-## 🚀 Оптимізація: Мемоїзація
+## � Docker
+
+BrowserX підтримує запуск в Docker з GUI через VNC:
+
+```bash
+# 1. Налаштуйте .env файл
+cp .env.example .env
+# Додайте свій GROQ_API_KEY
+
+# 2. Запустіть контейнер
+docker-compose up -d
+
+# 3. Підключіться через VNC
+# VNC Client → localhost:5900
+```
+
+**Докладніше:** [`docs/DOCKER.md`](docs/DOCKER.md)
+
+## �🚀 Оптимізація: Мемоїзація
 
 BrowserX використовує систему мемоїзації для оптимізації дорогих операцій:
 
@@ -66,25 +84,51 @@ node examples/memoize-examples.js
 | `Tor не працює` | Перевірити `bin/tor/` папку |
 | `Feed не працює` | Перевірити інтернет-з'єднання |
 
-## Структура проекту (Task 2: Project Setup)
+## Структура проекту
 
 ```
 browserx/
-├── package.json        # Конфігурація проекту
-├── LICENSE             # MIT ліцензія
-├── .gitignore          # Ігноровані файли
+├── package.json           # Конфігурація проекту
+├── LICENSE                # MIT ліцензія
+├── .gitignore             # Ігноровані файли
+│
+├── 🐳 Docker
+│   ├── Dockerfile         # Docker образ з Xvfb + VNC
+│   ├── docker-compose.yml # Docker Compose конфігурація
+│   ├── .dockerignore      # Виключення для Docker
+│   ├── .env.example       # Приклад environment variables
+│   ├── docker-test.sh     # Тест скрипт (Linux/macOS)
+│   └── docker-test.ps1    # Тест скрипт (Windows)
+│
 ├── src/
-│   ├── main.js         # Головний процес Electron
-│   ├── preload.js      # Preload скрипт
-│   ├── config.js       # Конфігурація (API ключі)
-│   └── modules/        # Модулі (Task 1 код)
-│       ├── ai-feed.js      # Генератори (Task 1)
-│       ├── ai-handlers.js  # Ітератор з таймаутом (Task 1)
-│       ├── tab-manager.js
-│       ├── storage.js
-│       └── ...
-├── public/             # HTML сторінки
-└── bin/                # Tor integration
+│   ├── main.js            # Головний процес Electron
+│   ├── preload.js         # Preload скрипт
+│   ├── config.js          # Конфігурація (API ключі)
+│   ├── modules/           # Модулі браузера
+│   │   ├── ai-feed.js         # Генератори нескінченної стрічки
+│   │   ├── ai-handlers.js     # AI IPC handlers + мемоїзація
+│   │   ├── tab-manager.js     # Управління вкладками
+│   │   ├── storage.js         # localStorage обгортка
+│   │   └── tor-manager.js     # Tor інтеграція
+│   └── utils/             # Утиліти
+│       └── memoize.js         # Система мемоїзації (LRU/LFU/TTL)
+│
+├── public/                # HTML сторінки
+│   ├── index.html         # Головне вікно браузера
+│   ├── feed.html          # AI нескінченна стрічка
+│   ├── settings.html      # Налаштування
+│   └── css/               # Стилі
+│
+├── docs/                  # Документація
+│   ├── DOCKER.md          # Docker guide
+│   ├── MEMOIZATION.md     # Мемоїзація guide
+│   └── ...
+│
+├── examples/              # Приклади використання
+│   └── memoize-examples.js
+│
+└── bin/                   # Tor binaries
+    └── tor/
 ```
 
 ## Ліцензія
