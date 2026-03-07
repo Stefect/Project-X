@@ -153,6 +153,21 @@ function registerStorageHandlers(storage, tabManager) {
     }
   });
 
+  // Навігація активної вкладки до URL
+  ipcMain.handle('navigate-url', async (event, url) => {
+    try {
+      console.log('[NAVIGATE] Navigating to:', url);
+      const mainWindow = BrowserWindow.getAllWindows()[0];
+      if (mainWindow) {
+        mainWindow.webContents.send('webview-navigate', { tabId: tabManager.getActiveTabId(), url });
+      }
+      return { success: true };
+    } catch (error) {
+      console.error('[NAVIGATE] Error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   console.log('[IPC] Storage handlers registered');
 }
 

@@ -4,6 +4,7 @@
  */
 
 const { ipcMain } = require('electron');
+const memoize = require('../utils/memoize');
 
 let isFeedRunning = false;
 let currentFeedGenerator = null;
@@ -76,6 +77,13 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
   console.log('[AI-HANDLERS] Registering handlers...');
   console.log('[AI-HANDLERS] groqClient:', groqClient ? 'INITIALIZED' : 'NULL/UNDEFINED');
   console.log('[AI-HANDLERS] tabManager:', tabManager ? 'INITIALIZED' : 'NULL/UNDEFINED');
+
+  // Створюємо мемоїзовану версію summarizeArticle з LRU політикою
+  // Кешуємо останні 100 резюме статей для уникнення повторних AI запитів
+  const cachedSummarizeArticle = memoize(
+    (title) => summarizeArticle(title, groqClient),
+    { maxSize: 100, policy: 'lru' }
+  );
   
   // ==================== РЕЗЮМУВАННЯ НОТАТОК ====================
   
@@ -261,7 +269,7 @@ ${tabsListString}`;
         try {
           // Promise.race - таймаут 5 секунд для перекладу та AI обробки
           const result = await Promise.race([
-            summarizeArticle(article.title, groqClient),
+            cachedSummarizeArticle(article.title),
             new Promise((_, reject) => 
               setTimeout(() => reject(new Error('AI_TIMEOUT')), 5000)
             )
@@ -302,48 +310,37 @@ ${tabsListString}`;
 
   // ==================== X-RAY: ОПИС ПОСИЛАНЬ ====================
   
-  // Кеш описів щоб не робити повторних запитів
-  const xrayCache = new Map();
-  const XRAY_CACHE_MAX = 200;
+  // Внутрішня функція для опису URL через AI
+  async function describeURL(url, linkText, context) {
+    if (!url || url.startsWith('file://') || url.startsWith('javascript:') || url.startsWith('#')) {
+      return null;
+    }
 
-  ipcMain.handle('describe-url', async (event, url, linkText, context) => {
-    try {
-      if (!url || url.startsWith('file://') || url.startsWith('javascript:') || url.startsWith('#')) {
-        return null;
-      }
+    if (!groqClient) {
+      // Без AI — показуємо текст посилання або домен
+      const domain = new URL(url).hostname;
+      const title = linkText || domain;
+      return { title, description: `Перейти на ${domain}` };
+    }
 
-      // Перевіряємо кеш
-      if (xrayCache.has(url)) {
-        return xrayCache.get(url);
-      }
+    console.log('[X-RAY] Describing:', url.substring(0, 80));
+    if (linkText) console.log('[X-RAY] Link text:', linkText.substring(0, 60));
+    if (context) console.log('[X-RAY] Context:', context.substring(0, 80));
 
-      if (!groqClient) {
-        // Без AI — показуємо текст посилання або домен
-        const domain = new URL(url).hostname;
-        const title = linkText || domain;
-        const result = { title, description: `Перейти на ${domain}` };
-        xrayCache.set(url, result);
-        return result;
-      }
+    // Формуємо запит з контекстом
+    let userMessage = `URL: ${url}`;
+    if (linkText && linkText.trim()) {
+      userMessage += `\nТекст посилання: «${linkText.trim()}»`;
+    }
+    if (context && context.trim()) {
+      userMessage += `\nКонтекст на сторінці: ${context.trim()}`;
+    }
 
-      console.log('[X-RAY] Describing:', url.substring(0, 80));
-      if (linkText) console.log('[X-RAY] Link text:', linkText.substring(0, 60));
-      if (context) console.log('[X-RAY] Context:', context.substring(0, 80));
-
-      // Формуємо запит з контекстом
-      let userMessage = `URL: ${url}`;
-      if (linkText && linkText.trim()) {
-        userMessage += `\nТекст посилання: «${linkText.trim()}»`;
-      }
-      if (context && context.trim()) {
-        userMessage += `\nКонтекст на сторінці: ${context.trim()}`;
-      }
-
-      const completion = await groqClient.chat.completions.create({
-        messages: [
-          {
-            role: 'system',
-            content: `Ти — X-Ray помічник браузера. Користувач навів мишку на посилання. Тобі надано URL, текст посилання і контекст зі сторінки.
+    const completion = await groqClient.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: `Ти — X-Ray помічник браузера. Користувач навів мишку на посилання. Тобі надано URL, текст посилання і контекст зі сторінки.
 
 ГОЛОВНЕ ЗАВДАННЯ: Опиши ЩО ЗНАХОДИТЬСЯ НА СТОРІНЦІ за посиланням, а НЕ як це стосується поточної сторінки.
 
@@ -357,38 +354,38 @@ ${tabsListString}`;
 
 Поверни ТІЛЬКИ JSON, без markdown та пояснень:
 {"title": "...", "description": "..."}`
-          },
-          {
-            role: 'user',
-            content: userMessage
-          }
-        ],
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.2,
-        max_tokens: 120
-      });
+        },
+        {
+          role: 'user',
+          content: userMessage
+        }
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.2,
+      max_tokens: 120
+    });
 
-      const responseText = completion.choices[0]?.message?.content || '';
-      let result;
+    const responseText = completion.choices[0]?.message?.content || '';
+    let result;
 
-      try {
-        const cleanJson = responseText.replace(/```json|```/g, '').trim();
-        result = JSON.parse(cleanJson);
-      } catch (parseError) {
-        const domain = new URL(url).hostname;
-        result = { title: domain, description: responseText.substring(0, 60) || `Посилання на ${domain}` };
-      }
+    try {
+      const cleanJson = responseText.replace(/```json|```/g, '').trim();
+      result = JSON.parse(cleanJson);
+    } catch (parseError) {
+      const domain = new URL(url).hostname;
+      result = { title: domain, description: responseText.substring(0, 60) || `Посилання на ${domain}` };
+    }
 
-      // Зберігаємо в кеш
-      if (xrayCache.size >= XRAY_CACHE_MAX) {
-        const firstKey = xrayCache.keys().next().value;
-        xrayCache.delete(firstKey);
-      }
-      xrayCache.set(url, result);
+    console.log('[X-RAY] Result:', result.title);
+    return result;
+  }
 
-      console.log('[X-RAY] Result:', result.title);
-      return result;
+  // Мемоїзована версія з LRU політикою - кешуємо 200 останніх описів посилань
+  const cachedDescribeURL = memoize(describeURL, { maxSize: 200, policy: 'lru' });
 
+  ipcMain.handle('describe-url', async (event, url, linkText, context) => {
+    try {
+      return await cachedDescribeURL(url, linkText, context);
     } catch (error) {
       console.error('[X-RAY] Error:', error.message);
       try {
