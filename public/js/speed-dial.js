@@ -63,10 +63,14 @@ function initSpeedDial() {
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
       closeModal();
     }
-    // Збереження по Enter (якщо фокус в модальному вікні)
+    // Збереження по Enter (ТІЛЬКИ якщо фокус всередині модального вікна!)
     if (e.key === 'Enter' && !modal.classList.contains('hidden')) {
-      e.preventDefault();
-      saveLink();
+      // Перевіряємо чи фокус всередині модального вікна
+      if (modal.contains(document.activeElement)) {
+        e.preventDefault();
+        saveLink();
+      }
+      // Якщо фокус поза модалом (наприклад, в URL input) - ігноруємо
     }
   });
 

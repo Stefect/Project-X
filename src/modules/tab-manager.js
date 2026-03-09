@@ -208,8 +208,27 @@ function reorderTabs(newOrder) {
  * Навігує активну вкладку до URL
  */
 function navigate(input, isTorActive) {
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] ══════════════════════════════════════');
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] navigate() викликано');
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] Input:', input);
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] isTorActive:', isTorActive);
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] activeTabId:', activeTabId);
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] Всього вкладок:', tabs.length);
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] Список вкладок:', tabs.map(t => `id:${t.id}`).join(', '));
+  
   const activeTab = tabs.find(t => t.id === activeTabId);
-  if (!activeTab) return;
+  
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] Знайдена активна вкладка:', !!activeTab);
+  if (activeTab) {
+    console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] Активна вкладка ID:', activeTab.id);
+    console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] Поточний URL:', activeTab.url);
+  }
+  
+  if (!activeTab) {
+    console.error('❌ [TAB-WEBVIEW] No active tab to navigate');
+    console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] ══════════════════════════════════════');
+    return;
+  }
   
   let url = input.trim();
   
@@ -231,10 +250,19 @@ function navigate(input, isTorActive) {
       : 'https://www.google.com/search?q=' + encodeURIComponent(url);
   }
   
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] ──────────────────────────────────────');
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] Фінальний URL:', url);
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] Відправка команди webview-navigate');
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] tabId:', activeTabId);
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] mainWindowRef:', !!mainWindowRef);
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] mainWindowRef.webContents:', !!mainWindowRef?.webContents);
   console.log('[TAB-WEBVIEW] Navigation:', input, '→', url);
   
   // Відправляємо команду на webview для навігації
   mainWindowRef.webContents.send('webview-navigate', { tabId: activeTabId, url });
+  
+  console.log('✅ [ДІАГНОСТИКА TAB-MANAGER] Команда webview-navigate відправлена!');
+  console.log('🌐 [ДІАГНОСТИКА TAB-MANAGER] ══════════════════════════════════════');
 }
 
 /**
