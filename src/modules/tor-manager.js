@@ -174,13 +174,17 @@ function startTor(exitCountry = null, options = {}) {
  * Перемикає Tor режим
  */
 async function toggleTor(mainWindow, tabManager = null) {
-  const ses = session.defaultSession;
+  const defaultSes = session.defaultSession;
+  const webviewSes = session.fromPartition('persist:main'); // Сесія для webview
   
   if (isTorActive) {
-    // Вимикаємо Tor - пряме підключення
-    await ses.setProxy({ mode: 'direct' });
+    // Вимикаємо Tor - пряме підключення для ОБОХ сесій
+    await Promise.all([
+      defaultSes.setProxy({ mode: 'direct' }),
+      webviewSes.setProxy({ mode: 'direct' })
+    ]);
     isTorActive = false;
-    console.log('[TOR] Tor disabled - regular connection');
+    console.log('[TOR] ✅ Tor disabled - regular connection (both sessions)');
     
     // Вимикаємо Privacy Mode
     if (privacyGuard) {
@@ -198,6 +202,20 @@ async function toggleTor(mainWindow, tabManager = null) {
       message: 'Tor вимкнено. Пошук: Google' 
     };
   } else {
+    // Якщо Tor процес НЕ запущений, запускаємо його зараз
+    if (!torProcess || torProcess.exitCode !== null) {
+      console.log('[TOR] Tor process not running, starting now...');
+      startTor('DE', { mainWindow });
+      
+      // Повідомляємо користувача що Tor запускається
+      return {
+        status: false,
+        message: 'Запуск Tor... Зачекайте 10-30 секунд',
+        bootstrapProgress: 0,
+        bootstrapStatus: 'Starting Tor process...'
+      };
+    }
+    
     // Перевіряємо чи Tor готовий
     if (!isTorReady) {
       console.warn('[TOR] Tor is not ready yet. Please wait for connection...');
@@ -225,35 +243,44 @@ async function toggleTor(mainWindow, tabManager = null) {
     console.log('[TOR] ✅ Port 9050 is listening (Tor ready)');
     console.log('[TOR] Applying SOCKS5 proxy configuration...');
     
-    // Очищаємо ВСІ типи кешу перед підключенням до Tor
+    // Очищаємо ВСІ типи кешу перед підключенням до Tor (ОБІ СЕСІЇ)
     // Це запобігає fingerprinting та витоку даних з попередньої сесії
     // КРИТИЧНО: localStorage може містити закешовану геолокацію!
     try {
-      await ses.clearStorageData({
-        storages: [
-          'appcache',       // Application cache
-          'cookies',        // Cookies
-          'filesystem',     // FileSystem API
-          'indexdb',        // IndexedDB
-          'localstorage',   // LocalStorage (КРИТИЧНО для геолокації!)
-          'shadercache',    // Shader cache
-          'websql',         // WebSQL
-          'serviceworkers', // Service Workers
-          'cachestorage'    // Cache Storage API
-        ]
-      });
-      console.log('[PRIVACY] ✓ Cleared ALL storage types for Tor session (cookies, localStorage, cache, etc.)');
+      const storageTypes = [
+        'appcache',       // Application cache
+        'cookies',        // Cookies
+        'filesystem',     // FileSystem API
+        'indexdb',        // IndexedDB
+        'localstorage',   // LocalStorage (КРИТИЧНО для геолокації!)
+        'shadercache',    // Shader cache
+        'websql',         // WebSQL
+        'serviceworkers', // Service Workers
+        'cachestorage'    // Cache Storage API
+      ];
+      
+      await Promise.all([
+        defaultSes.clearStorageData({ storages: storageTypes }),
+        webviewSes.clearStorageData({ storages: storageTypes })
+      ]);
+      console.log('[PRIVACY] ✓ Cleared ALL storage for BOTH sessions (main + webview)');
     } catch (err) {
       console.warn('[PRIVACY] Failed to clear storage:', err.message);
     }
     
-    // Вмикаємо Tor - SOCKS5 proxy з DNS через Tor
-    await ses.setProxy({
-      proxyRules: 'socks5://127.0.0.1:9050',
-      proxyBypassRules: '<local>' // Тільки локальні адреси без проксі
-    });
+    // Вмикаємо Tor - SOCKS5 proxy для ОБОХ сесій
+    await Promise.all([
+      defaultSes.setProxy({
+        proxyRules: 'socks5://127.0.0.1:9050',
+        proxyBypassRules: '<local>'
+      }),
+      webviewSes.setProxy({
+        proxyRules: 'socks5://127.0.0.1:9050',
+        proxyBypassRules: '<local>'
+      })
+    ]);
     
-    console.log('[TOR] ✅ SOCKS5 proxy applied: socks5://127.0.0.1:9050');
+    console.log('[TOR] ✅ SOCKS5 proxy applied to BOTH sessions: socks5://127.0.0.1:9050');
     console.log('[TOR] ✅ DNS resolution: Via Tor SOCKS5 (no DNS leak)');
     
     // Чекаємо 500ms щоб proxy точно застосувався

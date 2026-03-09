@@ -359,6 +359,15 @@
       const forwardBtn = document.getElementById('forward');
       const reloadBtn = document.getElementById('reload');
       const urlInput = document.getElementById('url');
+      
+      // 🔍 ДІАГНОСТИКА: Перевірка чи знайдено елементи навігації
+      console.log('🔍 [ДИАГНОСТИКА] URL Input знайдено:', !!urlInput);
+      console.log('🔍 [ДИАГНОСТИКА] URL Input element:', urlInput);
+      if (urlInput) {
+        console.log('🔍 [ДИАГНОСТИКА] URL Input ID:', urlInput.id);
+        console.log('🔍 [ДИАГНОСТИКА] URL Input placeholder:', urlInput.placeholder);
+      }
+      
       const notesList = document.getElementById('notes-list');
       const addNoteBtn = document.getElementById('add-note-btn');
       const summarizeBtn = document.getElementById('summarize-btn');
@@ -1555,12 +1564,45 @@
     }
 
     if (urlInput) {
-      urlInput.addEventListener('keypress', (e) => {
+      console.log('✅ [ДІАГНОСТИКА] URL Input listener підключається...');
+      let isNavigating = false; // Захист від спаму Enter
+      
+      // ВАЖЛИВО: Використовуємо keydown (не keypress) щоб спрацювати раніше за speed-dial
+      urlInput.addEventListener('keydown', (e) => {
+        console.log('⌨️ [ДІАГНОСТИКА] Keypress event:', e.key);
+        
         if (e.key === 'Enter') {
-          console.log('[WEB] Navigation to:', urlInput.value);
+          console.log('🎯 [ДІАГНОСТИКА] ═══════════════════════════════════');
+          console.log('🎯 [ДІАГНОСТИКА] ENTER СПРАЦЮВАВ!');
+          console.log('🎯 [ДІАГНОСТИКА] Користувач ввів:', urlInput.value);
+          console.log('🎯 [ДІАГНОСТИКА] isNavigating:', isNavigating);
+          console.log('🎯 [ДІАГНОСТИКА] ═══════════════════════════════════');
+          
+          e.preventDefault(); // Блокуємо стандартну поведінку
+          e.stopPropagation(); // ✅ КРИТИЧНО: Зупиняємо поширення до speed-dial обробника!
+          
+          // Захист від повторних натискань
+          if (isNavigating) {
+            console.log('⏸️ [WEB] Navigation already in progress, ignoring...');
+            return;
+          }
+          
+          isNavigating = true;
+          console.log('🚀 [ДІАГНОСТИКА] Відправка IPC navigate з URL:', urlInput.value);
           ipcRenderer.send('navigate', urlInput.value);
+          console.log('✅ [ДІАГНОСТИКА] IPC команда navigate відправлена!');
+          
+          // Знімаємо блокування через 500ms
+          setTimeout(() => {
+            isNavigating = false;
+            console.log('🔓 [ДІАГНОСТИКА] Navigation lock знято');
+          }, 500);
         }
       });
+      
+      console.log('✅ [ДІАГНОСТИКА] URL Input listener успішно підключено!');
+    } else {
+      console.error('❌ [ДІАГНОСТИКА] URL Input НЕ ЗНАЙДЕНО!');
     }
 
     // Отримуємо текст з контекстного меню (СПІЛЬНІ для всіх вкладок)
@@ -2781,11 +2823,42 @@
     
     // IPC: Навігація webview
     ipcRenderer.on('webview-navigate', (event, { tabId, url }) => {
+      console.log('📨 [ДІАГНОСТИКА RENDERER] ══════════════════════════════════════');
+      console.log('📨 [ДІАГНОСТИКА RENDERER] Отримано команду webview-navigate');
+      console.log('📨 [ДІАГНОСТИКА RENDERER] tabId:', tabId);
+      console.log('📨 [ДІАГНОСТИКА RENDERER] url:', url);
       console.log(`[WEBVIEW] Navigate webview-${tabId} to: ${url}`);
+      
       const webview = document.getElementById(`webview-${tabId}`);
+      console.log('📨 [ДІАГНОСТИКА RENDERER] Webview знайдено:', !!webview);
+      
       if (webview) {
+        console.log('📨 [ДІАГНОСТИКА RENDERER] Webview element:', webview);
+        console.log('📨 [ДІАГNOSTИКА RENDERER] Webview поточний src:', webview.src || webview.getAttribute('src'));
+        console.log('📨 [ДІАГНОСТИКА RENDERER] Викликаємо webview.loadURL()...');
+        
         webview.loadURL(url);
+        
+        console.log('✅ [ДІАГНОСТИКА RENDERER] webview.loadURL() викликано!');
+        
+        // 🎯 РОБИМО WEBVIEW ВИДИМИМ
+        webview.style.display = 'flex';
+        console.log('👁️ [ДІАГНОСТИКА RENDERER] Webview тепер видимий!');
+        
+        // 🎯 ХОВАЄМО ГОДИННИК ТА ЗАКЛАДКИ
+        const nativeNewTab = document.getElementById('native-new-tab');
+        if (nativeNewTab) {
+          nativeNewTab.style.display = 'none';
+          console.log('🙈 [ДІАГНОСТИКА RENDERER] Нативна нова вкладка схована!');
+        }
+      } else {
+        console.error('❌ [ДІАГНОСТИКА RENDERER] Webview НЕ знайдено з ID:', `webview-${tabId}`);
+        console.log('📨 [ДІАГНОСТИКА RENDERER] Всі webview на сторінці:');
+        document.querySelectorAll('webview').forEach((wv, idx) => {
+          console.log(`   ${idx + 1}. id="${wv.id}" src="${wv.src || wv.getAttribute('src')}"`);
+        });
       }
+      console.log('📨 [ДІАГНОСТИКА RENDERER] ══════════════════════════════════════');
     });
     
     // IPC: Назад
@@ -3089,7 +3162,7 @@
   </script>
   
   <!-- Speed Dial Module -->
-  <script src="../src/modules/speed-dial.js"></script>
+  <script src="js/speed-dial.js"></script>
 </body>
 </html>
 

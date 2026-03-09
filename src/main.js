@@ -80,7 +80,7 @@ function injectUnifiedT9(webviewId) {
 /**
  * Створює головне вікно браузера
  */
-function createWindow() {
+async function createWindow() {
   // Ініціалізуємо Groq AI
   console.log('[GROQ] Starting initialization...');
   console.log('[GROQ] config.GROQ_API_KEY:', config.GROQ_API_KEY ? `EXISTS (${config.GROQ_API_KEY.substring(0, 15)}...)` : 'NOT FOUND');
@@ -99,6 +99,16 @@ function createWindow() {
 
   // Реєструємо AI handlers після ініціалізації groqClient
   aiHandlers.registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
+
+  // ✅ ВАЖЛИВО: При старті браузера ЗАВЖДИ використовуємо пряме з'єднання (без проксі)
+  console.log('[PROXY] Setting direct connection (no proxy) on startup...');
+  const defaultSes = session.defaultSession;
+  const webviewSes = session.fromPartition('persist:main');
+  await Promise.all([
+    defaultSes.setProxy({ mode: 'direct' }),
+    webviewSes.setProxy({ mode: 'direct' })
+  ]);
+  console.log('[PROXY] ✅ Direct connection enabled for both sessions');
 
   // Створюємо вікно (frameless, але спочатку невидиме)
   mainWindow = new BrowserWindow({
@@ -348,10 +358,13 @@ app.whenReady().then(async () => {
   
   console.log('[PRIVACY] ✓ Global session-created handler registered');
   
-  createWindow(); // Створюємо вікно
+  await createWindow(); // Створюємо вікно (тепер async)
   
-  // Запускаємо Tor з передачею mainWindow для відправки прогресу
-  await torManager.startTor('DE', { mainWindow });
+  // ❌ НЕ запускаємо Tor автоматично! Користувач увімкне його кнопкою.
+  // Tor запускається ТІЛЬКИ при першому toggle через toggleTor()
+  // await torManager.startTor('DE', { mainWindow });
+  console.log('[TOR] Tor auto-start DISABLED. User will enable manually via button.');
+  
   reactiveEvents.setupReactiveNetworkEvents(mainWindow);
   
   // Відновлюємо сесію
@@ -463,7 +476,14 @@ ipcMain.on('reorder-tabs', (event, newOrder) => {
 // ==================== NAVIGATION IPC HANDLERS ====================
 
 ipcMain.on('navigate', (event, input) => {
+  console.log('📨 [ДІАГНОСТИКА MAIN] Отримано IPC navigate від renderer');
+  console.log('📨 [ДІАГНОСТИКА MAIN] Input URL:', input);
+  console.log('📨 [ДІАГНОСТИКА MAIN] Tor enabled:', torManager.isTorEnabled());
+  console.log('📨 [ДІАГНОСТИКА MAIN] Викликаємо tabManager.navigate()...');
+  
   tabManager.navigate(input, torManager.isTorEnabled());
+  
+  console.log('✅ [ДІАГНОСТИКА MAIN] tabManager.navigate() виконано');
 });
 
 ipcMain.on('go-back', () => {
