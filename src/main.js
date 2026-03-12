@@ -125,31 +125,26 @@ async function createWindow() {
     }
   });
 
-  // Коли головне вікно готове - закриваємо splash і показуємо браузер
-  mainWindow.once('ready-to-show', () => {
-    console.log('[MAIN] Main window ready');
+  // Чекаємо на ПОВНЕ завантаження всіх ресурсів (CSS, JS, зображення)
+  mainWindow.webContents.once('did-finish-load', () => {
+    console.log('[MAIN] All resources loaded (did-finish-load)');
     
-    // Визначаємо скільки часу минуло з показу splash
-    const splashElapsed = Date.now() - splashStartTime;
-    const minSplashDuration = 2000; // 2 секунди мінімум
-    const remainingTime = Math.max(0, minSplashDuration - splashElapsed);
-    
-    console.log(`[MAIN] Splash shown for ${splashElapsed}ms, waiting ${remainingTime}ms more`);
-    
-    // Чекаємо мінімальний час показу
+    // Додаємо невелику затримку після завантаження, щоб все встигло ініціалізуватися
     setTimeout(() => {
-      console.log('[MAIN] Closing splash and showing main window');
+      console.log('[MAIN] App fully initialized, closing splash');
       
-      // Плавне закриття splash
+      // Закриваємо splash
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.close();
         splashWindow = null;
       }
       
       // Показуємо головне вікно
-      mainWindow.show();
-      mainWindow.focus();
-    }, remainingTime);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }, 800); // 800мс після завантаження для ініціалізації скриптів
   });
 
   // Обробник закриття головного вікна
@@ -462,10 +457,14 @@ ipcMain.on('switch-tab', (event, tabId) => {
 });
 
 ipcMain.on('close-tab', (event, tabId) => {
+  console.log('[IPC] 📨 Received close-tab request for tabId:', tabId);
   const shouldClose = tabManager.closeTab(tabId, mainWindow);
+  console.log('[IPC] Tab manager returned shouldClose:', shouldClose);
   if (shouldClose) {
-    console.log('[TAB] Last tab closed - quitting');
+    console.log('[TAB] 🚪 Last tab closed - quitting application');
     app.quit();
+  } else {
+    console.log('[TAB] ✅ Tab closed successfully, continuing');
   }
 });
 

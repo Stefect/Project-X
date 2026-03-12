@@ -11,33 +11,35 @@
             box-sizing: border-box;
         }
         
-        html {
+        html, body {
             height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            position: relative;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: transparent;
             color: white;
-            overflow: hidden;
-            height: 100%;
-            margin: 0;
-            padding: 0;
         }
 
         /* Вертикальний сайдбар справа */
         .news-sidebar {
-            position: fixed;
+            position: absolute;
             right: 0;
             top: 0;
+            bottom: 0;
             width: 350px;
-            height: 100%;
             background: rgba(30, 31, 42, 0.85);
             backdrop-filter: blur(10px);
             border-left: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
             z-index: 100;
+            overflow: visible; /* Дозволяємо бачити всі елементи */
         }
 
         /* Заголовок News */
@@ -47,6 +49,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0; /* Запобігаємо стисканню заголовку */
         }
 
         .btn-close-feed {
@@ -89,6 +92,7 @@
         /* Контейнер для стрічки */
         #feed-container {
             flex: 1;
+            min-height: 0; /* Дозволяє flex-контейнеру стискатися */
             overflow-y: auto;
             padding: 15px;
             scroll-behavior: smooth;
@@ -188,8 +192,15 @@
         .sidebar-controls {
             padding: 15px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
+            display: flex !important; /* Force display */
             gap: 10px;
+            flex-shrink: 0; /* Запобігаємо стисканню кнопок */
+            min-height: 60px; /* Мінімальна висота для кнопок */
+            background: rgba(30, 31, 42, 0.95); /* Темніший фон щоб виділялись */
+            /* DEBUG: Тимчасово додаємо помаранчеву рамку */
+            border: 3px solid orange !important;
+            position: relative;
+            z-index: 1000;
         }
 
         .control-btn {
@@ -685,6 +696,35 @@
         const sourcesList = document.getElementById('sources-list');
         const container = document.getElementById('feed-container');
         const stats = document.getElementById('stats');
+        
+        console.log('[FEED] 🔍 Elements check:');
+        console.log('[FEED]   btnStart:', !!btnStart, btnStart);
+        console.log('[FEED]   btnStop:', !!btnStop, btnStop);
+        console.log('[FEED]   btnCategories:', !!btnCategories, btnCategories);
+        console.log('[FEED]   btnSources:', !!btnSources, btnSources);
+        console.log('[FEED]   btnCloseFeed:', !!btnCloseFeed, btnCloseFeed);
+        console.log('[FEED]   container:', !!container, container);
+        
+        // Перевіряємо видимість sidebar-controls
+        const sidebarControls = document.querySelector('.sidebar-controls');
+        if (sidebarControls) {
+            console.log('[FEED] 📐 sidebar-controls dimensions:');
+            console.log('[FEED]   offsetHeight:', sidebarControls.offsetHeight);
+            console.log('[FEED]   offsetTop:', sidebarControls.offsetTop);
+            console.log('[FEED]   offsetWidth:', sidebarControls.offsetWidth);
+            console.log('[FEED]   scrollTop:', sidebarControls.scrollTop);
+            console.log('[FEED]   display:', window.getComputedStyle(sidebarControls).display);
+            console.log('[FEED]   visibility:', window.getComputedStyle(sidebarControls).visibility);
+            console.log('[FEED]   position:', window.getComputedStyle(sidebarControls).position);
+            
+            // ТЕСТ: Змінюємо колір фону для перевірки видимості
+            sidebarControls.style.backgroundColor = 'red';
+            sidebarControls.style.border = '5px solid yellow';
+            console.log('[FEED] ⚠️ ТЕСТ: Встановлено червоний фон та жовту рамку на .sidebar-controls');
+        } else {
+            console.error('[FEED] ❌ .sidebar-controls НЕ ЗНАЙДЕНО!');
+        }
+        
         let feedActive = false;
         let articlesLoaded = 0;
         let selectedCategories = ['all']; // Array of selected categories
@@ -693,12 +733,26 @@
 
         // Обробник кнопки закриття панелі
         if (btnCloseFeed) {
+            console.log('[FEED] ✅ Attaching close button handler');
             btnCloseFeed.addEventListener('click', () => {
-                console.log('[FEED] Close button clicked');
+                console.log('[FEED] 🚪 Close button clicked!');
                 // Просто змінюємо location на about:blank
                 // Це спрацює і викличе обробник did-navigate в index.html
                 window.location.href = 'about:blank';
             });
+        } else {
+            console.error('[FEED] ❌ btnCloseFeed NOT FOUND!');
+        }
+        
+        // ТЕСТ: Додаємо простий обробник для btnStart
+        if (btnStart) {
+            console.log('[FEED] ✅ Attaching TEST handler to btnStart');
+            btnStart.addEventListener('click', () => {
+                console.log('[FEED] 🎯 START BUTTON CLICKED! (test handler)');
+                alert('Start button works!');
+            });
+        } else {
+            console.error('[FEED] ❌ btnStart NOT FOUND!');
         }
 
         // Функція для оновлення статистики

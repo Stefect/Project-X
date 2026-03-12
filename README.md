@@ -1,136 +1,218 @@
-## Налаштування Groq API Key
+# BrowserX - Локалізація навчальних тасок
 
-Для запуску проекту необхідно створити файл `.env` у корені репозиторію та додати туди ваш Groq API Key:
+Цей проект містить реалізації трьох навчальних завдань. Нижче описано, де знаходиться код кожної таски.
 
+---
+
+## 📋 Task 1: Generators and Iterators
+
+**Де знаходиться:** [`src/modules/ai-feed.js`](src/modules/ai-feed.js)
+
+### Реалізовані генератори:
+
+#### 1. Round Robin Generator (рядок ~141)
+```javascript
+function* roundRobinSourceGenerator(sources)
 ```
-GROQ_API_KEY=ваш_ключ_сюди
+**Що робить:** Циклічно перебирає джерела новин у нескінченному циклі (Round Robin патерн).
+
+**Використання:**
+- Рівномірно розподіляє запити між різними джерелами (Reddit, Dev.to, HackerNews)
+- Запобігає перевантаженню одного джерела
+
+#### 2. Infinite Article Generator (рядок ~261)
+```javascript
+async function* infiniteArticleGenerator(categories = ['all'], customSources = [])
+```
+**Що робить:** Створює нескінченний потік статей з різних джерел.
+
+**Особливості:**
+- Асинхронний generator (`async function*`)
+- Використовує `yield` для повернення статей по одній
+- Працює з таймаутами через timeout iterator wrapper
+- Фільтрує статті по категоріях (tech, science, gaming, AI, crypto тощо)
+
+#### 3. Timeout Iterator Wrapper
+**Функціональність:** Обробляє генератори з таймаутом, споживає iterator протягом заданого часу.
+
+**Приклад використання:**
+```javascript
+// Споживати статті протягом 30 секунд
+const articles = [];
+for await (const article of infiniteArticleGenerator(['tech', 'ai'])) {
+    articles.push(article);
+    if (/* timeout reached */) break;
+}
 ```
 
-Без цього ключа проект не буде працювати. Не додавайте файл `.env` у репозиторій — він має бути локальним і приватним.
+---
 
-### Кроки:
-1. Створіть файл `.env` у корені проекту.
-2. Додайте рядок з вашим Groq API Key.
-3. Збережіть файл.
-4. Запустіть проект.
+## 📦 Task 2: Project Setup
 
-> **Увага:** Не розміщуйте секрети у публічних файлах чи репозиторії.
-# BrowserX
+**Де знаходиться:** Кореневі файли проекту
 
-**Privacy-focused browser з AI функціями**
+### Компоненти:
 
-## Швидкий старт
-
+#### 1. Git Repository
 ```bash
-# 1. Клонувати репозиторій
-git clone https://github.com/Stefect/Project-X.git
-cd Project-X
+git log  # Перевірити історію комітів
+```
+- Ініціалізовано репозиторій
+- Підключено до GitHub: `https://github.com/Stefect/Project-X.git`
 
-# 2. Встановити залежності
+#### 2. .gitignore файл
+**Розташування:** [`.gitignore`](.gitignore)
+```
+node_modules/
+src/config.js
+.env
+*.log
+build/
+release/
+...
+```
+
+#### 3. Package Configuration
+**Розташування:** [`package.json`](package.json)
+- **Назва проекту:** `browserx`
+- **Версія:** `2.2.0`
+- **Автор:** Stefect
+- **Ліцензія:** MIT (див. [`LICENSE`](LICENSE))
+- **Опис:** Privacy-focused browser with AI features
+
+#### 4. Dependencies
+```json
+"dependencies": {
+  "electron": "^40.1.0",
+  "groq-sdk": "^0.9.0",
+  "node-fetch": "^3.3.2",
+  ...
+}
+```
+
+#### 5. Приклад використання бібліотеки
+**Проект демонструє як використовувати:**
+- Electron (основа браузера)
+- Groq SDK (AI функції)
+- Node-Fetch (HTTP запити)
+
+**Як запустити:**
+```bash
+# Встановити залежності
 npm install
 
-# 3. Налаштувати API ключ
-cp config.js.example src/config.js
-# Відредагувати src/config.js та вставити GROQ_API_KEY
-
-# 4. Запустити
+# Запустити проект
 npm start
 ```
 
-## � Docker
+---
 
-BrowserX підтримує запуск в Docker з GUI через VNC:
+## 🧠 Task 3: Memoization Function
+
+**Де знаходиться:** [`src/utils/memoize.js`](src/utils/memoize.js)
+
+### Повна реалізація мемоїзації:
+
+#### Основна функція
+```javascript
+function memoize(fn, options = {})
+```
+
+**Параметри:**
+- `fn`: Чиста функція для мемоїзації
+- `options`: Конфігурація (`maxSize`, `policy`, `ttl`, `customEvict`)
+
+#### Підтримувані стратегії витіснення:
+
+1. **LRU (Least Recently Used)** - за замовчуванням
+   - Видаляє найдавніше використаний елемент
+   - Оновлює порядок при кожному доступі
+
+2. **LFU (Least Frequently Used)**
+   - Видаляє найменш часто використовуваний елемент
+   - Веде підрахунок доступів (`accessCount`)
+
+3. **Time-Based (TTL)**
+   - Автоматично видаляє застарілі записи
+   - Налаштовується через `ttl` (в мілісекундах)
+
+4. **Custom Policy**
+   - Дозволяє передати власну функцію витіснення
+
+#### Приклад використання:
+
+**В проекті:** [`src/modules/ai-handlers.js`](src/modules/ai-handlers.js)
+```javascript
+const memoize = require('../utils/memoize');
+
+// Мемоїзація AI summarize з LRU
+const summarizeArticleMemoized = memoize(
+    async (articleText, existingSummaries) => { /* ... */ },
+    { maxSize: 100, policy: 'lru' }
+);
+
+// Мемоїзація X-Ray з LRU (200 записів)
+const getXRayResultMemoized = memoize(
+    async (url) => { /* ... */ },
+    { maxSize: 200, policy: 'lru' }
+);
+```
+
+**Переваги в проекті:**
+- 🚀 **-80% API запитів** (повторні статті беруться з кешу)
+- ⚡ **X-Ray < 1ms** замість 2-5 секунд AI запиту
+- 💰 **Економія Groq API квоти**
+
+#### Методи мемоїзованої функції:
+```javascript
+memoizedFn.cache        // Доступ до Map кешу
+memoizedFn.clearCache() // Очистити кеш
+```
+
+---
+
+## 🚀 Швидкий старт
 
 ```bash
-# 1. Налаштуйте .env файл
-cp .env.example .env
-# Додайте свій GROQ_API_KEY
+# Клонувати репозиторій
+git clone https://github.com/Stefect/Project-X.git
+cd Project-X
 
-# 2. Запустіть контейнер
-docker-compose up -d
+# Встановити залежності
+npm install
 
-# 3. Підключіться через VNC
-# VNC Client → localhost:5900
+# Налаштувати API ключ (потрібний для AI функцій)
+cp config.js.example src/config.js
+# Відредагувати src/config.js та додати GROQ_API_KEY
+
+# Запустити
+npm start
 ```
 
-**Докладніше:** [`docs/DOCKER.md`](docs/DOCKER.md)
+---
 
-## �🚀 Оптимізація: Мемоїзація
-
-BrowserX використовує систему мемоїзації для оптимізації дорогих операцій:
-
-**Що кешується:**
-- ✅ AI резюмування статей (LRU, 100 записів)
-- ✅ X-Ray опис посилань (LRU, 200 записів)
-- 📚 Детальніше: [`docs/MEMOIZATION.md`](docs/MEMOIZATION.md)
-
-**Тестування:**
-```bash
-node examples/memoize-examples.js
-```
-
-**Переваги:**
-- 🚀 -80% Groq API запитів (повторні статті з кешу)
-- ⚡ X-Ray < 1ms (vs 2-5s AI запиту)
-- 💰 Економія API квоти
-
-## Можливі помилки та їх вирішення
-
-| Помилка | Рішення |
-|---------|---------|
-| `Cannot find module 'electron'` | `npm install` |
-| `GROQ_API_KEY not found` | Створити `src/config.js` з API ключем |
-| `CSS не завантажується` | `npm run build:css` |
-| `Tor не працює` | Перевірити `bin/tor/` папку |
-| `Feed не працює` | Перевірити інтернет-з'єднання |
-
-## Структура проекту
+## 📁 Структура проекту
 
 ```
-browserx/
-├── package.json           # Конфігурація проекту
-├── LICENSE                # MIT ліцензія
-├── .gitignore             # Ігноровані файли
-│
-├── 🐳 Docker
-│   ├── Dockerfile         # Docker образ з Xvfb + VNC
-│   ├── docker-compose.yml # Docker Compose конфігурація
-│   ├── .dockerignore      # Виключення для Docker
-│   ├── .env.example       # Приклад environment variables
-│   ├── docker-test.sh     # Тест скрипт (Linux/macOS)
-│   └── docker-test.ps1    # Тест скрипт (Windows)
+Project-X/
+├── 📄 package.json              # Task 2: Конфігурація проекту
+├── 📄 LICENSE                   # Task 2: MIT ліцензія
+├── 📄 .gitignore                # Task 2: Git ignore rules
 │
 ├── src/
-│   ├── main.js            # Головний процес Electron
-│   ├── preload.js         # Preload скрипт
-│   ├── config.js          # Конфігурація (API ключі)
-│   ├── modules/           # Модулі браузера
-│   │   ├── ai-feed.js         # Генератори нескінченної стрічки
-│   │   ├── ai-handlers.js     # AI IPC handlers + мемоїзація
-│   │   ├── tab-manager.js     # Управління вкладками
-│   │   ├── storage.js         # localStorage обгортка
-│   │   └── tor-manager.js     # Tor інтеграція
-│   └── utils/             # Утиліти
-│       └── memoize.js         # Система мемоїзації (LRU/LFU/TTL)
+│   ├── modules/
+│   │   ├── ai-feed.js           # ✅ Task 1: Generators & Iterators
+│   │   └── ai-handlers.js       # 🔗 Використання Task 3 (memoization)
+│   └── utils/
+│       └── memoize.js           # ✅ Task 3: Memoization Function
 │
-├── public/                # HTML сторінки
-│   ├── index.html         # Головне вікно браузера
-│   ├── feed.html          # AI нескінченна стрічка
-│   ├── settings.html      # Налаштування
-│   └── css/               # Стилі
-│
-├── docs/                  # Документація
-│   ├── DOCKER.md          # Docker guide
-│   ├── MEMOIZATION.md     # Мемоїзація guide
-│   └── ...
-│
-├── examples/              # Приклади використання
-│   └── memoize-examples.js
-│
-└── bin/                   # Tor binaries
-    └── tor/
+└── public/
+    └── feed.html                # UI для нескінченної стрічки (Task 1)
 ```
 
-## Ліцензія
+---
 
-MIT © ІМ-55
+## 🎓 Автор
+
+**ІМ-55** | MIT License
+
