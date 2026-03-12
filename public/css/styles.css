@@ -2437,6 +2437,11 @@ webview.active {
   align-items: center;
   transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   z-index: 9999;
+  
+  /* 🪟 GLASSMORPHISM: Робимо сайдбар скляним */
+  background: rgba(20, 20, 30, 0.3) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
 }
 
 /* Відкритий стан */
@@ -2444,14 +2449,17 @@ webview.active {
   left: 0; /* Прилипає до краю */
 }
 
-/* Панель з темним градієнтом (преміум стиль) */
+/* Панель з ефектом матового скла (Glassmorphism) */
 .sidebar-content {
-  background: linear-gradient(135deg, 
-    rgba(26, 27, 38, 0.98) 0%,
-    rgba(36, 40, 59, 0.98) 50%,
-    rgba(26, 27, 38, 0.98) 100%
-  );
-  border: 1px solid rgba(65, 72, 104, 0.4);
+  /* Напівпрозорий фон */
+  background: rgba(15, 15, 25, 0.4) !important;
+  
+  /* 🪟 МАГІЯ СКЛА: розмиваємо тло під панеллю */
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  
+  /* Тонка напівпрозора рамка для ефекту скла */
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-left: none;
   border-radius: 0 16px 16px 0;
   padding: 20px 15px;
@@ -2459,15 +2467,30 @@ webview.active {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  
+  /* М'яка тінь для відділення від фону */
   box-shadow: 
-    8px 0 24px rgba(0, 0, 0, 0.6),
-    inset -1px 0 1px rgba(255, 255, 255, 0.05); /* Тонкий блиск по краю */
+    5px 0 20px rgba(0, 0, 0, 0.3),
+    inset -1px 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* 🔨 ЯДЕРНИЙ УДАР: Очищаємо фони всіх вкладених елементів */
+#side-toolbar div,
+#side-toolbar nav,
+#side-toolbar section,
+.sidebar-content div,
+.sidebar-content nav,
+.sidebar-content section {
+  background-color: transparent !important;
+  background: transparent !important;
 }
 
 /* Кнопки з м'яким світінням при наведенні */
-.sidebar-content button {
-  background: rgba(65, 72, 104, 0.2);
-  border: 1px solid rgba(65, 72, 104, 0.3);
+.sidebar-content button,
+#side-toolbar button,
+.sidebar-btn {
+  background: rgba(255, 255, 255, 0.05) !important; /* Ледь помітний прозорий фон */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 10px;
   padding: 12px 16px;
   color: rgba(192, 202, 245, 0.9);
@@ -2483,11 +2506,12 @@ webview.active {
 }
 
 /* Ефект при наведенні миші - акцентне підсвічування */
-.sidebar-content button:hover {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+.sidebar-content button:hover,
+#side-toolbar button:hover,
+.sidebar-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important; /* Трохи світліше при наведенні */
+  border: 1px solid rgba(59, 130, 246, 0.4) !important;
   color: #ffffff;
-  transform: translateX(4px);
   box-shadow: 
     0 0 20px rgba(59, 130, 246, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -2501,11 +2525,10 @@ webview.active {
   transform: translateY(-50%);
   width: 36px;
   height: 70px;
-  background: linear-gradient(135deg, 
-    rgba(36, 40, 59, 0.98) 0%,
-    rgba(26, 27, 38, 0.98) 100%
-  );
-  border: 1px solid rgba(65, 72, 104, 0.4);
+  background: rgba(20, 20, 30, 0.3) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-left: none;
   border-radius: 0 14px 14px 0;
   color: rgba(192, 202, 245, 0.8);
@@ -2522,10 +2545,7 @@ webview.active {
 }
 
 #sidebar-toggle:hover {
-  background: linear-gradient(135deg, 
-    rgba(59, 130, 246, 0.3) 0%,
-    rgba(59, 130, 246, 0.15) 100%
-  );
+  background: rgba(59, 130, 246, 0.2) !important;
   border-color: rgba(59, 130, 246, 0.5);
   color: #ffffff;
   box-shadow: 

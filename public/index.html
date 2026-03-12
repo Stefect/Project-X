@@ -17,7 +17,7 @@
       <div class="tab active" data-tab-id="1">
         <img class="tab-favicon" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E">
         <span class="tab-title">Нова вкладка</span>
-        <span class="tab-close"></span>
+        <span class="tab-close">×</span>
       </div>
       <button class="new-tab-btn" id="new-tab-btn" title="Нова вкладка (Ctrl+T)">+</button>
     </div>
@@ -756,17 +756,23 @@
       // Закрити вкладку
       function closeTab(tabId) {
         try {
-          console.log('[DEL] Closing tab:', tabId);
+          console.log('[DEL] 🗑️ Closing tab:', tabId);
+          console.log('[DEL] Total tabs before close:', document.querySelectorAll('.tab').length);
+          
           const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
           if (tabElement) {
             tabElement.remove();
-            console.log('[OK] Tab element removed from DOM');
+            console.log('[OK] ✅ Tab element removed from DOM');
+            console.log('[DEL] Total tabs after close:', document.querySelectorAll('.tab').length);
           } else {
-            console.warn('[WARN] Tab element not found in DOM');
+            console.warn('[WARN] ⚠️ Tab element not found in DOM');
           }
+          
+          console.log('[IPC] 📤 Sending close-tab to main process...');
           ipcRenderer.send('close-tab', tabId);
+          console.log('[IPC] ✅ close-tab message sent');
         } catch (error) {
-          console.error('[ERR] Tab closing error:', error);
+          console.error('[ERR] ❌ Tab closing error:', error);
         }
       }
       
@@ -896,16 +902,18 @@
         if (!tab) return;
         
         const tabId = parseInt(tab.dataset.tabId);
-        console.log('[CLICK] Click on tab:', tabId);
+        console.log('[CLICK] 👆 Click on tab:', tabId);
         
         // Якщо клікнули на кнопку закриття
         if (e.target.classList.contains('tab-close')) {
-          console.log('[ERR] Click on tab close button');
+          console.log('[CLICK] 🗑️ Click on tab close button (×)');
+          console.log('[CLICK] Target element:', e.target);
           e.stopPropagation();
           closeTab(tabId);
+          return;
         } else {
           // Перемкнутись на вкладку
-          console.log('[RELOAD] Switching to tab');
+          console.log('[CLICK] 🔄 Switching to tab');
           switchTab(tabId);
         }
       });
