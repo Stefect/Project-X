@@ -157,30 +157,42 @@ function switchTab(tabId, mainWindow, sidebarWidth) {
  * Закриває вкладку
  */
 function closeTab(tabId, mainWindow) {
+  console.log('[TAB-MANAGER] 🗑️ closeTab called with tabId:', tabId);
+  console.log('[TAB-MANAGER] Current tabs count:', tabs.length);
+  console.log('[TAB-MANAGER] Current tabs:', tabs.map(t => t.id));
+  
   const tabIndex = tabs.findIndex(t => t.id === tabId);
-  if (tabIndex === -1) return false;
+  console.log('[TAB-MANAGER] Tab index found:', tabIndex);
+  
+  if (tabIndex === -1) {
+    console.warn('[TAB-MANAGER] ⚠️ Tab not found in tabs array');
+    return false;
+  }
   
   // Якщо це остання вкладка - повертаємо true
   if (tabs.length <= 1) {
-    console.log('[TAB-WEBVIEW] Closing last tab');
+    console.log('[TAB-MANAGER] 🚪 Closing last tab - returning true to quit app');
     return true;
   }
   
   // Якщо це активна вкладка, перемкнемось на іншу
   if (activeTabId === tabId) {
+    console.log('[TAB-MANAGER] 🔄 Closing active tab, switching to another...');
     const newActiveTab = tabs[tabIndex + 1] || tabs[tabIndex - 1];
     if (newActiveTab) {
+      console.log('[TAB-MANAGER] Switching to tab:', newActiveTab.id);
       switchTab(newActiveTab.id, mainWindow, 0);
     }
   }
   
   // Видаляємо webview елемент з DOM
+  console.log('[TAB-MANAGER] 📤 Sending remove-webview to renderer...');
   mainWindow.webContents.send('remove-webview', { tabId });
   
   // Видаляємо з масиву
   tabs.splice(tabIndex, 1);
   
-  console.log('[TAB-WEBVIEW] Closed:', tabId, '| Remaining:', tabs.length);
+  console.log('[TAB-MANAGER] ✅ Tab closed. Remaining tabs:', tabs.length);
   return false;
 }
 
