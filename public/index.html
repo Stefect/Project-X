@@ -359,15 +359,7 @@
       const forwardBtn = document.getElementById('forward');
       const reloadBtn = document.getElementById('reload');
       const urlInput = document.getElementById('url');
-      
-      // 🔍 ДІАГНОСТИКА: Перевірка чи знайдено елементи навігації
-      console.log('🔍 [ДИАГНОСТИКА] URL Input знайдено:', !!urlInput);
-      console.log('🔍 [ДИАГНОСТИКА] URL Input element:', urlInput);
-      if (urlInput) {
-        console.log('🔍 [ДИАГНОСТИКА] URL Input ID:', urlInput.id);
-        console.log('🔍 [ДИАГНОСТИКА] URL Input placeholder:', urlInput.placeholder);
-      }
-      
+
       const notesList = document.getElementById('notes-list');
       const addNoteBtn = document.getElementById('add-note-btn');
       const summarizeBtn = document.getElementById('summarize-btn');
@@ -379,16 +371,6 @@
       const reactiveList = document.getElementById('reactive-list');
       const reactiveEmpty = document.getElementById('reactive-empty');
       const reactiveClearBtn = document.getElementById('reactive-clear-btn');
-      
-      console.log('[DBG] Buttons:', {
-        notesList: !!notesList,
-        addNoteBtn: !!addNoteBtn,
-        summarizeBtn: !!summarizeBtn,
-        clearBtn: !!clearBtn,
-        noteEditor: !!noteEditor,
-        noteInput: !!noteInput,
-        reactiveList: !!reactiveList
-      });
 
       const reactiveMaxItems = 6;
 
@@ -1572,45 +1554,26 @@
     }
 
     if (urlInput) {
-      console.log('✅ [ДІАГНОСТИКА] URL Input listener підключається...');
       let isNavigating = false; // Захист від спаму Enter
-      
+
       // ВАЖЛИВО: Використовуємо keydown (не keypress) щоб спрацювати раніше за speed-dial
       urlInput.addEventListener('keydown', (e) => {
-        console.log('⌨️ [ДІАГНОСТИКА] Keypress event:', e.key);
-        
         if (e.key === 'Enter') {
-          console.log('🎯 [ДІАГНОСТИКА] ═══════════════════════════════════');
-          console.log('🎯 [ДІАГНОСТИКА] ENTER СПРАЦЮВАВ!');
-          console.log('🎯 [ДІАГНОСТИКА] Користувач ввів:', urlInput.value);
-          console.log('🎯 [ДІАГНОСТИКА] isNavigating:', isNavigating);
-          console.log('🎯 [ДІАГНОСТИКА] ═══════════════════════════════════');
-          
           e.preventDefault(); // Блокуємо стандартну поведінку
-          e.stopPropagation(); // ✅ КРИТИЧНО: Зупиняємо поширення до speed-dial обробника!
-          
+          e.stopPropagation(); // Зупиняємо поширення до speed-dial обробника
+
           // Захист від повторних натискань
-          if (isNavigating) {
-            console.log('⏸️ [WEB] Navigation already in progress, ignoring...');
-            return;
-          }
-          
+          if (isNavigating) return;
+
           isNavigating = true;
-          console.log('🚀 [ДІАГНОСТИКА] Відправка IPC navigate з URL:', urlInput.value);
           ipcRenderer.send('navigate', urlInput.value);
-          console.log('✅ [ДІАГНОСТИКА] IPC команда navigate відправлена!');
-          
+
           // Знімаємо блокування через 500ms
           setTimeout(() => {
             isNavigating = false;
-            console.log('🔓 [ДІАГНОСТИКА] Navigation lock знято');
           }, 500);
         }
       });
-      
-      console.log('✅ [ДІАГНОСТИКА] URL Input listener успішно підключено!');
-    } else {
-      console.error('❌ [ДІАГНОСТИКА] URL Input НЕ ЗНАЙДЕНО!');
     }
 
     // Отримуємо текст з контекстного меню (СПІЛЬНІ для всіх вкладок)
@@ -2804,16 +2767,19 @@
       if (activeWebview) {
         // Перевіряємо чи це нова порожня вкладка
         const src = activeWebview.getAttribute('src');
-        const isNewTab = !src || src === 'about:blank' || src === '';
-        
+        const isNewTab = !src || src === 'about:blank' || src === '' || src === 'data:text/html,' || src.startsWith('data:');
+        const nativeNewTab = document.getElementById('native-new-tab');
+
         if (!isNewTab) {
           // Для реальних сайтів показуємо webview поверх native new tab
           activeWebview.style.display = 'flex';
           activeWebview.classList.add('active');
+          if (nativeNewTab) nativeNewTab.style.display = 'none';
           // Ховаємо FAB коли відкритий сайт
           if (newsFabBtn) newsFabBtn.classList.add('hidden');
         } else {
           // Для about:blank показуємо native new tab та FAB
+          if (nativeNewTab) nativeNewTab.style.display = '';
           if (newsFabBtn) newsFabBtn.classList.remove('hidden');
         }
         // Для about:blank не показуємо webview, залишається видимим native new tab знизу
@@ -2828,45 +2794,50 @@
         webview.remove();
       }
     });
+
+    // IPC: Закриття панелі новин (ховаємо webview без навігації на about:blank)
+    ipcRenderer.on('close-feed-panel', (event, { tabId }) => {
+      console.log(`[FEED] Closing feed panel for webview-${tabId}`);
+      const webview = document.getElementById(`webview-${tabId}`);
+      if (webview) {
+        webview.style.display = 'none';
+        webview.classList.remove('active');
+        webview.setAttribute('src', 'data:text/html,');
+      }
+      const nativeNewTab = document.getElementById('native-new-tab');
+      if (nativeNewTab) nativeNewTab.style.display = '';
+      const newsFab = document.getElementById('news-fab');
+      if (newsFab) newsFab.classList.remove('hidden');
+    });
     
     // IPC: Навігація webview
     ipcRenderer.on('webview-navigate', (event, { tabId, url }) => {
-      console.log('📨 [ДІАГНОСТИКА RENDERER] ══════════════════════════════════════');
-      console.log('📨 [ДІАГНОСТИКА RENDERER] Отримано команду webview-navigate');
-      console.log('📨 [ДІАГНОСТИКА RENDERER] tabId:', tabId);
-      console.log('📨 [ДІАГНОСТИКА RENDERER] url:', url);
       console.log(`[WEBVIEW] Navigate webview-${tabId} to: ${url}`);
-      
+
       const webview = document.getElementById(`webview-${tabId}`);
-      console.log('📨 [ДІАГНОСТИКА RENDERER] Webview знайдено:', !!webview);
       
       if (webview) {
-        console.log('📨 [ДІАГНОСТИКА RENDERER] Webview element:', webview);
-        console.log('📨 [ДІАГNOSTИКА RENDERER] Webview поточний src:', webview.src || webview.getAttribute('src'));
-        console.log('📨 [ДІАГНОСТИКА RENDERER] Викликаємо webview.loadURL()...');
-        
-        webview.loadURL(url);
-        
-        console.log('✅ [ДІАГНОСТИКА RENDERER] webview.loadURL() викликано!');
-        
-        // 🎯 РОБИМО WEBVIEW ВИДИМИМ
+        // Встановлюємо src — це працює навіть для неініціалізованих webview
+        // (loadURL вимагає dom-ready, а src атрибут запускає ініціалізацію)
+        webview.src = url;
+        webview.setAttribute('src', url);
+
+        // Робимо webview видимим
         webview.style.display = 'flex';
-        console.log('👁️ [ДІАГНОСТИКА RENDERER] Webview тепер видимий!');
-        
-        // 🎯 ХОВАЄМО ГОДИННИК ТА ЗАКЛАДКИ
+        webview.classList.add('active');
+
+        // Ховаємо native new tab
         const nativeNewTab = document.getElementById('native-new-tab');
         if (nativeNewTab) {
           nativeNewTab.style.display = 'none';
-          console.log('🙈 [ДІАГНОСТИКА RENDERER] Нативна нова вкладка схована!');
         }
+
+        // Ховаємо FAB
+        const newsFab = document.getElementById('news-fab');
+        if (newsFab) newsFab.classList.add('hidden');
       } else {
-        console.error('❌ [ДІАГНОСТИКА RENDERER] Webview НЕ знайдено з ID:', `webview-${tabId}`);
-        console.log('📨 [ДІАГНОСТИКА RENDERER] Всі webview на сторінці:');
-        document.querySelectorAll('webview').forEach((wv, idx) => {
-          console.log(`   ${idx + 1}. id="${wv.id}" src="${wv.src || wv.getAttribute('src')}"`);
-        });
+        console.error(`[WEBVIEW] Webview not found: webview-${tabId}`);
       }
-      console.log('📨 [ДІАГНОСТИКА RENDERER] ══════════════════════════════════════');
     });
     
     // IPC: Назад
@@ -2945,24 +2916,27 @@
       webview.addEventListener('did-navigate', (e) => {
         const url = e.url;
         console.log(`[WEBVIEW-${tabId}] Navigate to: ${url}`);
-        
+
         // Перевіряємо чи повернулись на about:blank (закриття feed)
         const nativeNewTab = document.getElementById('native-new-tab');
         const newsFab = document.getElementById('news-fab');
-        
+
         if (url === 'about:blank' || url === '') {
           console.log(`[WEBVIEW-${tabId}] Returning to about:blank, showing native new tab`);
-          // Показуємо native new tab та FAB
+          // Оновлюємо src атрибут
+          webview.setAttribute('src', 'data:text/html,');
+          // Ховаємо webview та показуємо native new tab + FAB
           if (webview.classList.contains('active')) {
             webview.style.display = 'none';
             webview.classList.remove('active');
+            if (nativeNewTab) nativeNewTab.style.display = '';
             if (newsFab) {
               newsFab.classList.remove('hidden');
               console.log('[FAB] Showing news FAB');
             }
           }
         }
-        
+
         // Оновлюємо URL bar якщо це активна вкладка
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
@@ -2987,9 +2961,11 @@
         
         if (url === 'about:blank' || url === '') {
           // Показуємо native new tab та FAB
+          webview.setAttribute('src', 'data:text/html,');
           if (webview.classList.contains('active')) {
             webview.style.display = 'none';
             webview.classList.remove('active');
+            if (nativeNewTab) nativeNewTab.style.display = '';
             if (newsFab) newsFab.classList.remove('hidden');
           }
         }
