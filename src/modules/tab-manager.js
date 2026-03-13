@@ -26,21 +26,25 @@ function init(mainWindow) {
  * Створює HTML елемент <webview> для вкладки
  */
 function createWebviewElement(tabId, url) {
-  const startUrl = url || 'about:blank';
-  
   // Визначаємо inline стилі залежно від того, чи це активна вкладка
   const isActive = tabId === activeTabId;
-  const displayStyle = isActive ? 'flex' : 'none';
-  
+  // Порожні вкладки (без URL) завжди приховані — показується native new tab
+  const hasUrl = url && url !== 'about:blank';
+  const displayStyle = (isActive && hasUrl) ? 'flex' : 'none';
+
+  // Для порожніх вкладок використовуємо data URI замість about:blank
+  // щоб ініціалізувати guest-процес (потрібно для preload) без ERR_ABORTED
+  const srcValue = hasUrl ? url : 'data:text/html,';
+
   return `
     <webview
       id="webview-${tabId}"
-      src="${startUrl}"
+      src="${srcValue}"
       preload="file://${path.join(__dirname, '..', 'preload.js')}"
       partition="persist:main"
       class="${isActive ? 'active' : ''}"
       webpreferences="contextIsolation=yes, nodeIntegration=no"
-      style="flex-grow: 1; width: 100%; height: 100%; display: ${displayStyle}; border: none; background: transparent;"
+      style="display: ${displayStyle}; border: none; background: transparent;"
     ></webview>
   `;
 }
@@ -73,12 +77,12 @@ function initFirstTab(browserView, startUrl) {
  * Створює нову вкладку
  */
 function createTab(mainWindow, url = null, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel, sidebarWidth }) {
-  const targetUrl = url || 'about:blank';
-  
+  const targetUrl = url || null;
+
   const newTab = {
     id: nextTabId,
     url: targetUrl,
-    title: 'Loading...',
+    title: url ? 'Loading...' : 'New tab',
     navigationHistory: [],
     currentIndex: 0
   };

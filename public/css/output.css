@@ -341,9 +341,6 @@
   .flex-shrink {
     flex-shrink: 1;
   }
-  .flex-grow {
-    flex-grow: 1;
-  }
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
   }
@@ -2808,8 +2805,6 @@ body.has-wallpaper.light-mode::before {
   }
 }
 webview {
-  width: 100%;
-  height: 100%;
   display: none;
   background: #ffffff;
   border: none;
