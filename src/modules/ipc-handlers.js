@@ -168,6 +168,20 @@ function registerStorageHandlers(storage, tabManager) {
     }
   });
 
+  // Закриття панелі новин (без навігації на about:blank)
+  ipcMain.handle('close-feed-panel', async (event) => {
+    try {
+      const mainWindow = BrowserWindow.getAllWindows()[0];
+      if (mainWindow) {
+        mainWindow.webContents.send('close-feed-panel', { tabId: tabManager.getActiveTabId() });
+      }
+      return { success: true };
+    } catch (error) {
+      console.error('[FEED] Close error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   console.log('[IPC] Storage handlers registered');
 }
 
