@@ -2313,8 +2313,6 @@ body.has-wallpaper.light-mode::before {
 /* Контейнер для webview вкладок - ЖОРСТКА ВИСОТА для Chromium */
 /* Стилі для webview тегів */
 webview {
-  width: 100%;
-  height: 100%;
   display: none;
   background: #ffffff; /* Білий фон для сайтів */
   border: none;
