@@ -773,8 +773,8 @@
           }
           
           if (faviconElement && url) {
-            // Для локальних файлів (newtab тощо) показуємо іконку глобуса
-            if (url.startsWith('file://') || url.includes('newtab.html')) {
+            // Show a globe icon for internal pages (app://) and local file:// pages
+            if (url.startsWith('file://') || url.startsWith('app://') || url.includes('newtab.html')) {
               faviconElement.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E`;
             } else {
               try {
@@ -788,8 +788,8 @@
       
       // Оновити URL bar
       ipcRenderer.on('update-url-bar', (event, url) => {
-        // Не показуємо локальні файли (newtab)
-        if (url && (url.includes('newtab.html') || url.startsWith('file://'))) {
+        // Не показуємо локальні файли (newtab) та внутрішні app:// сторінки
+        if (url && (url.includes('newtab.html') || url.startsWith('file://') || url.startsWith('app://'))) {
           urlInput.value = '';
         } else {
           urlInput.value = url;
@@ -838,7 +838,7 @@
         let faviconUrl = globeIcon;
         try {
           const urlObj = new URL(data.url);
-          if (urlObj.protocol !== 'file:') {
+          if (urlObj.protocol !== 'file:' && urlObj.protocol !== 'app:') {
             faviconUrl = urlObj.origin + '/favicon.ico';
           }
         } catch (e) {}
@@ -3099,8 +3099,9 @@
     if (openBookmarksBtn) {
       openBookmarksBtn.addEventListener('click', () => {
         console.log('[NATIVE NEW TAB] Opening bookmarks page');
-        // Використовуємо відносний шлях від index.html
-        const newtabPath = new URL('newtab.html', window.location.href).href;
+        // Use the app:// protocol so webviews can load internal pages
+        // regardless of the installation path (avoids ERR_ABORTED on file:// URLs)
+        const newtabPath = 'app://localhost/newtab.html';
         
         // Отримуємо активний webview або шукаємо будь-який
         let activeWebview = document.querySelector('webview.active');
@@ -3121,7 +3122,9 @@
     if (newsFab) {
       newsFab.addEventListener('click', async () => {
         console.log('[NATIVE NEW TAB] Opening news feed');
-        const feedPath = new URL('feed.html', window.location.href).href;
+        // Use the app:// protocol so webviews can load internal pages
+        // regardless of the installation path (avoids ERR_ABORTED on file:// URLs)
+        const feedPath = 'app://localhost/feed.html';
         
         try {
           // Використовуємо IPC для навігації через систему вкладок
