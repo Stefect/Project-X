@@ -30,13 +30,15 @@ function registerStorageHandlers(storage, tabManager) {
     console.log('[HISTORY] Deleted:', url);
   });
 
+  ipcMain.on('add-to-history', (event, { url, title, favicon }) => {
+    storage.addToHistory(url, title, favicon || '');
+  });
+
   ipcMain.on('open-url-from-history', (event, url) => {
     console.log('[HISTORY] Opening:', url);
-    const activeTab = tabManager.getActiveTab();
-    if (activeTab && activeTab.browserView) {
-      activeTab.browserView.webContents.loadURL(url).catch(err => {
-        console.error('[HISTORY] Load error:', err.message);
-      });
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      mainWindow.webContents.send('webview-navigate', { tabId: tabManager.getActiveTabId(), url });
     }
   });
 
