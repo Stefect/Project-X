@@ -2890,20 +2890,20 @@
         const url = webview.getURL();
         const title = webview.getTitle();
         console.log(`[WEBVIEW-${tabId}] Loaded: ${url}`);
-        
+
         // Оновлюємо інформацію про вкладку в UI
         const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
         if (tab) {
           const titleSpan = tab.querySelector('.tab-title');
-          if (titleSpan) titleSpan.textContent = title || 'Нова вкладка';
+          if (titleSpan && !url.startsWith('data:')) titleSpan.textContent = title || 'Нова вкладка';
         }
         
         // Оновлюємо URL bar якщо це активна вкладка
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
           if (urlInput) {
-            // Ховаємо file:/// URL для локальних сторінок
-            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html')) {
+            // Ховаємо file:/// URL і data: URIs для локальних сторінок
+            if (url.startsWith('data:') || url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html')) {
               urlInput.value = '';
             } else {
               urlInput.value = url;
@@ -2985,6 +2985,7 @@
       
       // Оновлення заголовку
       webview.addEventListener('page-title-updated', (e) => {
+        if (webview.getURL().startsWith('data:')) return;
         const title = e.title;
         const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
         if (tab) {
@@ -3020,6 +3021,17 @@
         createTab(e.url);
       });
       
+      // Діалоги з webview (alert/confirm) — без цього вони мовчки ігноруються
+      webview.addEventListener('dialog', (e) => {
+        if (e.type === 'alert') {
+          window.alert(e.message);
+          e.dialog.close();
+        } else if (e.type === 'confirm') {
+          const result = window.confirm(e.message);
+          e.dialog.close(result);
+        }
+      });
+
       // Console messages з webview
       webview.addEventListener('console-message', (e) => {
         if (e.level >= 1) { // Warnings and errors

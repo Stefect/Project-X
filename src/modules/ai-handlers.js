@@ -270,27 +270,35 @@ ${tabsListString}`;
           // Promise.race - таймаут 5 секунд для перекладу та AI обробки
           const result = await Promise.race([
             cachedSummarizeArticle(article.title),
-            new Promise((_, reject) => 
+            new Promise((_, reject) =>
               setTimeout(() => reject(new Error('AI_TIMEOUT')), 5000)
             )
           ]);
 
           console.log(`[FEED] AI processed: ${result.summary.substring(0, 30)}...`);
-          event.sender.send('new-feed-item', { 
-            ...article, 
-            title: result.translatedTitle,
-            summary: result.summary 
-          });
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('new-feed-item', {
+              ...article,
+              title: result.translatedTitle,
+              summary: result.summary
+            });
+          }
 
         } catch (error) {
           if (error.message === 'AI_TIMEOUT') {
             console.log(`[FEED] AI timeout (>3 sec). Skipping ${article.source}`);
-            event.sender.send('feed-timeout-skip', article.source);
+            if (!event.sender.isDestroyed()) {
+              event.sender.send('feed-timeout-skip', article.source);
+            }
           } else {
             console.error('[FEED] Processing error:', error.message);
           }
         }
       }
+      // Скидаємо стан після завершення циклу (генератор вичерпався або зупинений)
+      isFeedRunning = false;
+      currentFeedGenerator = null;
+      console.log('[FEED] Generator finished, state reset');
     })();
     
     return { success: true, message: 'Стрічка запущена' };

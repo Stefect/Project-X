@@ -177,7 +177,12 @@ async function fetchOneArticle(source) {
         }
         
         // Для інших джерел використовуємо fetch
-        const response = await fetch(source.url);
+        const response = await fetch(source.url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json, */*'
+            }
+        });
         
         if (!response.ok) {
             console.error(`[HTTP ERROR] Status ${response.status} for ${source.name}`);
@@ -216,7 +221,9 @@ async function fetchOneArticle(source) {
                 // Обмежуємо до перших 30 історій щоб уникнути великої відповіді
                 const limitedData = data.slice(0, 30);
                 const randomId = limitedData[Math.floor(Math.random() * limitedData.length)];
-                const itemResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${randomId}.json`);
+                const itemResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${randomId}.json`, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+                });
                 const item = await itemResponse.json();
                 if (item && item.title) {
                     console.log(`[OK] HackerNews: ${item.title.substring(0, 50)}...`);
