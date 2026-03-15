@@ -376,7 +376,7 @@
       // Повідомлення про пропуск (timeout)
       window.api.onFeedSkip((source) => {
         console.log('[TIME] Article skipped from:', source);
-        
+
         const notice = document.createElement('div');
         notice.className = 'news-skip';
         notice.textContent = `[TIME] Skipped from ${source}`;
