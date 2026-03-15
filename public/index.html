@@ -866,14 +866,15 @@
       // Активація вкладки з main процесу
       ipcRenderer.on('tab-activated', (event, tabId) => {
         console.log('[SESSION] Activating tab:', tabId);
-        const tabs = document.querySelectorAll('.tab');
-        tabs.forEach(tab => {
-          if (parseInt(tab.dataset.tabId) === tabId) {
-            tab.classList.add('active');
-          } else {
-            tab.classList.remove('active');
-          }
+        const currentBg = localStorage.getItem('themeBg') || '#1a1b26';
+        const currentAccent = localStorage.getItem('themeAccent') || '#3b82f6';
+        document.querySelectorAll('.tab').forEach(tab => {
+          const isActive = parseInt(tab.dataset.tabId) === tabId;
+          tab.classList.toggle('active', isActive);
+          tab.style.background   = isActive ? currentAccent : lightenColorSimple(currentBg, 15);
+          tab.style.borderColor  = isActive ? currentAccent : lightenColorSimple(currentBg, 25);
         });
+        currentTabId = tabId;
       });
     
     // Обробники подій для вкладок
@@ -2918,14 +2919,19 @@
         const url = webview.getURL();
         const title = webview.getTitle();
         console.log(`[WEBVIEW-${tabId}] Loaded: ${url}`);
-        
+
         // Оновлюємо інформацію про вкладку в UI
         const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
         if (tab) {
           const titleSpan = tab.querySelector('.tab-title');
           if (titleSpan) titleSpan.textContent = title || 'Нова вкладка';
         }
-        
+
+        // Синхронізуємо URL і заголовок у main process для коректного збереження сесії
+        if (url && !url.startsWith('file://') && url !== 'about:blank' && !url.startsWith('data:')) {
+          ipcRenderer.send('update-tab-url', { tabId, url, title });
+        }
+
         // Оновлюємо URL bar якщо це активна вкладка
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
@@ -3008,6 +3014,11 @@
               urlInput.value = url;
             }
           }
+        }
+
+        // Оновлюємо URL у main process (SPA-навігація: YouTube, GitHub тощо)
+        if (url && !url.startsWith('file://') && url !== 'about:blank' && !url.startsWith('data:')) {
+          ipcRenderer.send('update-tab-url', { tabId, url });
         }
       });
       

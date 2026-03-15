@@ -146,10 +146,11 @@ function switchTab(tabId, mainWindow, sidebarWidth) {
   }
   
   activeTabId = tabId;
-  
+
   // Відправляємо команду на UI для перемикання класу .active
   mainWindow.webContents.send('switch-webview', { tabId });
-  
+  mainWindow.webContents.send('tab-activated', tabId);
+
   // Оновлюємо URL bar
   mainWindow.webContents.send('update-url-bar', tab.url);
   
@@ -420,9 +421,9 @@ function restoreSession(sessionData, mainWindow, { storage, themeManager, inject
 function updateTabInfo(tabId, url, title) {
   const tab = tabs.find(t => t.id === tabId);
   if (tab) {
-    tab.url = url;
-    tab.title = title;
-    console.log(`[TAB-WEBVIEW] Updated tab ${tabId}: ${title}`);
+    if (url)   tab.url   = url;
+    if (title) tab.title = title;
+    console.log(`[TAB-WEBVIEW] Updated tab ${tabId}: url=${url || '—'} title=${title || '—'}`);
   }
 }
 
