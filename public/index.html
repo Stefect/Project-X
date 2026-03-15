@@ -59,13 +59,6 @@
     </div>
   </div>
   
-  <!-- News FAB Button -->
-  <button id="news-fab" class="news-fab" title="Відкрити стрічку новин">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-    </svg>
-  </button>
-  
   <!-- Webview елементи будуть додані сюди динамічно через JavaScript -->
 
   <!-- Speed Dial Edit Modal -->
@@ -2764,8 +2757,7 @@
       
       // Показуємо активний з flex-display
       const activeWebview = document.getElementById(`webview-${tabId}`);
-      const newsFabBtn = document.getElementById('news-fab');
-      
+
       if (activeWebview) {
         // Перевіряємо чи це нова порожня вкладка
         const src = activeWebview.getAttribute('src');
@@ -2777,12 +2769,9 @@
           activeWebview.style.display = 'flex';
           activeWebview.classList.add('active');
           if (nativeNewTab) nativeNewTab.style.display = 'none';
-          // Ховаємо FAB коли відкритий сайт
-          if (newsFabBtn) newsFabBtn.classList.add('hidden');
         } else {
-          // Для about:blank показуємо native new tab та FAB
+          // Для about:blank показуємо native new tab
           if (nativeNewTab) nativeNewTab.style.display = '';
-          if (newsFabBtn) newsFabBtn.classList.remove('hidden');
         }
         // Для about:blank не показуємо webview, залишається видимим native new tab знизу
       }
@@ -2797,21 +2786,6 @@
       }
     });
 
-    // IPC: Закриття панелі новин (ховаємо webview без навігації на about:blank)
-    ipcRenderer.on('close-feed-panel', (event, { tabId }) => {
-      console.log(`[FEED] Closing feed panel for webview-${tabId}`);
-      const webview = document.getElementById(`webview-${tabId}`);
-      if (webview) {
-        webview.style.display = 'none';
-        webview.classList.remove('active');
-        webview.setAttribute('src', 'data:text/html,');
-      }
-      const nativeNewTab = document.getElementById('native-new-tab');
-      if (nativeNewTab) nativeNewTab.style.display = '';
-      const newsFab = document.getElementById('news-fab');
-      if (newsFab) newsFab.classList.remove('hidden');
-    });
-    
     // IPC: Навігація webview
     ipcRenderer.on('webview-navigate', (event, { tabId, url }) => {
       console.log(`[WEBVIEW] Navigate webview-${tabId} to: ${url}`);
@@ -2833,10 +2807,6 @@
         if (nativeNewTab) {
           nativeNewTab.style.display = 'none';
         }
-
-        // Ховаємо FAB
-        const newsFab = document.getElementById('news-fab');
-        if (newsFab) newsFab.classList.add('hidden');
       } else {
         console.error(`[WEBVIEW] Webview not found: webview-${tabId}`);
       }
@@ -2943,7 +2913,7 @@
           const urlInput = document.getElementById('url');
           if (urlInput) {
             // Ховаємо file:/// URL і data: URIs для локальних сторінок
-            if (url.startsWith('data:') || url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html')) {
+            if (url.startsWith('data:') || url.includes('newtab.html') || url.includes('history.html')) {
               urlInput.value = '';
             } else {
               urlInput.value = url;
@@ -2959,21 +2929,16 @@
 
         // Перевіряємо чи повернулись на about:blank (закриття feed)
         const nativeNewTab = document.getElementById('native-new-tab');
-        const newsFab = document.getElementById('news-fab');
 
         if (url === 'about:blank' || url === '') {
           console.log(`[WEBVIEW-${tabId}] Returning to about:blank, showing native new tab`);
           // Оновлюємо src атрибут
           webview.setAttribute('src', 'data:text/html,');
-          // Ховаємо webview та показуємо native new tab + FAB
+          // Ховаємо webview та показуємо native new tab
           if (webview.classList.contains('active')) {
             webview.style.display = 'none';
             webview.classList.remove('active');
             if (nativeNewTab) nativeNewTab.style.display = '';
-            if (newsFab) {
-              newsFab.classList.remove('hidden');
-              console.log('[FAB] Showing news FAB');
-            }
           }
         }
 
@@ -2982,7 +2947,7 @@
           const urlInput = document.getElementById('url');
           if (urlInput) {
             // Ховаємо file:/// URL для локальних сторінок (newtab, history, тощо)
-            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html') || url === 'about:blank' || url === '') {
+            if (url.includes('newtab.html') || url.includes('history.html') || url === 'about:blank' || url === '') {
               urlInput.value = ''; // Очищаємо рядок для локальних сторінок
             } else {
               urlInput.value = url;
@@ -3003,24 +2968,22 @@
         
         // Перевіряємо чи повернулись на about:blank
         const nativeNewTab = document.getElementById('native-new-tab');
-        const newsFab = document.getElementById('news-fab');
-        
+
         if (url === 'about:blank' || url === '') {
-          // Показуємо native new tab та FAB
+          // Показуємо native new tab
           webview.setAttribute('src', 'data:text/html,');
           if (webview.classList.contains('active')) {
             webview.style.display = 'none';
             webview.classList.remove('active');
             if (nativeNewTab) nativeNewTab.style.display = '';
-            if (newsFab) newsFab.classList.remove('hidden');
           }
         }
-        
+
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
           if (urlInput) {
             // Також ховаємо file:/// для локальних сторінок
-            if (url.includes('newtab.html') || url.includes('history.html') || url.includes('feed.html') || url === 'about:blank') {
+            if (url.includes('newtab.html') || url.includes('history.html') || url === 'about:blank') {
               urlInput.value = '';
             } else {
               urlInput.value = url;
@@ -3191,29 +3154,6 @@
           activeWebview.src = newtabPath;
         } else {
           console.error('[NATIVE NEW TAB] No webview found');
-        }
-      });
-    }
-    
-    // Обробник кнопки новин FAB
-    const newsFab = document.getElementById('news-fab');
-    if (newsFab) {
-      newsFab.addEventListener('click', async () => {
-        console.log('[NATIVE NEW TAB] Opening news feed');
-        // Use the app:// protocol so webviews can load internal pages
-        // regardless of the installation path (avoids ERR_ABORTED on file:// URLs)
-        const feedPath = 'app://localhost/feed.html';
-        
-        try {
-          // Використовуємо IPC для навігації через систему вкладок
-          await ipcRenderer.invoke('navigate-url', feedPath);
-          
-          // Приховуємо кнопку новин
-          newsFab.classList.add('hidden');
-          
-          console.log('[NATIVE NEW TAB] News feed navigation requested');
-        } catch (error) {
-          console.error('[NATIVE NEW TAB] Failed to open feed:', error);
         }
       });
     }

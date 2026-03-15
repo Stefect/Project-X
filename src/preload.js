@@ -30,13 +30,7 @@ const browserStorageAPI = {
   clearNotes: () => ipcRenderer.send('clear-notes')
 };
 
-// API для Infinite Feed (нескінченна стрічка новин) + X-Ray + AI
 const mainAPI = {
-  startFeed: (categories, sourceNames) => ipcRenderer.invoke('start-infinite-feed', categories, sourceNames),
-  stopFeed: () => ipcRenderer.invoke('stop-infinite-feed'),
-  closeFeed: () => ipcRenderer.invoke('close-feed-panel'),
-  onNewFeedItem: (callback) => ipcRenderer.on('new-feed-item', (_event, data) => callback(data)),
-  onFeedSkip: (callback) => ipcRenderer.on('feed-timeout-skip', (_event, source) => callback(source)),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   openInBrowser: (url) => ipcRenderer.invoke('open-in-browser', url),
 

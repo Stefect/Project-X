@@ -163,8 +163,7 @@ function registerStorageHandlers(storage, tabManager) {
       let targetUrl = url;
       if (url && url.startsWith('file://')) {
         const lower = url.toLowerCase();
-        if (lower.includes('feed.html')) targetUrl = 'app://localhost/feed.html';
-        else if (lower.includes('newtab.html')) targetUrl = 'app://localhost/newtab.html';
+        if (lower.includes('newtab.html')) targetUrl = 'app://localhost/newtab.html';
         else if (lower.includes('history.html')) targetUrl = 'app://localhost/history.html';
       }
       console.log('[NAVIGATE] Navigating to:', targetUrl);
@@ -175,20 +174,6 @@ function registerStorageHandlers(storage, tabManager) {
       return { success: true };
     } catch (error) {
       console.error('[NAVIGATE] Error:', error);
-      return { success: false, error: error.message };
-    }
-  });
-
-  // Закриття панелі новин (без навігації на about:blank)
-  ipcMain.handle('close-feed-panel', async (event) => {
-    try {
-      const mainWindow = BrowserWindow.getAllWindows()[0];
-      if (mainWindow) {
-        mainWindow.webContents.send('close-feed-panel', { tabId: tabManager.getActiveTabId() });
-      }
-      return { success: true };
-    } catch (error) {
-      console.error('[FEED] Close error:', error);
       return { success: false, error: error.message };
     }
   });
