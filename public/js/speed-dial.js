@@ -2,6 +2,8 @@
 // SPEED DIAL MODULE - Модуль швидкого доступу
 // ============================================
 
+const { ipcRenderer } = require('electron');
+
 // Палітра кольорів з градієнтами для карток
 const availableColors = [
   { class: 'bg-gradient-to-br from-red-500 to-pink-600', name: 'red' },
@@ -207,8 +209,8 @@ function renderSpeedDial() {
     }
     
     card.innerHTML = `
-      <a href="${escapeHtml(link.url)}" class="absolute inset-0 z-10 group-hover:bg-black/20 transition-colors"></a>
-      
+      <div class="card-open-link absolute inset-0 z-10 group-hover:bg-black/20 transition-colors cursor-pointer"></div>
+
       <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
         <button class="edit-link-btn p-1.5 bg-black/70 hover:bg-black/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Редагувати">✏️</button>
         <button class="delete-link-btn p-1.5 bg-black/70 hover:bg-red-500/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Видалити">🗑️</button>
@@ -219,6 +221,11 @@ function renderSpeedDial() {
       </div>` : ''}
     `;
     
+    const openLink = card.querySelector('.card-open-link');
+    if (openLink) {
+      openLink.addEventListener('click', () => ipcRenderer.send('navigate', link.url));
+    }
+
     const editBtn = card.querySelector('.edit-link-btn');
     const deleteBtn = card.querySelector('.delete-link-btn');
     

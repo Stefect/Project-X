@@ -7,7 +7,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const { app, BrowserWindow, ipcMain, Menu, session, net, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, session, net, protocol, clipboard } = require('electron');
 
 // Register app:// as a privileged scheme so webviews can load internal pages
 // without ERR_ABORTED (must be called before app.ready)
@@ -433,6 +433,95 @@ ipcMain.on('window-close', () => {
   console.log('[WINDOW] Close command received');
   if (mainWindow) mainWindow.close();
   app.quit();
+});
+
+// ==================== CONTEXT MENU ====================
+
+ipcMain.on('show-context-menu', (event, params) => {
+  const { tabId, selectionText, linkURL, linkText, srcURL, mediaType, isEditable, pageURL } = params;
+  const template = [];
+
+  // --- Текст виділено ---
+  if (selectionText) {
+    const label = selectionText.length > 30 ? selectionText.substring(0, 30) + '…' : selectionText;
+    if (isEditable) {
+      template.push({ label: 'Вирізати', click: () => mainWindow.webContents.send('context-menu-action', { action: 'cut', tabId }) });
+    }
+    template.push({ label: 'Копіювати', click: () => mainWindow.webContents.send('context-menu-action', { action: 'copy', tabId }) });
+    template.push({ type: 'separator' });
+    template.push({
+      label: `Знайти: "${label}"`,
+      click: () => mainWindow.webContents.send('context-menu-action', { action: 'search', tabId, text: selectionText })
+    });
+    template.push({
+      label: `Перекласти: "${label}"`,
+      click: () => mainWindow.webContents.send('context-menu-action', { action: 'translate', tabId, text: selectionText })
+    });
+  }
+
+  // --- Редаговане поле ---
+  if (isEditable) {
+    template.push({ label: 'Вставити', click: () => mainWindow.webContents.send('context-menu-action', { action: 'paste', tabId }) });
+    template.push({ label: 'Виділити все', click: () => mainWindow.webContents.send('context-menu-action', { action: 'select-all', tabId }) });
+  }
+
+  // --- Посилання ---
+  if (linkURL) {
+    if (template.length > 0) template.push({ type: 'separator' });
+    template.push({
+      label: 'Відкрити посилання в новій вкладці',
+      click: () => mainWindow.webContents.send('context-menu-action', { action: 'open-link-new-tab', tabId, url: linkURL })
+    });
+    template.push({
+      label: 'Копіювати адресу посилання',
+      click: () => clipboard.writeText(linkURL)
+    });
+    if (linkText) {
+      template.push({
+        label: 'Копіювати текст посилання',
+        click: () => clipboard.writeText(linkText)
+      });
+    }
+  }
+
+  // --- Зображення ---
+  if (mediaType === 'image' && srcURL) {
+    if (template.length > 0) template.push({ type: 'separator' });
+    template.push({
+      label: 'Відкрити зображення в новій вкладці',
+      click: () => mainWindow.webContents.send('context-menu-action', { action: 'open-link-new-tab', tabId, url: srcURL })
+    });
+    template.push({
+      label: 'Копіювати адресу зображення',
+      click: () => clipboard.writeText(srcURL)
+    });
+    template.push({
+      label: 'Зберегти зображення як…',
+      click: () => mainWindow.webContents.send('context-menu-action', { action: 'save-image', tabId, url: srcURL })
+    });
+  }
+
+  // --- Навігація та інструменти (завжди) ---
+  if (template.length > 0) template.push({ type: 'separator' });
+  template.push({ label: 'Назад',    click: () => tabManager.goBack()   });
+  template.push({ label: 'Вперед',  click: () => tabManager.goForward() });
+  template.push({ label: 'Оновити', click: () => tabManager.reload()    });
+
+  template.push({ type: 'separator' });
+  template.push({
+    label: 'Копіювати адресу сторінки',
+    click: () => clipboard.writeText(pageURL)
+  });
+  template.push({
+    label: 'Переглянути вихідний код',
+    click: () => mainWindow.webContents.send('context-menu-action', { action: 'view-source', tabId, url: pageURL })
+  });
+  template.push({
+    label: 'Інструменти розробника',
+    click: () => mainWindow.webContents.send('toggle-webview-devtools')
+  });
+
+  Menu.buildFromTemplate(template).popup({ window: mainWindow });
 });
 
 // ==================== THEME IPC HANDLERS ====================

@@ -866,14 +866,15 @@
       // Активація вкладки з main процесу
       ipcRenderer.on('tab-activated', (event, tabId) => {
         console.log('[SESSION] Activating tab:', tabId);
-        const tabs = document.querySelectorAll('.tab');
-        tabs.forEach(tab => {
-          if (parseInt(tab.dataset.tabId) === tabId) {
-            tab.classList.add('active');
-          } else {
-            tab.classList.remove('active');
-          }
+        const currentBg = localStorage.getItem('themeBg') || '#1a1b26';
+        const currentAccent = localStorage.getItem('themeAccent') || '#3b82f6';
+        document.querySelectorAll('.tab').forEach(tab => {
+          const isActive = parseInt(tab.dataset.tabId) === tabId;
+          tab.classList.toggle('active', isActive);
+          tab.style.background   = isActive ? currentAccent : lightenColorSimple(currentBg, 15);
+          tab.style.borderColor  = isActive ? currentAccent : lightenColorSimple(currentBg, 25);
         });
+        currentTabId = tabId;
       });
     
     // Обробники подій для вкладок
@@ -2875,7 +2876,35 @@
         }
       }
     });
-    
+
+    // Дії з контекстного меню
+    ipcRenderer.on('context-menu-action', (event, { action, tabId, text, url }) => {
+      const webview = document.getElementById(`webview-${tabId}`);
+      if (!webview) return;
+
+      switch (action) {
+        case 'copy':         webview.copy(); break;
+        case 'cut':          webview.cut();  break;
+        case 'paste':        webview.paste(); break;
+        case 'select-all':   webview.selectAll(); break;
+        case 'search':
+          createTab('https://www.google.com/search?q=' + encodeURIComponent(text));
+          break;
+        case 'translate':
+          createTab('https://translate.google.com/?sl=auto&tl=uk&op=translate&text=' + encodeURIComponent(text));
+          break;
+        case 'open-link-new-tab':
+          createTab(url);
+          break;
+        case 'view-source':
+          createTab('view-source:' + url);
+          break;
+        case 'save-image':
+          webview.downloadURL(url);
+          break;
+      }
+    });
+
     /**
      * Налаштовує обробники подій для webview елемента
      */
@@ -2897,7 +2926,12 @@
           const titleSpan = tab.querySelector('.tab-title');
           if (titleSpan && !url.startsWith('data:')) titleSpan.textContent = title || 'Нова вкладка';
         }
-        
+
+        // Синхронізуємо URL і заголовок у main process для коректного збереження сесії
+        if (url && !url.startsWith('file://') && url !== 'about:blank' && !url.startsWith('data:')) {
+          ipcRenderer.send('update-tab-url', { tabId, url, title });
+        }
+
         // Оновлюємо URL bar якщо це активна вкладка
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
@@ -2981,6 +3015,11 @@
             }
           }
         }
+
+        // Оновлюємо URL у main process (SPA-навігація: YouTube, GitHub тощо)
+        if (url && !url.startsWith('file://') && url !== 'about:blank' && !url.startsWith('data:')) {
+          ipcRenderer.send('update-tab-url', { tabId, url });
+        }
       });
       
       // Оновлення заголовку
@@ -3037,6 +3076,21 @@
         if (e.level >= 1) { // Warnings and errors
           console.log(`[WEBVIEW-${tabId}] [${e.level === 1 ? 'WARN' : 'ERROR'}] ${e.message}`);
         }
+      });
+
+      // Контекстне меню (ПКМ)
+      webview.addEventListener('context-menu', (e) => {
+        e.preventDefault();
+        ipcRenderer.send('show-context-menu', {
+          tabId,
+          selectionText: e.params.selectionText || '',
+          linkURL:       e.params.linkURL       || '',
+          linkText:      e.params.linkText      || '',
+          srcURL:        e.params.srcURL        || '',
+          mediaType:     e.params.mediaType     || 'none',
+          isEditable:    e.params.isEditable    || false,
+          pageURL:       webview.getURL()       || ''
+        });
       });
     }
     

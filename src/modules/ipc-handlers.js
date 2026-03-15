@@ -85,6 +85,10 @@ function registerStorageHandlers(storage, tabManager) {
     return storage.getSession();
   });
 
+  ipcMain.on('update-tab-url', (event, { tabId, url, title }) => {
+    tabManager.updateTabInfo(tabId, url, title);
+  });
+
   // ==================== НАЛАШТУВАННЯ ====================
   
   ipcMain.handle('get-settings', () => {
