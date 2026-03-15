@@ -345,7 +345,7 @@ function getSessionData() {
       navigationHistory: tab.navigationHistory || [],
       currentIndex: tab.currentIndex || 0
     }))
-    .filter(tab => tab.url && tab.url !== 'about:blank' && !tab.url.startsWith('file://'));
+    .filter(tab => tab.url && tab.url !== 'about:blank' && !tab.url.startsWith('file://') && !tab.url.startsWith('app://'));
 }
 
 /**
