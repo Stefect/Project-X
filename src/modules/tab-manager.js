@@ -7,6 +7,7 @@
 const{ session } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { pathToFileURL } = require('url');
 
 // Стан вкладок
 let tabs = [];
@@ -40,7 +41,7 @@ function createWebviewElement(tabId, url) {
     <webview
       id="webview-${tabId}"
       src="${srcValue}"
-      preload="file://${path.join(__dirname, '..', 'preload.js')}"
+      preload="${pathToFileURL(path.join(__dirname, '..', 'preload.js')).href}"
       partition="persist:main"
       class="${isActive ? 'active' : ''}"
       webpreferences="contextIsolation=yes, nodeIntegration=no"
@@ -357,9 +358,9 @@ function restoreSession(sessionData, mainWindow, { storage, themeManager, inject
   console.log('[TAB-WEBVIEW SESSION] Found saved tabs:', sessionTabs.length);
   
   if (sessionTabs.length === 0) {
-    console.log('[TAB-WEBVIEW SESSION] No tabs to restore, creating first tab');
-    // Створюємо першу вкладку з about:blank (показується native new tab)
-    createTab(mainWindow, null, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel });
+    console.log('[TAB-WEBVIEW SESSION] No tabs to restore, initializing first tab');
+    // Використовуємо initFirstTab щоб id=1 збігався з хардкодним DOM-елементом
+    initFirstTab(null, null);
     return;
   }
   
