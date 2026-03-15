@@ -42,16 +42,12 @@ function registerStorageHandlers(storage, tabManager) {
 
   ipcMain.on('open-history', async (event) => {
     console.log('[HISTORY] Opening history page');
-    const historyUrl = `file://${path.join(__dirname, '..', '..', 'public', 'history.html')}`;
-    
-    const activeTab = tabManager.getActiveTab();
-    if (activeTab && activeTab.browserView) {
-      try {
-        await activeTab.browserView.webContents.loadURL(historyUrl);
-        console.log('[HISTORY] Loaded successfully');
-      } catch (err) {
-        console.error('[HISTORY] Load error:', err.message);
-      }
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (mainWindow) {
+      mainWindow.webContents.send('webview-navigate', {
+        tabId: tabManager.getActiveTabId(),
+        url: 'app://localhost/history.html'
+      });
     }
   });
 
@@ -156,10 +152,19 @@ function registerStorageHandlers(storage, tabManager) {
   // Навігація активної вкладки до URL
   ipcMain.handle('navigate-url', async (event, url) => {
     try {
-      console.log('[NAVIGATE] Navigating to:', url);
+      // Convert file:// URLs for internal pages to app:// so webviews can load them.
+      // Webviews block file:// navigation (especially on paths with non-ASCII chars).
+      let targetUrl = url;
+      if (url && url.startsWith('file://')) {
+        const lower = url.toLowerCase();
+        if (lower.includes('feed.html')) targetUrl = 'app://localhost/feed.html';
+        else if (lower.includes('newtab.html')) targetUrl = 'app://localhost/newtab.html';
+        else if (lower.includes('history.html')) targetUrl = 'app://localhost/history.html';
+      }
+      console.log('[NAVIGATE] Navigating to:', targetUrl);
       const mainWindow = BrowserWindow.getAllWindows()[0];
       if (mainWindow) {
-        mainWindow.webContents.send('webview-navigate', { tabId: tabManager.getActiveTabId(), url });
+        mainWindow.webContents.send('webview-navigate', { tabId: tabManager.getActiveTabId(), url: targetUrl });
       }
       return { success: true };
     } catch (error) {

@@ -7,7 +7,21 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const { app, BrowserWindow, ipcMain, Menu, session, net } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, session, net, protocol } = require('electron');
+
+// Register app:// as a privileged scheme so webviews can load internal pages
+// without ERR_ABORTED (must be called before app.ready)
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'app',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true
+    }
+  }
+]);
 const fs = require('fs');
 const Groq = require('groq-sdk');
 
@@ -248,6 +262,23 @@ function restoreSessionSmart() {
 // ==================== APP LIFECYCLE ====================
 
 app.whenReady().then(async () => {
+  // Serve internal app pages (feed.html, newtab.html, history.html, etc.)
+  // via the custom app:// protocol so webviews can load them without ERR_ABORTED.
+  // The file:// protocol is blocked by Electron's security model for <webview> elements,
+  // especially when the installation path contains non-ASCII characters or spaces.
+  const publicDir = path.resolve(path.join(__dirname, '..', 'public'));
+  protocol.handle('app', (request) => {
+    const { pathname } = new URL(request.url);
+    // Resolve the full path and verify it stays within the public directory
+    // to prevent directory traversal attacks
+    const resolved = path.resolve(path.join(publicDir, pathname));
+    if (!resolved.startsWith(publicDir + path.sep) && resolved !== publicDir) {
+      return new Response('Not Found', { status: 404 });
+    }
+    return net.fetch('file://' + resolved);
+  });
+  console.log('[PROTOCOL] app:// protocol registered for internal pages');
+
   // Спочатку показуємо splash screen
   createSplashWindow();
   
