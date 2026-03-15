@@ -2875,7 +2875,35 @@
         }
       }
     });
-    
+
+    // Дії з контекстного меню
+    ipcRenderer.on('context-menu-action', (event, { action, tabId, text, url }) => {
+      const webview = document.getElementById(`webview-${tabId}`);
+      if (!webview) return;
+
+      switch (action) {
+        case 'copy':         webview.copy(); break;
+        case 'cut':          webview.cut();  break;
+        case 'paste':        webview.paste(); break;
+        case 'select-all':   webview.selectAll(); break;
+        case 'search':
+          createTab('https://www.google.com/search?q=' + encodeURIComponent(text));
+          break;
+        case 'translate':
+          createTab('https://translate.google.com/?sl=auto&tl=uk&op=translate&text=' + encodeURIComponent(text));
+          break;
+        case 'open-link-new-tab':
+          createTab(url);
+          break;
+        case 'view-source':
+          createTab('view-source:' + url);
+          break;
+        case 'save-image':
+          webview.downloadURL(url);
+          break;
+      }
+    });
+
     /**
      * Налаштовує обробники подій для webview елемента
      */
@@ -3025,6 +3053,21 @@
         if (e.level >= 1) { // Warnings and errors
           console.log(`[WEBVIEW-${tabId}] [${e.level === 1 ? 'WARN' : 'ERROR'}] ${e.message}`);
         }
+      });
+
+      // Контекстне меню (ПКМ)
+      webview.addEventListener('context-menu', (e) => {
+        e.preventDefault();
+        ipcRenderer.send('show-context-menu', {
+          tabId,
+          selectionText: e.params.selectionText || '',
+          linkURL:       e.params.linkURL       || '',
+          linkText:      e.params.linkText      || '',
+          srcURL:        e.params.srcURL        || '',
+          mediaType:     e.params.mediaType     || 'none',
+          isEditable:    e.params.isEditable    || false,
+          pageURL:       webview.getURL()       || ''
+        });
       });
     }
     
