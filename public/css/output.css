@@ -356,9 +356,6 @@
   .flex-col {
     flex-direction: column;
   }
-  .flex-wrap {
-    flex-wrap: wrap;
-  }
   .items-center {
     align-items: center;
   }
@@ -1955,7 +1952,7 @@ body:not(.newtab-page) .container {
 .logo {
   font-weight: 700;
   font-size: 15px;
-  color: #f7768e;
+  color: #ffffff;
   letter-spacing: -0.5px;
   -webkit-user-select: none;
      -moz-user-select: none;
@@ -2231,6 +2228,26 @@ body.has-wallpaper .container {
 }
 body.has-wallpaper.light-mode::before {
   background: rgba(255, 255, 255, 0.2);
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
 }
 .gx-card {
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
