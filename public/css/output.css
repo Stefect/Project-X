@@ -713,6 +713,11 @@
     --tw-ease: var(--ease-in-out);
     transition-timing-function: var(--ease-in-out);
   }
+  .select-all {
+    -webkit-user-select: all;
+    -moz-user-select: all;
+         user-select: all;
+  }
   .group-hover\:bg-black\/20 {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
