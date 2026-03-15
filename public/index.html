@@ -124,6 +124,7 @@
       <hr class="divider">
       
       <button id="theme-settings-btn" class="sidebar-btn" title="Налаштувати вигляд">🎨 Теми</button>
+      <button id="history-menu" class="sidebar-btn" title="Історія переглядів">🕐 Історія</button>
       <button id="toggle-sidebar-toolbar" class="sidebar-btn" title="Показати/сховати конспект">📝 Нотатки</button>
       <button id="organize-tabs-btn" class="sidebar-btn" title="Організація вкладок">📑 Групи</button>
     </div>
@@ -2890,6 +2891,11 @@
         const url = webview.getURL();
         const title = webview.getTitle();
         console.log(`[WEBVIEW-${tabId}] Loaded: ${url}`);
+
+        // Зберігаємо в історію
+        if (url && !url.startsWith('file://') && url !== 'about:blank' && url !== '') {
+          ipcRenderer.send('add-to-history', { url, title });
+        }
         
         // Оновлюємо інформацію про вкладку в UI
         const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
@@ -2954,6 +2960,12 @@
       // Навігація всередині сторінки
       webview.addEventListener('did-navigate-in-page', (e) => {
         const url = e.url;
+
+        // Зберігаємо в історію (SPA навігація: React Router, Vue Router тощо)
+        if (url && !url.startsWith('file://') && url !== 'about:blank' && url !== '') {
+          const title = webview.getTitle();
+          ipcRenderer.send('add-to-history', { url, title });
+        }
         
         // Перевіряємо чи повернулись на about:blank
         const nativeNewTab = document.getElementById('native-new-tab');
