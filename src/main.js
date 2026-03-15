@@ -27,13 +27,11 @@ const Groq = require('groq-sdk');
 
 // Модулі
 const storage = require('./modules/storage');
-const { infiniteArticleGenerator } = require('./modules/ai-feed');
 const reactiveEvents = require('./modules/reactive-events');
 const torManager = require('./modules/tor-manager');
 const themeManager = require('./modules/theme-manager');
 const tabManager = require('./modules/tab-manager');
 const ipcHandlers = require('./modules/ipc-handlers');
-const aiHandlers = require('./modules/ai-handlers');
 const privacyGuard = require('./modules/privacy-guard');
 
 console.log('[CONSOLE] Starting BrowserX...');
@@ -110,9 +108,6 @@ async function createWindow() {
   } catch (error) {
     console.error('[ERROR] Groq initialization error:', error.message);
   }
-
-  // Реєструємо AI handlers після ініціалізації groqClient
-  aiHandlers.registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
 
   // ✅ ВАЖЛИВО: При старті браузера ЗАВЖДИ використовуємо пряме з'єднання (без проксі)
   console.log('[PROXY] Setting direct connection (no proxy) on startup...');
@@ -262,7 +257,7 @@ function restoreSessionSmart() {
 // ==================== APP LIFECYCLE ====================
 
 app.whenReady().then(async () => {
-  // Serve internal app pages (feed.html, newtab.html, history.html, etc.)
+  // Serve internal app pages (newtab.html, history.html, etc.)
   // via the custom app:// protocol so webviews can load them without ERR_ABORTED.
   // The file:// protocol is blocked by Electron's security model for <webview> elements,
   // especially when the installation path contains non-ASCII characters or spaces.
