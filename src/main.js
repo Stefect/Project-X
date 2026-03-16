@@ -33,6 +33,7 @@ const themeManager = require('./modules/theme-manager');
 const tabManager = require('./modules/tab-manager');
 const ipcHandlers = require('./modules/ipc-handlers');
 const privacyGuard = require('./modules/privacy-guard');
+const { registerNewsHandlers } = require('./modules/news-handlers');
 
 console.log('[CONSOLE] Starting BrowserX...');
 
@@ -262,7 +263,7 @@ app.whenReady().then(async () => {
   // The file:// protocol is blocked by Electron's security model for <webview> elements,
   // especially when the installation path contains non-ASCII characters or spaces.
   const publicDir = path.resolve(path.join(__dirname, '..', 'public'));
-  protocol.handle('app', (request) => {
+  const appProtocolHandler = (request) => {
     const { pathname } = new URL(request.url);
     // Resolve the full path and verify it stays within the public directory
     // to prevent directory traversal attacks
@@ -271,7 +272,10 @@ app.whenReady().then(async () => {
       return new Response('Not Found', { status: 404 });
     }
     return net.fetch('file://' + resolved);
-  });
+  };
+  protocol.handle('app', appProtocolHandler);
+  // Also register for the webview partition session so webviews can load app:// URLs
+  session.fromPartition('persist:main').protocol.handle('app', appProtocolHandler);
   console.log('[PROTOCOL] app:// protocol registered for internal pages');
 
   // Спочатку показуємо splash screen
@@ -800,6 +804,7 @@ ipcMain.handle('check-ip', async () => {
 
 // Реєструємо IPC handlers з модулів
 ipcHandlers.registerStorageHandlers(storage, tabManager);
+registerNewsHandlers();
 // AI handlers реєструються всередині createWindow() після ініціалізації groqClient
 
 console.log('[CONSOLE] BrowserX main process initialized');

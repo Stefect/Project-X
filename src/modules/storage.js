@@ -74,7 +74,7 @@ function setData(key, value) {
 // ==================== ІСТОРІЯ ====================
 function addToHistory(url, title, favicon = '') {
   // Не зберігаємо newtab та порожні URL
-  if (!url || url.includes('newtab.html') || url.startsWith('file://')) return;
+  if (!url || url.includes('newtab.html') || url.startsWith('file://') || url.startsWith('app://')) return;
   
   const data = getData();
   let history = data.history || [];

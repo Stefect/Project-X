@@ -8,3 +8,4 @@ dist/
 .env
 config.js
 src/config.js
+.idea/
