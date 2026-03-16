@@ -40,6 +40,10 @@ const mainAPI = {
   // AI утиліти
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
 
+  // News
+  fetchNews: (categories, count) => ipcRenderer.invoke('fetch-news', { categories, count }),
+  getNewsCategories: () => ipcRenderer.invoke('get-news-categories'),
+
   // Слухаємо події Tor теми
   onTorTheme: (callback) => ipcRenderer.on('tor-theme', (_event, data) => callback(data))
 };

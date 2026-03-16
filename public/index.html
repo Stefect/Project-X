@@ -120,6 +120,8 @@
       <button id="history-menu" class="sidebar-btn" title="Історія переглядів">🕐 Історія</button>
       <button id="toggle-sidebar-toolbar" class="sidebar-btn" title="Показати/сховати конспект">📝 Нотатки</button>
       <button id="organize-tabs-btn" class="sidebar-btn" title="Організація вкладок">📑 Групи</button>
+      <hr class="divider">
+      <button id="toggle-news-btn" class="sidebar-btn" title="AI Стрічка новин">📰 Новини</button>
     </div>
     
     <!-- Стрілка для відкриття/закриття sidebar -->
@@ -276,6 +278,29 @@
     <button id="add-note-btn" title="Додати нотатку (Ctrl+Shift+N)">+ Нова нотатка</button>
     <button id="summarize-btn">Узагальнити через AI</button>
     <button id="clear-btn">Очистити все</button>
+  </div>
+
+  <!-- AI News Sidebar -->
+  <div id="news-sidebar" class="collapsed">
+    <div class="news-sidebar-header">
+      <h3>
+        <span>AI Стрічка</span>
+        <span class="article-count">Статей: <span id="feed-count">0</span></span>
+      </h3>
+      <button id="close-news-btn" title="Закрити">✕</button>
+    </div>
+
+    <div id="news-categories" class="news-categories"></div>
+
+    <div id="articles-container" class="articles-container">
+      <div class="news-empty-state">
+        <p>Виберіть категорії та натисніть кнопку нижче</p>
+      </div>
+    </div>
+
+    <div class="news-footer">
+      <button id="generate-news-btn" class="generate-btn">✨ Згенерувати стрічку</button>
+    </div>
   </div>
 
   <script>
@@ -1525,6 +1550,115 @@
         toggleSidebar();
       }
     });
+
+    // ===== AI News Sidebar =====
+    const newsSidebar = document.getElementById('news-sidebar');
+    const toggleNewsBtn = document.getElementById('toggle-news-btn');
+    const closeNewsBtn = document.getElementById('close-news-btn');
+    const generateNewsBtn = document.getElementById('generate-news-btn');
+    const articlesContainer = document.getElementById('articles-container');
+    const feedCount = document.getElementById('feed-count');
+    const newsCategoriesEl = document.getElementById('news-categories');
+
+    let isNewsSidebarOpen = false;
+
+    // Завантажуємо категорії і будуємо пілюлі-фільтри
+    (async () => {
+      try {
+        const cats = await ipcRenderer.invoke('get-news-categories');
+        Object.entries(cats).forEach(([id, label]) => {
+          const pill = document.createElement('button');
+          pill.className = 'cat-pill active';
+          pill.dataset.cat = id;
+          pill.textContent = label;
+          pill.addEventListener('click', () => {
+            const allPills = Array.from(newsCategoriesEl.querySelectorAll('.cat-pill'));
+            const activePills = allPills.filter(p => p.classList.contains('active'));
+            if (pill.classList.contains('active') && activePills.length === 1) {
+              // Остання активна → скидаємо: активуємо всі
+              allPills.forEach(p => p.classList.add('active'));
+            } else {
+              // Solo mode: активуємо тільки цю
+              allPills.forEach(p => p.classList.remove('active'));
+              pill.classList.add('active');
+            }
+          });
+          newsCategoriesEl.appendChild(pill);
+        });
+      } catch (e) {
+        console.warn('[NEWS] Could not load categories:', e.message);
+      }
+    })();
+
+    function getSelectedCategories() {
+      return Array.from(newsCategoriesEl.querySelectorAll('.cat-pill.active')).map(p => p.dataset.cat);
+    }
+
+    function openNewsSidebar() {
+      if (!isSidebarCollapsed) toggleSidebar(); // закриваємо нотатки
+      newsSidebar.classList.remove('collapsed');
+      newsSidebar.classList.add('expanded');
+      isNewsSidebarOpen = true;
+    }
+
+    function closeNewsSidebar() {
+      newsSidebar.classList.remove('expanded');
+      newsSidebar.classList.add('collapsed');
+      isNewsSidebarOpen = false;
+    }
+
+    function toggleNewsSidebar() {
+      isNewsSidebarOpen ? closeNewsSidebar() : openNewsSidebar();
+    }
+
+    if (toggleNewsBtn) toggleNewsBtn.addEventListener('click', toggleNewsSidebar);
+    if (closeNewsBtn) closeNewsBtn.addEventListener('click', closeNewsSidebar);
+
+    // Закриваємо новини, коли відкривають нотатки
+    if (toggleSidebarToolbar) {
+      toggleSidebarToolbar.addEventListener('click', () => {
+        if (isNewsSidebarOpen) closeNewsSidebar();
+      });
+    }
+
+    // Реальна генерація стрічки через IPC
+    if (generateNewsBtn) {
+      generateNewsBtn.addEventListener('click', async () => {
+        const selected = getSelectedCategories();
+        if (!selected.length) {
+          articlesContainer.innerHTML = '<div class="news-empty-state"><p>Виберіть хоча б одну категорію</p></div>';
+          return;
+        }
+
+        generateNewsBtn.disabled = true;
+        generateNewsBtn.textContent = '⏳ Збираємо новини...';
+        articlesContainer.innerHTML = '<div class="news-empty-state"><p>Запит до джерел...</p></div>';
+
+        try {
+          const articles = await ipcRenderer.invoke('fetch-news', { categories: selected, count: 15 });
+          if (!articles.length) {
+            articlesContainer.innerHTML = '<div class="news-empty-state"><p>Нічого не знайдено.<br>Перевірте з\'єднання.</p></div>';
+          } else {
+            articlesContainer.innerHTML = '';
+            articles.forEach(item => {
+              const card = document.createElement('div');
+              card.className = 'news-card';
+              card.style.cursor = 'pointer';
+              card.innerHTML = `<h4>${item.title}</h4><div class="news-meta"><span class="news-source">${item.source}</span><span class="news-time">${item.time}</span></div>`;
+              card.addEventListener('click', () => ipcRenderer.invoke('open-in-browser', item.url));
+              articlesContainer.appendChild(card);
+            });
+            if (feedCount) feedCount.textContent = articles.length;
+          }
+        } catch (e) {
+          console.error('[NEWS] Fetch error:', e);
+          articlesContainer.innerHTML = '<div class="news-empty-state"><p>Помилка завантаження.<br>Перевірте підключення.</p></div>';
+        } finally {
+          generateNewsBtn.disabled = false;
+          generateNewsBtn.textContent = '✨ Оновити стрічку';
+        }
+      });
+    }
 
     // Навігація
     if (backBtn) {
