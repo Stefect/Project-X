@@ -181,6 +181,29 @@ function registerStorageHandlers(storage, tabManager) {
   console.log('[IPC] Storage handlers registered');
 }
 
+function registerAISchedulerHandlers(aiScheduler) {
+  ipcMain.handle('ai-add-task', async (event, { task, priority }) => {
+    try {
+      aiScheduler.addTask(task, priority);
+      return { success: true };
+    } catch (error) {
+      console.error('[AI Scheduler] Error adding task:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('ai-get-status', () => {
+    return aiScheduler.getStatus();
+  });
+
+  ipcMain.on('ai-clear-queue', () => {
+    aiScheduler.clearQueue();
+  });
+
+  console.log('[IPC] AI Scheduler handlers registered');
+}
+
 module.exports = {
-  registerStorageHandlers
+  registerStorageHandlers,
+  registerAISchedulerHandlers
 };
