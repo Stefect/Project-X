@@ -111,150 +111,86 @@ npm start
 
 **Де знаходиться:** [`src/utils/memoize.js`](src/utils/memoize.js)
 
-### Повна реалізація мемоїзації:
+### Реалізовані компоненти:
 
-#### Основна функція
+#### 1. Основна функція мемоізації
 ```javascript
 function memoize(fn, options = {})
 ```
 
 **Параметри:**
-- `fn`: Чиста функція для мемоїзації
-- `options`: Конфігурація (`maxSize`, `policy`, `ttl`, `customEvict`)
+- `fn`: Функція для мемоізації
+- `options`: Налаштування (`maxSize`, `policy`, `ttl`, `customEvict`)
 
-#### Підтримувані стратегії витіснення:
+#### 2. Чотири політики витіснення:
 
-1. **LRU (Least Recently Used)** - за замовчуванням
-   - Видаляє найдавніше використаний елемент
-   - Оновлює порядок при кожному доступі
-
-2. **LFU (Least Frequently Used)**
-   - Видаляє найменш часто використовуваний елемент
-   - Веде підрахунок доступів (`accessCount`)
-
-3. **Time-Based (TTL)**
-   - Автоматично видаляє застарілі записи
-   - Налаштовується через `ttl` (в мілісекундах)
-
-4. **Custom Policy**
-   - Дозволяє передати власну функцію витіснення
-
-#### Приклад використання:
-
-**В проекті:** [`src/modules/ai-handlers.js`](src/modules/ai-handlers.js)
+**LRU (Least Recently Used)** - за замовчуванням
 ```javascript
-const memoize = require('../utils/memoize');
+const cached = memoize(slowFn, { maxSize: 100, policy: 'lru' });
+```
 
-// Мемоїзація AI summarize з LRU
-const summarizeArticleMemoized = memoize(
-    async (articleText, existingSummaries) => { /* ... */ },
+**LFU (Least Frequently Used)** - підрахунок використань
+```javascript
+const cached = memoize(slowFn, { maxSize: 50, policy: 'lfu' });
+```
+
+**TIME (Time-based expiry)** - автоматичне видалення по часу
+```javascript
+const cached = memoize(slowFn, { maxSize: 30, policy: 'time', ttl: 60000 });
+```
+
+**CUSTOM** - власна логіка витіснення
+```javascript
+const cached = memoize(slowFn, {
+    policy: 'custom',
+    customEvict: (cache) => cache.keys().next().value
+});
+```
+
+#### 3. AI інтеграція в проекті
+**Файл:** [`src/modules/ai-handlers.js`](src/modules/ai-handlers.js)
+
+```javascript
+// Кешування AI резюме статей (LRU, 100 записів)
+const cachedSummarizeArticle = memoize(
+    (title) => summarizeArticle(title, groqClient),
     { maxSize: 100, policy: 'lru' }
 );
 
-// Мемоїзація X-Ray з LRU (200 записів)
-const getXRayResultMemoized = memoize(
-    async (url) => { /* ... */ },
-    { maxSize: 200, policy: 'lru' }
-);
+// Кешування X-Ray URL опису (LRU, 200 записів)
+const cachedDescribeURL = memoize(describeURL, {
+    maxSize: 200,
+    policy: 'lru'
+});
 ```
 
-**Переваги в проекті:**
-- 🚀 **-80% API запитів** (повторні статті беруться з кешу)
-- ⚡ **X-Ray < 1ms** замість 2-5 секунд AI запиту
-- 💰 **Економія Groq API квоти**
+#### 4. Тестування та демонстрація
+**Файл:** [`examples/memoize-test.js`](examples/memoize-test.js)
 
-#### Методи мемоїзованої функції:
+```bash
+# Запустити тести всіх політик
+node examples/memoize-test.js
+```
+
+**Тест показує:**
+- LRU витіснення при перевищенні розміру
+- LFU підрахунок частоти використання
+- TIME автоматичне видалення застарілих записів
+- Різниці в швидкості (з кешу vs без кешу)
+
+#### 5. Методи та API
 ```javascript
-memoizedFn.cache        // Доступ до Map кешу
-memoizedFn.clearCache() // Очистити кеш
+const cached = memoize(fn, options);
+
+cached.cache           // Map з кешованими значеннями
+cached.clearCache()    // Очистити весь кеш
+cached(args...)        // Виклик з мемоізацією
 ```
 
----
-
-## 🔄 Task 4: Bi-Directional Priority Queue
-
-**Де знаходиться:** [`src/utils/priority-queue.js`](src/utils/priority-queue.js)
-
-### Реалізація двосторонньої черги з пріоритетами:
-
-#### Основна структура даних
-```javascript
-class BiDirectionalPriorityQueue {
-    enqueue(item, priority)
-    dequeue(type)  // 'highest', 'lowest', 'oldest', 'newest'
-    peek(type)
-    isEmpty()
-    size()
-    clear()
-}
-```
-
-**Підтримувані типи вибірки:**
-- `'highest'` - найвищий пріоритет
-- `'lowest'` - найнижчий пріоритет
-- `'oldest'` - найстаріший (перший доданий, FIFO)
-- `'newest'` - найновіший (останній доданий, LIFO)
-
-#### Реальне використання в проекті:
-
-**AI Task Scheduler** ([`src/modules/ai-task-scheduler.js`](src/modules/ai-task-scheduler.js))
-```javascript
-const BiDirectionalPriorityQueue = require('../utils/priority-queue');
-
-class AITaskScheduler {
-    constructor() {
-        this.taskQueue = new BiDirectionalPriorityQueue();
-        this.maxQueueSize = 100;
-    }
-
-    addTask(task, priority) {
-        // При переповненні викидаємо найнижчий пріоритет
-        if (this.taskQueue.size() >= this.maxQueueSize) {
-            const dropped = this.taskQueue.dequeue('lowest');
-        }
-
-        this.taskQueue.enqueue(task, priority);
-    }
-
-    async processQueue() {
-        while (!this.taskQueue.isEmpty()) {
-            // ЗАВЖДИ обробляємо найвищий пріоритет першим
-            const task = this.taskQueue.dequeue('highest');
-            await task.execute();
-        }
-    }
-}
-```
-
-**Пріоритети завдань:**
-- `10` - T9 автодоповнення (користувач чекає прямо зараз!)
-- `5` - Переклад сторінок
-- `2` - Аналіз контенту
-- `1` - Саммарі фонових вкладок
-
-**Інтеграція в браузер:** [`src/main.js`](src/main.js) (рядок ~812)
-```javascript
-const aiScheduler = require('./modules/ai-task-scheduler');
-
-// IPC handlers для роботи з Renderer процесу
-ipcHandlers.registerAISchedulerHandlers(aiScheduler);
-
-// Тестовий приклад (запускається через 5 сек після старту)
-setTimeout(() => {
-    aiScheduler.addTask({ name: 'T9 підказка', execute: async () => {...} }, 10);
-    aiScheduler.addTask({ name: 'Саммарі вкладки', execute: async () => {...} }, 1);
-    // T9 виконається ПЕРШИМ незважаючи на порядок додавання!
-}, 5000);
-```
-
-**Переваги:**
-- 🚀 Критичні завдання (T9) виконуються миттєво
-- 🗑️ Автоматичне скидання низькопріоритетних завдань при перевантаженні
-- 📊 Статистика виконання (processed/dropped/errors)
-
-**Складність:**
-- `enqueue()` - O(1)
-- `dequeue()` - O(n) лінійний пошук (достатньо для черг до ~100 елементів)
+#### 6. Переваги в проекті
+- ⚡ **Прискорення AI запитів** - повторні статті з кешу < 1мс
+- 💰 **Економія API квоти** - менше запитів до Groq
+- 🚀 **Оптимізація UI** - швидше завантаження X-Ray інформації
 
 ---
 
@@ -272,8 +208,11 @@ npm install
 cp config.js.example src/config.js
 # Відредагувати src/config.js та додати GROQ_API_KEY
 
-# Запустити
+# Запустити браузер
 npm start
+
+# Або протестувати мемоізацію окремо
+node examples/memoize-test.js
 ```
 
 ---
@@ -289,11 +228,12 @@ Project-X/
 ├── src/
 │   ├── modules/
 │   │   ├── ai-feed.js           # ✅ Task 1: Generators & Iterators
-│   │   ├── ai-task-scheduler.js # 🔗 Task 4: Використання Priority Queue
-│   │   └── ai-handlers.js       # 🔗 Використання Task 3 (memoization)
+│   │   └── ai-handlers.js       # 🔗 Task 3 інтеграція (AI + memoization)
 │   └── utils/
-│       ├── memoize.js           # ✅ Task 3: Memoization Function
-│       └── priority-queue.js    # ✅ Task 4: Bi-Directional Priority Queue
+│       └── memoize.js           # ✅ Task 3: Memoization Function
+│
+├── examples/
+│   └── memoize-test.js          # 🧪 Task 3: Тести мемоізації
 │
 └── public/
     └── feed.html                # UI для нескінченної стрічки (Task 1)

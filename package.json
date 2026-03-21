@@ -89,6 +89,12 @@
     },
     "portable": {
       "artifactName": "BrowserX-Portable-${version}.${ext}"
-    }
+    },
+    "protocols": [
+      {
+        "name": "BrowserX App Protocol",
+        "schemes": ["app"]
+      }
+    ]
   }
 }
