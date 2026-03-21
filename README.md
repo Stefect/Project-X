@@ -171,6 +171,93 @@ memoizedFn.clearCache() // Очистити кеш
 
 ---
 
+## 🔄 Task 4: Bi-Directional Priority Queue
+
+**Де знаходиться:** [`src/utils/priority-queue.js`](src/utils/priority-queue.js)
+
+### Реалізація двосторонньої черги з пріоритетами:
+
+#### Основна структура даних
+```javascript
+class BiDirectionalPriorityQueue {
+    enqueue(item, priority)
+    dequeue(type)  // 'highest', 'lowest', 'oldest', 'newest'
+    peek(type)
+    isEmpty()
+    size()
+    clear()
+}
+```
+
+**Підтримувані типи вибірки:**
+- `'highest'` - найвищий пріоритет
+- `'lowest'` - найнижчий пріоритет
+- `'oldest'` - найстаріший (перший доданий, FIFO)
+- `'newest'` - найновіший (останній доданий, LIFO)
+
+#### Реальне використання в проекті:
+
+**AI Task Scheduler** ([`src/modules/ai-task-scheduler.js`](src/modules/ai-task-scheduler.js))
+```javascript
+const BiDirectionalPriorityQueue = require('../utils/priority-queue');
+
+class AITaskScheduler {
+    constructor() {
+        this.taskQueue = new BiDirectionalPriorityQueue();
+        this.maxQueueSize = 100;
+    }
+
+    addTask(task, priority) {
+        // При переповненні викидаємо найнижчий пріоритет
+        if (this.taskQueue.size() >= this.maxQueueSize) {
+            const dropped = this.taskQueue.dequeue('lowest');
+        }
+
+        this.taskQueue.enqueue(task, priority);
+    }
+
+    async processQueue() {
+        while (!this.taskQueue.isEmpty()) {
+            // ЗАВЖДИ обробляємо найвищий пріоритет першим
+            const task = this.taskQueue.dequeue('highest');
+            await task.execute();
+        }
+    }
+}
+```
+
+**Пріоритети завдань:**
+- `10` - T9 автодоповнення (користувач чекає прямо зараз!)
+- `5` - Переклад сторінок
+- `2` - Аналіз контенту
+- `1` - Саммарі фонових вкладок
+
+**Інтеграція в браузер:** [`src/main.js`](src/main.js) (рядок ~812)
+```javascript
+const aiScheduler = require('./modules/ai-task-scheduler');
+
+// IPC handlers для роботи з Renderer процесу
+ipcHandlers.registerAISchedulerHandlers(aiScheduler);
+
+// Тестовий приклад (запускається через 5 сек після старту)
+setTimeout(() => {
+    aiScheduler.addTask({ name: 'T9 підказка', execute: async () => {...} }, 10);
+    aiScheduler.addTask({ name: 'Саммарі вкладки', execute: async () => {...} }, 1);
+    // T9 виконається ПЕРШИМ незважаючи на порядок додавання!
+}, 5000);
+```
+
+**Переваги:**
+- 🚀 Критичні завдання (T9) виконуються миттєво
+- 🗑️ Автоматичне скидання низькопріоритетних завдань при перевантаженні
+- 📊 Статистика виконання (processed/dropped/errors)
+
+**Складність:**
+- `enqueue()` - O(1)
+- `dequeue()` - O(n) лінійний пошук (достатньо для черг до ~100 елементів)
+
+---
+
 ## 🚀 Швидкий старт
 
 ```bash
@@ -202,9 +289,11 @@ Project-X/
 ├── src/
 │   ├── modules/
 │   │   ├── ai-feed.js           # ✅ Task 1: Generators & Iterators
+│   │   ├── ai-task-scheduler.js # 🔗 Task 4: Використання Priority Queue
 │   │   └── ai-handlers.js       # 🔗 Використання Task 3 (memoization)
 │   └── utils/
-│       └── memoize.js           # ✅ Task 3: Memoization Function
+│       ├── memoize.js           # ✅ Task 3: Memoization Function
+│       └── priority-queue.js    # ✅ Task 4: Bi-Directional Priority Queue
 │
 └── public/
     └── feed.html                # UI для нескінченної стрічки (Task 1)
