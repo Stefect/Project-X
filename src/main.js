@@ -258,6 +258,16 @@ function restoreSessionSmart() {
 
 // ==================== APP LIFECYCLE ====================
 
+// Забезпечуємо один екземпляр додатку
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  console.log('[PROTOCOL] Another instance is already running, quitting...');
+  app.quit();
+} else {
+  console.log('[PROTOCOL] Single instance lock acquired');
+}
+
 app.whenReady().then(async () => {
   // Serve internal app pages (newtab.html, history.html, etc.)
   // via the custom app:// protocol so webviews can load them without ERR_ABORTED.
@@ -865,3 +875,59 @@ setTimeout(() => {
 }, 5000);
 
 console.log('[CONSOLE] BrowserX main process initialized');
+
+// ==================== URL PROTOCOL HANDLING ====================
+
+// Обробка app:// URLs з командного рядка при запуску
+function handleAppUrl(url) {
+  console.log('[PROTOCOL] Handling app:// URL:', url);
+
+  if (mainWindow) {
+    const { pathname } = new URL(url);
+    console.log('[PROTOCOL] Loading:', pathname);
+
+    // Фокусуємо головне вікно
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+
+    // Надсилаємо URL до renderer процесу
+    mainWindow.webContents.send('handle-app-url', pathname);
+  }
+}
+
+// Перевіряємо чи є app:// URL в аргументах запуску
+if (process.argv.length >= 2) {
+  const possibleUrl = process.argv.find(arg => arg.startsWith('app://'));
+  if (possibleUrl) {
+    console.log('[PROTOCOL] Found app:// URL in startup args:', possibleUrl);
+    // Відкладаємо до готовності вікна
+    app.whenReady().then(() => {
+      // Чекаємо поки вікно створено
+      setTimeout(() => handleAppUrl(possibleUrl), 1000);
+    });
+  }
+}
+
+// Обробка коли користувач намагається запустити другий екземпляр з app:// URL
+app.on('second-instance', (event, commandLine, workingDirectory) => {
+  console.log('[PROTOCOL] Second instance detected');
+
+  const url = commandLine.find(arg => arg.startsWith('app://'));
+  if (url) {
+    handleAppUrl(url);
+  }
+
+  // В будь-якому випадку фокусуємо головне вікно
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
+// macOS підтримка (якщо знадобиться)
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  if (url.startsWith('app://')) {
+    handleAppUrl(url);
+  }
+});
