@@ -34,6 +34,7 @@ const tabManager = require('./modules/tab-manager');
 const ipcHandlers = require('./modules/ipc-handlers');
 const privacyGuard = require('./modules/privacy-guard');
 const { registerNewsHandlers } = require('./modules/news-handlers');
+const aiScheduler = require('./modules/ai-task-scheduler');
 
 console.log('[CONSOLE] Starting BrowserX...');
 
@@ -804,7 +805,63 @@ ipcMain.handle('check-ip', async () => {
 
 // Реєструємо IPC handlers з модулів
 ipcHandlers.registerStorageHandlers(storage, tabManager);
+ipcHandlers.registerAISchedulerHandlers(aiScheduler);
 registerNewsHandlers();
 // AI handlers реєструються всередині createWindow() після ініціалізації groqClient
+
+// ==================== ТЕСТ AI TASK SCHEDULER ====================
+setTimeout(() => {
+  console.log('\n[TEST] 🧪 Демонстрація AI Task Scheduler...\n');
+
+  // Низький пріоритет (фон)
+  aiScheduler.addTask({
+    name: 'Саммарі фонової вкладки #1',
+    type: 'summary',
+    execute: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('   📝 Саммарі готовий');
+    }
+  }, 1);
+
+  aiScheduler.addTask({
+    name: 'Саммарі фонової вкладки #2',
+    type: 'summary',
+    execute: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('   📝 Саммарі готовий');
+    }
+  }, 1);
+
+  // Середній пріоритет
+  aiScheduler.addTask({
+    name: 'Переклад сторінки',
+    type: 'translation',
+    execute: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('   🌐 Переклад завершено');
+    }
+  }, 5);
+
+  // НАЙВИЩИЙ - користувач чекає
+  aiScheduler.addTask({
+    name: 'T9 Автодоповнення тексту',
+    type: 't9',
+    execute: async () => {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      console.log('   ⚡ T9 підказка готова');
+    }
+  }, 10);
+
+  aiScheduler.addTask({
+    name: 'Аналіз контенту',
+    type: 'analysis',
+    execute: async () => {
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      console.log('   🔍 Аналіз завершено');
+    }
+  }, 2);
+
+  console.log('[TEST] ✅ Завдання додані. Виконання за пріоритетом.\n');
+}, 5000);
 
 console.log('[CONSOLE] BrowserX main process initialized');
