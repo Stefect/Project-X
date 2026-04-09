@@ -1,6 +1,6 @@
 # BrowserX - лабораторні роботи
 
-тут 3 таски які треба було зробити для курсу
+тут 5 задач які треба було зробити для курсу
 
 ## Task 1: Генератори
 
@@ -66,20 +66,81 @@ const cachedDescribeURL = memoize(describeURL, { maxSize: 200, policy: 'lru' });
 
 тест: `node examples/memoize-test.js`
 
+## Task 4: Таб-менеджер
+
+файл: `src/modules/tab-manager.js`
+
+зробив менеджер для управління вкладками браузера:
+
+```javascript
+class TabManager {
+  constructor() {
+    this.tabs = new Map();
+    this.activeTab = null;
+  }
+  
+  createTab(id, url)
+  switchTab(id)
+  closeTab(id)
+  getTabs()
+}
+```
+
+можливості:
+- створення й закриття вкладок
+- переключення між вкладками
+- отримання списку активних вкладок
+- управління історією вкладок
+
+## Task 5: Асинхронні функції для масивів
+
+файл: `src/utils/async-array.js`
+
+реалізував утилітні функції для роботи з асинхронними операціями над масивами:
+
+```javascript
+async function asyncMap(arr, asyncFn, options = {})
+async function asyncFilter(arr, asyncFn, options = {})
+async function asyncFind(arr, asyncFn, options = {})
+async function asyncSome(arr, asyncFn, options = {})
+async function asyncReduce(arr, asyncFn, initial, options = {})
+```
+
+особливості:
+- контроль паралельності (concurrency control)
+- підтримка AbortController для скасування
+- як Promise так і Callback варіанти
+- використовуються в модулях: news-fetcher, privacy-guard, tab-manager, storage, ipc-handlers
+
+приклади: `src/utils/async-array-examples.js`
+документація: `ASYNC_ARRAY_INTEGRATION.md`
+
 ## Структура
 
 ```
 Project-X/
 ├── src/
 │   ├── modules/
-│   │   ├── ai-feed.js        # Task 1 генератори
-│   │   └── ai-handlers.js    # Task 3 мемоізація тут
+│   │   ├── ai-feed.js             # Task 1 генератори
+│   │   ├── tab-manager.js         # Task 4 таб-менеджер
+│   │   └── ai-handlers.js         # Task 3 мемоізація
 │   └── utils/
-│       └── memoize.js        # Task 3 основна функція
+│       ├── memoize.js             # Task 3 основна функція
+│       ├── async-array.js         # Task 5 асинхронні функції
+│       └── async-array-examples.js # Task 5 приклади
 ├── examples/
-│   └── memoize-test.js       # Task 3 тести
-└── package.json              # Task 2 налаштування
+│   └── memoize-test.js            # Task 3 тести
+├── ASYNC_ARRAY_INTEGRATION.md     # Task 5 документація
+└── package.json                   # Task 2 налаштування
 ```
+
+## Статус
+
+✅ Task 1: Генератори - завершено
+✅ Task 2: Налаштування проекту - завершено  
+✅ Task 3: Мемоізація - завершено
+✅ Task 4: Таб-менеджер - завершено
+✅ Task 5: Асинхронні функції для масивів - завершено
 
 ## Як запустити
 
