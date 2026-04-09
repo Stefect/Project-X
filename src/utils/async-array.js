@@ -112,4 +112,49 @@ function asyncFilterCallback(arr, asyncPredicate, callback, options = {}) {
   });
 }
 
-module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback };
+async function asyncFind(arr, asyncPredicate, options = {}) {
+  const { signal } = options;
+
+  for (let i = 0; i < arr.length; i++) {
+    if (signal?.aborted) throw new Error('╨Ю╨┐╨╡╤А╨░╤Ж╤Ц╤О ╤Б╨║╨░╤Б╨╛╨▓╨░╨╜╨╛');
+    
+    const match = await asyncPredicate(arr[i], i, arr);
+    if (match) return arr[i];
+  }
+
+  return undefined;
+}
+
+function asyncFindCallback(arr, asyncPredicate, callback, options = {}) {
+  const { signal } = options;
+  let index = 0;
+  let isFound = false;
+
+  const checkNext = () => {
+    if (isFound || signal?.aborted) return;
+
+    if (index >= arr.length) {
+      return callback(null, undefined);
+    }
+
+    const currentIndex = index;
+    asyncPredicate(arr[index], index, arr, (err, match) => {
+      if (err || isFound) {
+        isFound = true;
+        return callback(err);
+      }
+
+      if (match) {
+        isFound = true;
+        callback(null, arr[currentIndex]);
+      } else {
+        index++;
+        checkNext();
+      }
+    });
+  };
+
+  checkNext();
+}
+
+module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback, asyncFind, asyncFindCallback };
