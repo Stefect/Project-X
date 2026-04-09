@@ -157,4 +157,91 @@ function asyncFindCallback(arr, asyncPredicate, callback, options = {}) {
   checkNext();
 }
 
-module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback, asyncFind, asyncFindCallback };
+async function asyncSome(arr, asyncPredicate, options = {}) {
+  const { signal } = options;
+
+  for (let i = 0; i < arr.length; i++) {
+    if (signal?.aborted) throw new Error('╨Ю╨┐╨╡╤А╨░╤Ж╤Ц╤О ╤Б╨║╨░╤Б╨╛╨▓╨░╨╜╨╛');
+    
+    const match = await asyncPredicate(arr[i], i, arr);
+    if (match) return true;
+  }
+
+  return false;
+}
+
+function asyncSomeCallback(arr, asyncPredicate, callback, options = {}) {
+  const { signal } = options;
+  let completed = 0;
+  let found = false;
+
+  if (arr.length === 0) return callback(null, false);
+
+  arr.forEach((val, idx, array) => {
+    if (found || signal?.aborted) return;
+
+    asyncPredicate(val, idx, array, (err, result) => {
+      if (err) return callback(err);
+
+      if (result && !found) {
+        found = true;
+        callback(null, true);
+      } else {
+        completed++;
+        if (completed === arr.length && !found) {
+          callback(null, false);
+        }
+      }
+    });
+  });
+}
+
+async function asyncReduce(arr, asyncFn, initialValue, options = {}) {
+  const { signal } = options;
+  let accumulator = initialValue;
+
+  for (let i = 0; i < arr.length; i++) {
+    if (signal?.aborted) throw new Error('╨Ю╨┐╨╡╤А╨░╤Ж╤Ц╤О ╤Б╨║╨░╤Б╨╛╨▓╨░╨╜╨╛');
+    
+    accumulator = await asyncFn(accumulator, arr[i], i, arr);
+  }
+
+  return accumulator;
+}
+
+function asyncReduceCallback(arr, asyncFn, initialValue, callback, options = {}) {
+  const { signal } = options;
+  let index = 0;
+  let accumulator = initialValue;
+
+  const processNext = () => {
+    if (signal?.aborted) return callback(new Error('╨Ю╨┐╨╡╤А╨░╤Ж╤Ц╤О ╤Б╨║╨░╤Б╨╛╨▓╨░╨╜╨╛'));
+
+    if (index >= arr.length) {
+      return callback(null, accumulator);
+    }
+
+    const currentIndex = index;
+    asyncFn(accumulator, arr[index], index, arr, (err, result) => {
+      if (err) return callback(err);
+
+      accumulator = result;
+      index++;
+      processNext();
+    });
+  };
+
+  processNext();
+}
+
+function createAsyncController(timeoutMs = null) {
+  const controller = new AbortController();
+  
+  if (timeoutMs) {
+    setTimeout(() => controller.abort(), timeoutMs);
+  }
+
+  return controller;
+}
+
+module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback, asyncFind, asyncFindCallback, asyncSome, asyncSomeCallback, asyncReduce, asyncReduceCallback, createAsyncController };
