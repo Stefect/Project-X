@@ -118,4 +118,54 @@ function asyncFilterCallback(arr, asyncPredicate, callback, options = {}) {
   });
 }
 
-module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback };
+async function asyncFind(arr, asyncPredicate, options = {}) {
+  const { signal } = options;
+
+  for (let i = 0; i < arr.length; i++) {
+    if (signal?.aborted) throw new Error('Операцію скасовано');
+    
+    try {
+      const match = await asyncPredicate(arr[i], i, arr);
+      if (match) return arr[i];
+    } catch (e) {
+      continue;
+    }
+  }
+
+  return undefined;
+}
+
+function asyncFindCallback(arr, asyncPredicate, callback, options = {}) {
+  const { signal } = options;
+  let currentIndex = 0;
+  let finished = false;
+
+  const searchNext = () => {
+    if (finished || signal?.aborted) return;
+
+    if (currentIndex >= arr.length) {
+      return callback(null, undefined);
+    }
+
+    const idx = currentIndex++;
+    asyncPredicate(arr[idx], idx, arr, (err, match) => {
+      if (finished) return;
+      
+      if (err) {
+        searchNext();
+        return;
+      }
+
+      if (match) {
+        finished = true;
+        callback(null, arr[idx]);
+      } else {
+        searchNext();
+      }
+    });
+  };
+
+  searchNext();
+}
+
+module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback, asyncFind, asyncFindCallback };
