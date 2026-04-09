@@ -249,4 +249,33 @@ function asyncReduceCallback(arr, asyncFn, initialValue, callback, options = {})
   reduceNext();
 }
 
-module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback, asyncFind, asyncFindCallback, asyncSome, asyncSomeCallback, asyncReduce, asyncReduceCallback };
+function createAsyncController(timeoutMs = null) {
+  const controller = new AbortController();
+  let timeoutId;
+  
+  if (timeoutMs && timeoutMs > 0) {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
+  }
+
+  return {
+    controller,
+    cancel: () => controller.abort(),
+    clearTimeout: () => clearTimeout(timeoutId)
+  };
+}
+
+module.exports = {
+  asyncMap,
+  asyncMapCallback,
+  asyncFilter,
+  asyncFilterCallback,
+  asyncFind,
+  asyncFindCallback,
+  asyncSome,
+  asyncSomeCallback,
+  asyncReduce,
+  asyncReduceCallback,
+  createAsyncController
+};
