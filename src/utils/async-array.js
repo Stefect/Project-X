@@ -168,4 +168,85 @@ function asyncFindCallback(arr, asyncPredicate, callback, options = {}) {
   searchNext();
 }
 
-module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback, asyncFind, asyncFindCallback };
+async function asyncSome(arr, asyncPredicate, options = {}) {
+  const { signal } = options;
+
+  for (let i = 0; i < arr.length; i++) {
+    if (signal?.aborted) throw new Error('Операцію скасовано');
+    
+    const match = await asyncPredicate(arr[i], i, arr);
+    if (match) return true;
+  }
+
+  return false;
+}
+
+function asyncSomeCallback(arr, asyncPredicate, callback, options = {}) {
+  const { signal } = options;
+  let completed = 0;
+  let found = false;
+
+  if (!arr.length) return callback(null, false);
+
+  arr.forEach((val, idx) => {
+    if (found) return;
+
+    asyncPredicate(val, idx, arr, (err, result) => {
+      if (found) return;
+      
+      if (err) {
+        completed++;
+      } else if (result) {
+        found = true;
+        return callback(null, true);
+      } else {
+        completed++;
+      }
+
+      if (completed === arr.length && !found) {
+        callback(null, false);
+      }
+    });
+  });
+}
+
+async function asyncReduce(arr, asyncFn, initialValue, options = {}) {
+  const { signal } = options;
+  let accumulator = initialValue;
+
+  for (let i = 0; i < arr.length; i++) {
+    if (signal?.aborted) throw new Error('Операцію скасовано');
+    
+    accumulator = await asyncFn(accumulator, arr[i], i, arr);
+  }
+
+  return accumulator;
+}
+
+function asyncReduceCallback(arr, asyncFn, initialValue, callback, options = {}) {
+  const { signal } = options;
+  let index = 0;
+  let accumulator = initialValue;
+
+  const reduceNext = () => {
+    if (signal?.aborted) {
+      return callback(new Error('Операцію скасовано'));
+    }
+
+    if (index >= arr.length) {
+      return callback(null, accumulator);
+    }
+
+    const currentIdx = index++;
+    asyncFn(accumulator, arr[currentIdx], currentIdx, arr, (err, result) => {
+      if (err) return callback(err);
+
+      accumulator = result;
+      process.nextTick(() => reduceNext());
+    });
+  };
+
+  reduceNext();
+}
+
+module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback, asyncFind, asyncFindCallback, asyncSome, asyncSomeCallback, asyncReduce, asyncReduceCallback };
