@@ -5,26 +5,31 @@
     return Promise.all(arr.map((val, idx, array) => asyncFn(val, idx, array)));
   }
 
+  const limit = Number.isFinite(concurrency) && concurrency > 0
+    ? Math.floor(concurrency)
+    : 1;
   const results = new Array(arr.length);
   const inProgress = new Set();
 
   for (let i = 0; i < arr.length; i++) {
+    if (signal?.aborted) throw new Error('Операцію скасовано');
+
     const idx = i;
-    
     const task = (async () => {
-      const result = await asyncFn(arr[idx], idx, arr);
-      results[idx] = result;
-      inProgress.delete(task);
-      return result;
+      try {
+        const result = await asyncFn(arr[idx], idx, arr);
+        results[idx] = result;
+        return result;
+      } finally {
+        inProgress.delete(task);
+      }
     })();
 
     inProgress.add(task);
 
-    if (inProgress.size >= concurrency) {
+    if (inProgress.size >= limit) {
       await Promise.race(inProgress);
     }
-
-    if (signal?.aborted) throw new Error('Операцію скасовано');
   }
 
   if (inProgress.size > 0) {
@@ -37,45 +42,49 @@
 function asyncMapCallback(arr, asyncFn, callback, options = {}) {
   const { signal, concurrency = Infinity } = options;
   const results = new Array(arr.length);
+  const limit = concurrency === Infinity
+    ? arr.length
+    : Math.max(1, Math.floor(concurrency) || 1);
+  let active = 0;
+  let nextIndex = 0;
   let completedCount = 0;
-  let errored = false;
+  let settled = false;
+
+  const done = (err, data) => {
+    if (settled) return;
+    settled = true;
+    callback(err, data);
+  };
 
   if (arr.length === 0) return callback(null, results);
 
-  const processItem = (index) => {
-    if (errored || signal?.aborted) return;
+  const startNext = () => {
+    if (settled) return;
+    if (signal?.aborted) return done(new Error('Операцію скасовано'));
 
-    asyncFn(arr[index], index, arr, (err, result) => {
-      if (err) {
-        if (!errored) {
-          errored = true;
-          callback(err);
+    while (active < limit && nextIndex < arr.length && !settled) {
+      const index = nextIndex++;
+      active++;
+
+      asyncFn(arr[index], index, arr, (err, result) => {
+        active--;
+        if (settled) return;
+        if (signal?.aborted) return done(new Error('Операцію скасовано'));
+        if (err) return done(err);
+
+        results[index] = result;
+        completedCount++;
+
+        if (completedCount === arr.length) {
+          return done(null, results);
         }
-        return;
-      }
 
-      results[index] = result;
-      completedCount++;
-
-      if (completedCount === arr.length) {
-        callback(null, results);
-      }
-    });
+        startNext();
+      });
+    }
   };
 
-  if (concurrency === Infinity) {
-    arr.forEach((_, idx) => setImmediate(() => processItem(idx)));
-  } else {
-    let started = 0;
-    const startNext = () => {
-      while (started < arr.length && !errored) {
-        processItem(started);
-        started++;
-        if (started - (started - concurrency) >= concurrency) break;
-      }
-    };
-    startNext();
-  }
+  startNext();
 }
 
 async function asyncFilter(arr, asyncPredicate, options = {}) {
@@ -101,6 +110,10 @@ function asyncFilterCallback(arr, asyncPredicate, callback, options = {}) {
   arr.forEach((val, idx) => {
     asyncPredicate(val, idx, arr, (err, result) => {
       if (hasError) return;
+      if (signal?.aborted) {
+        hasError = true;
+        return callback(new Error('Операцію скасовано'));
+      }
       
       if (err) {
         hasError = true;
@@ -141,7 +154,8 @@ function asyncFindCallback(arr, asyncPredicate, callback, options = {}) {
   let finished = false;
 
   const searchNext = () => {
-    if (finished || signal?.aborted) return;
+    if (finished) return;
+    if (signal?.aborted) return callback(new Error('Операцію скасовано'));
 
     if (currentIndex >= arr.length) {
       return callback(null, undefined);
@@ -193,9 +207,14 @@ function asyncSomeCallback(arr, asyncPredicate, callback, options = {}) {
 
     asyncPredicate(val, idx, arr, (err, result) => {
       if (found) return;
+      if (signal?.aborted) {
+        found = true;
+        return callback(new Error('Операцію скасовано'));
+      }
       
       if (err) {
-        completed++;
+        found = true;
+        return callback(err);
       } else if (result) {
         found = true;
         return callback(null, true);
@@ -261,8 +280,22 @@ function createAsyncController(timeoutMs = null) {
 
   return {
     controller,
-    cancel: () => controller.abort(),
-    clearTimeout: () => clearTimeout(timeoutId)
+    signal: controller.signal,
+    cancel: () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      controller.abort();
+    },
+    get aborted() {
+      return controller.signal.aborted;
+    },
+    clearTimeout: () => {
+      if (!timeoutId) return;
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
   };
 }
 
