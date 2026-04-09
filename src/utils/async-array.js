@@ -78,4 +78,38 @@ function asyncMapCallback(arr, asyncFn, callback, options = {}) {
   }
 }
 
-module.exports = { asyncMap, asyncMapCallback };
+async function asyncFilter(arr, asyncPredicate, options = {}) {
+  const { signal } = options;
+  const results = await Promise.all(arr.map((val, idx, array) => asyncPredicate(val, idx, array)));
+  
+  if (signal?.aborted) throw new Error('╨Ю╨┐╨╡╤А╨░╤Ж╤Ц╤О ╤Б╨║╨░╤Б╨╛╨▓╨░╨╜╨╛');
+  
+  return arr.filter((_, idx) => results[idx]);
+}
+
+function asyncFilterCallback(arr, asyncPredicate, callback, options = {}) {
+  const { signal } = options;
+  const results = new Array(arr.length);
+  let completed = 0;
+  let hasError = false;
+
+  if (arr.length === 0) return callback(null, []);
+
+  arr.forEach((val, idx, array) => {
+    asyncPredicate(val, idx, array, (err, result) => {
+      if (err || hasError) {
+        hasError = true;
+        return callback(err || new Error('╨Ю╨┐╨╡╤А╨░╤Ж╤Ц╤О ╤Б╨║╨░╤Б╨╛╨▓╨░╨╜╨╛'));
+      }
+
+      results[idx] = result ? val : undefined;
+      completed++;
+
+      if (completed === arr.length) {
+        callback(null, results.filter(v => v !== undefined));
+      }
+    });
+  });
+}
+
+module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback };
