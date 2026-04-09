@@ -78,4 +78,44 @@ function asyncMapCallback(arr, asyncFn, callback, options = {}) {
   }
 }
 
-module.exports = { asyncMap, asyncMapCallback };
+async function asyncFilter(arr, asyncPredicate, options = {}) {
+  const { signal } = options;
+  
+  const predicates = await Promise.all(
+    arr.map((val, idx, array) => asyncPredicate(val, idx, array))
+  );
+  
+  if (signal?.aborted) throw new Error('Операцію скасовано');
+  
+  return arr.filter((_, idx) => predicates[idx]);
+}
+
+function asyncFilterCallback(arr, asyncPredicate, callback, options = {}) {
+  const { signal } = options;
+  const predicates = new Array(arr.length);
+  let completed = 0;
+  let hasError = false;
+
+  if (arr.length === 0) return callback(null, []);
+
+  arr.forEach((val, idx) => {
+    asyncPredicate(val, idx, arr, (err, result) => {
+      if (hasError) return;
+      
+      if (err) {
+        hasError = true;
+        return callback(err);
+      }
+
+      predicates[idx] = result;
+      completed++;
+
+      if (completed === arr.length) {
+        const filtered = arr.filter((_, i) => predicates[i]);
+        callback(null, filtered);
+      }
+    });
+  });
+}
+
+module.exports = { asyncMap, asyncMapCallback, asyncFilter, asyncFilterCallback };
