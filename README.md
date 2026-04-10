@@ -1,158 +1,90 @@
-# BrowserX - лабораторні роботи
+# BrowserX - лабораторний проєкт (Task 1-5)
 
-тут 5 задач які треба було зробити для курсу
+Проєкт робився як практичний набір задач із JavaScript/Node.js в реальному застосунку (Electron).
+Нижче коротко, що саме реалізовано по кожному таску.
 
-## Task 1: Генератори
+## Task 1: Generators + Iterator with timeout
 
-файл: `src/modules/ai-feed.js`
+Файл: `src/modules/ai-feed.js`
 
-зробив генератори для новин:
-- roundRobinSourceGenerator - перебирає джерела по колу
-- infiniteArticleGenerator - нескінченна стрічка статей
-- є таймаути щоб не зависало
+Що є:
+- `roundRobinSourceGenerator(sources)` - нескінченний обхід джерел по колу.
+- `incrementalCounterGenerator(start, step)` - окремий нескінченний числовий генератор.
+- `infiniteArticleGenerator(categories, customSources)` - async-генератор стрічки новин.
+- `consumeGeneratorWithTimeout(generator, timeoutMs, processItem?)` - споживання ітератора з обмеженням часу.
 
-```javascript
-function* roundRobinSourceGenerator(sources) {
-  let index = 0;
-  while (true) {
-    yield sources[index % sources.length];
-    index++;
-  }
-}
-```
+## Task 2: Project setup
 
-генератори працюють з reddit, dev.to, hackernews
+Що налаштовано:
+- git-репозиторій + `.gitignore`
+- `package.json` зі скриптами запуску/білду
+- структура `src/`, `public/`, `examples/`
+- конфіг під Electron + Tailwind/PostCSS
 
-## Task 2: Налаштування проекту
+Базовий запуск:
 
-зробив:
-- git репозиторій
-- package.json з залежностями
-- .gitignore щоб не комітити зайве
-- підключив до github
-
-запуск:
-```
+```bash
 npm install
 npm start
 ```
 
-треба config.js з API ключем для groq
+## Task 3: Memoization function
 
-## Task 3: Мемоізація
+Файл: `src/utils/memoize.js`
 
-файл: `src/utils/memoize.js`
+Можливості:
+- мемоізація довільної pure-функції
+- політики витіснення: `lru`, `lfu`, `time`, `custom`
+- контроль розміру кешу (`maxSize`)
+- підтримка TTL (`ttl`) для time-based сценарію
+- утиліти у memoized-функції: `.clear()`, `.has()`, `.delete()`, `.stats()`
 
-зробив функцію мемоізації з різними політиками:
+Демо:
 
-```javascript
-function memoize(fn, options) {
-    const cache = new Map();
-    // тут логіка кешування
-}
+```bash
+node examples/memoize-test.js
 ```
 
-політики витіснення:
-- LRU - найстарший видаляється
-- LFU - найрідше використовуваний видаляється
-- TIME - по часу видаляється
-- CUSTOM - можна свою функцію передати
+## Task 4: Bi-directional priority queue
 
-використав мемоізацію в AI модулі:
-```javascript
-const cachedSummarizeArticle = memoize(summarizeArticle, { maxSize: 100, policy: 'lru' });
-const cachedDescribeURL = memoize(describeURL, { maxSize: 200, policy: 'lru' });
-```
+Файл: `src/utils/priority-queue.js`
 
-тест: `node examples/memoize-test.js`
+Підтримувані операції:
+- `enqueue(item, priority)`
+- `dequeue('highest' | 'lowest' | 'oldest' | 'newest')`
+- `peek('highest' | 'lowest' | 'oldest' | 'newest')`
 
-## Task 4: Таб-менеджер
+Queue використовується в `src/modules/ai-task-scheduler.js` для пріоритизації AI-задач.
 
-файл: `src/modules/tab-manager.js`
+## Task 5: Async array function variants
 
-зробив менеджер для управління вкладками браузера:
+Файл: `src/utils/async-array.js`
 
-```javascript
-class TabManager {
-  constructor() {
-    this.tabs = new Map();
-    this.activeTab = null;
-  }
-  
-  createTab(id, url)
-  switchTab(id)
-  closeTab(id)
-  getTabs()
-}
-```
+Promise-варіанти:
+- `asyncMap`, `asyncFilter`, `asyncFind`, `asyncFindIndex`, `asyncSome`, `asyncReduce`
 
-можливості:
-- створення й закриття вкладок
-- переключення між вкладками
-- отримання списку активних вкладок
-- управління історією вкладок
+Callback-варіанти:
+- `asyncMapCallback`, `asyncFilterCallback`, `asyncFindCallback`, `asyncFindIndexCallback`, `asyncSomeCallback`, `asyncReduceCallback`
 
-## Task 5: Асинхронні функції для масивів
+Додатково:
+- `createAsyncController(timeoutMs)` для скасування через `AbortController`
+- `concurrency` для контрольованого паралелізму в map/filter-потоках
 
-файл: `src/utils/async-array.js`
+Приклади:
+- `src/utils/async-array-examples.js`
 
-реалізував утилітні функції для роботи з асинхронними операціями над масивами:
+## Корисні файли
 
-```javascript
-async function asyncMap(arr, asyncFn, options = {})
-async function asyncFilter(arr, asyncFn, options = {})
-async function asyncFind(arr, asyncFn, options = {})
-async function asyncSome(arr, asyncFn, options = {})
-async function asyncReduce(arr, asyncFn, initial, options = {})
-```
+- `src/modules/ai-feed.js` - генератори та timeout-consumer
+- `src/utils/memoize.js` - Task 3
+- `src/utils/priority-queue.js` - Task 4
+- `src/utils/async-array.js` - Task 5
+- `examples/memoize-test.js` - швидкий локальний demo-run
 
-особливості:
-- контроль паралельності (concurrency control)
-- підтримка AbortController для скасування
-- як Promise так і Callback варіанти
-- використовуються в модулях: news-fetcher, privacy-guard, tab-manager, storage, ipc-handlers
+## Примітка по AI
 
-приклади: `src/utils/async-array-examples.js`
-документація: `ASYNC_ARRAY_INTEGRATION.md`
-
-## Структура
-
-```
-Project-X/
-├── src/
-│   ├── modules/
-│   │   ├── ai-feed.js             # Task 1 генератори
-│   │   ├── tab-manager.js         # Task 4 таб-менеджер
-│   │   └── ai-handlers.js         # Task 3 мемоізація
-│   └── utils/
-│       ├── memoize.js             # Task 3 основна функція
-│       ├── async-array.js         # Task 5 асинхронні функції
-│       └── async-array-examples.js # Task 5 приклади
-├── examples/
-│   └── memoize-test.js            # Task 3 тести
-├── ASYNC_ARRAY_INTEGRATION.md     # Task 5 документація
-└── package.json                   # Task 2 налаштування
-```
-
-## Статус
-
-✅ Task 1: Генератори - завершено
-✅ Task 2: Налаштування проекту - завершено  
-✅ Task 3: Мемоізація - завершено
-✅ Task 4: Таб-менеджер - завершено
-✅ Task 5: Асинхронні функції для масивів - завершено
-
-## Як запустити
-
-```
-git clone https://github.com/Stefect/Project-X.git
-cd Project-X
-npm install
-npm start
-```
-
-для AI потрібен GROQ_API_KEY в config.js
+Для AI-функцій потрібен коректний ключ у конфігурації (`.env` / `config.js`, залежно від сценарію запуску).
 
 ---
 
-автор: Stefect | ІМ-55
+Автор: Stefect | ІМ-55
