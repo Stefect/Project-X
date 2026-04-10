@@ -1,5 +1,19 @@
 const BiDirectionalPriorityQueue = require('../utils/priority-queue');
 
+const PRIORITY = {
+    LOW: 1,
+    NORMAL: 5,
+    HIGH: 10
+};
+
+function toPriorityOrDefault(priority) {
+    if (!Number.isFinite(priority)) {
+        return PRIORITY.NORMAL;
+    }
+
+    return Math.max(PRIORITY.LOW, Math.floor(priority));
+}
+
 class AITaskScheduler {
     constructor() {
         this.taskQueue = new BiDirectionalPriorityQueue();
@@ -12,17 +26,30 @@ class AITaskScheduler {
         };
     }
 
-    addTask(task, priority) {
+    addTask(task, priority = PRIORITY.NORMAL) {
+        if (!task || typeof task !== 'object') {
+            throw new TypeError('Task must be an object');
+        }
+
+        if (typeof task.execute !== 'function') {
+            throw new TypeError('Task.execute must be a function');
+        }
+
+        const normalizedPriority = toPriorityOrDefault(priority);
+
         if (this.taskQueue.size() >= this.maxQueueSize) {
-            const droppedTask = this.taskQueue.dequeue('lowest');
+            this.taskQueue.dequeue('lowest');
             this.stats.dropped++;
         }
 
-        this.taskQueue.enqueue(task, priority);
+        this.taskQueue.enqueue(task, normalizedPriority);
 
         if (!this.isProcessing) {
-            this.processQueue();
+            // Відпускаємо цикл обробки в мікротаску, щоб addTask залишався швидким.
+            Promise.resolve().then(() => this.processQueue());
         }
+
+        return this.taskQueue.size();
     }
 
     async processQueue() {
@@ -35,9 +62,7 @@ class AITaskScheduler {
             if (!currentTask) break;
 
             try {
-                if (typeof currentTask.execute === 'function') {
-                    await currentTask.execute();
-                }
+                await currentTask.execute();
                 this.stats.processed++;
             } catch (error) {
                 this.stats.errors++;
@@ -57,6 +82,7 @@ class AITaskScheduler {
 
     clearQueue() {
         this.taskQueue.clear();
+        return true;
     }
 }
 

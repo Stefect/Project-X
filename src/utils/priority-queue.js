@@ -1,46 +1,73 @@
 class BiDirectionalPriorityQueue {
+    static MODES = {
+        HIGHEST: 'highest',
+        LOWEST: 'lowest',
+        OLDEST: 'oldest',
+        NEWEST: 'newest'
+    };
+
     constructor() {
         this.items = [];
         this.insertCounter = 0;
     }
 
     enqueue(item, priority) {
+        if (!Number.isFinite(priority)) {
+            throw new TypeError('Priority must be a finite number');
+        }
+
         this.items.push({
             item,
             priority,
             order: this.insertCounter++
         });
+
+        return this.items.length;
+    }
+
+    _normalizeMode(type) {
+        const value = String(type || '').toLowerCase();
+        const validModes = Object.values(BiDirectionalPriorityQueue.MODES);
+        return validModes.includes(value) ? value : BiDirectionalPriorityQueue.MODES.HIGHEST;
+    }
+
+    _isBetterCandidate(current, candidate, mode) {
+        if (mode === BiDirectionalPriorityQueue.MODES.HIGHEST) {
+            if (candidate.priority !== current.priority) {
+                return candidate.priority > current.priority;
+            }
+            return candidate.order < current.order;
+        }
+
+        if (mode === BiDirectionalPriorityQueue.MODES.LOWEST) {
+            if (candidate.priority !== current.priority) {
+                return candidate.priority < current.priority;
+            }
+            return candidate.order < current.order;
+        }
+
+        if (mode === BiDirectionalPriorityQueue.MODES.OLDEST) {
+            return candidate.order < current.order;
+        }
+
+        if (mode === BiDirectionalPriorityQueue.MODES.NEWEST) {
+            return candidate.order > current.order;
+        }
+
+        return false;
     }
 
     _findIndex(type) {
-        if (this.items.length === 0) return -1;
+        if (this.items.length === 0) {
+            return -1;
+        }
+
+        const mode = this._normalizeMode(type);
 
         let targetIndex = 0;
         for (let i = 1; i < this.items.length; i++) {
-            switch (type) {
-                case 'highest':
-                    if (this.items[i].priority > this.items[targetIndex].priority) {
-                        targetIndex = i;
-                    }
-                    break;
-
-                case 'lowest':
-                    if (this.items[i].priority < this.items[targetIndex].priority) {
-                        targetIndex = i;
-                    }
-                    break;
-
-                case 'oldest':
-                    if (this.items[i].order < this.items[targetIndex].order) {
-                        targetIndex = i;
-                    }
-                    break;
-
-                case 'newest':
-                    if (this.items[i].order > this.items[targetIndex].order) {
-                        targetIndex = i;
-                    }
-                    break;
+            if (this._isBetterCandidate(this.items[targetIndex], this.items[i], mode)) {
+                targetIndex = i;
             }
         }
 
@@ -71,6 +98,14 @@ class BiDirectionalPriorityQueue {
     clear() {
         this.items = [];
         this.insertCounter = 0;
+    }
+
+    toArray() {
+        return this.items.map(entry => ({
+            item: entry.item,
+            priority: entry.priority,
+            order: entry.order
+        }));
     }
 }
 
