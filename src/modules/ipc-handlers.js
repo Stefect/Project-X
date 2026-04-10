@@ -4,7 +4,33 @@
  */
 
 const { ipcMain, shell, BrowserWindow } = require('electron');
-const path = require('path');
+
+function getMainWindow() {
+  return BrowserWindow.getAllWindows()[0] || null;
+}
+
+function navigateActiveTab(tabManager, url) {
+  const mainWindow = getMainWindow();
+  if (!mainWindow) return false;
+
+  mainWindow.webContents.send('webview-navigate', {
+    tabId: tabManager.getActiveTabId(),
+    url
+  });
+
+  return true;
+}
+
+function toInternalAppUrl(url) {
+  if (!url || !url.startsWith('file://')) return url;
+
+  const lower = url.toLowerCase();
+  if (lower.includes('newtab.html')) return 'app://localhost/newtab.html';
+  if (lower.includes('history.html')) return 'app://localhost/history.html';
+  if (lower.includes('settings.html')) return 'app://localhost/settings.html';
+
+  return url;
+}
 
 /**
  * Реєструє всі IPC handlers для storage та утиліт
@@ -36,21 +62,12 @@ function registerStorageHandlers(storage, tabManager) {
 
   ipcMain.on('open-url-from-history', (event, url) => {
     console.log('[HISTORY] Opening:', url);
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    if (mainWindow) {
-      mainWindow.webContents.send('webview-navigate', { tabId: tabManager.getActiveTabId(), url });
-    }
+    navigateActiveTab(tabManager, url);
   });
 
   ipcMain.on('open-history', async (event) => {
     console.log('[HISTORY] Opening history page');
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    if (mainWindow) {
-      mainWindow.webContents.send('webview-navigate', {
-        tabId: tabManager.getActiveTabId(),
-        url: 'app://localhost/history.html'
-      });
-    }
+    navigateActiveTab(tabManager, 'app://localhost/history.html');
   });
 
   // ==================== ЗАКЛАДКИ ====================
@@ -144,7 +161,7 @@ function registerStorageHandlers(storage, tabManager) {
     try {
       console.log('[BROWSER] Opening in new tab:', url);
       // Відправляємо команду до головного вікна (не до event.sender - sidebar)
-      const mainWindow = BrowserWindow.getAllWindows()[0];
+      const mainWindow = getMainWindow();
       if (mainWindow) {
         mainWindow.webContents.send('open-in-new-tab', url);
       }
@@ -158,19 +175,10 @@ function registerStorageHandlers(storage, tabManager) {
   // Навігація активної вкладки до URL
   ipcMain.handle('navigate-url', async (event, url) => {
     try {
-      // Convert file:// URLs for internal pages to app:// so webviews can load them.
-      // Webviews block file:// navigation (especially on paths with non-ASCII chars).
-      let targetUrl = url;
-      if (url && url.startsWith('file://')) {
-        const lower = url.toLowerCase();
-        if (lower.includes('newtab.html')) targetUrl = 'app://localhost/newtab.html';
-        else if (lower.includes('history.html')) targetUrl = 'app://localhost/history.html';
-      }
+      const targetUrl = toInternalAppUrl(url);
       console.log('[NAVIGATE] Navigating to:', targetUrl);
-      const mainWindow = BrowserWindow.getAllWindows()[0];
-      if (mainWindow) {
-        mainWindow.webContents.send('webview-navigate', { tabId: tabManager.getActiveTabId(), url: targetUrl });
-      }
+
+      navigateActiveTab(tabManager, targetUrl);
       return { success: true };
     } catch (error) {
       console.error('[NAVIGATE] Error:', error);
