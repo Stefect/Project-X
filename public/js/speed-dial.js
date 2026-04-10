@@ -17,7 +17,7 @@ const availableColors = [
 
 let savedLinks = JSON.parse(localStorage.getItem('projectX_speedDial')) || [];
 let currentEditingIndex = null;
-let selectedColor = availableColors[4].class; // Дефолтний колір (indigo)
+let selectedColor = availableColors[3].class; // Дефолтний колір (blue)
 let currentBannerUrl = null; // Зберігає завантажений банер
 
 let speedDialContainer;
@@ -316,7 +316,7 @@ function openModal(index) {
     linkTitleInput.value = '';
     linkUrlInput.value = '';
     linkUrlInput.style.borderColor = '';
-    selectedColor = availableColors[4].class;
+    selectedColor = availableColors[3].class;
     
     // Ховаємо превʼю
     bannerPreview.classList.add('hidden');

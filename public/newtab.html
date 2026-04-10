@@ -46,48 +46,51 @@
   </div>
 
   <!-- Speed Dial Edit Modal -->
-  <div id="edit-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
-    <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl w-full max-w-md shadow-2xl">
-      <h2 id="modal-title" class="text-2xl font-bold mb-5 text-gray-100">Додати закладку</h2>
-      
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">Назва сайту <span class="text-gray-500 text-xs">(необов'язково)</span></label>
-          <input type="text" id="link-title" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="Автоматично визначиться з URL">
-        </div>
-        
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">URL адреса</label>
-          <input type="url" id="link-url" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500" placeholder="https://youtube.com">
+  <div id="edit-modal" class="hidden bookmark-modal-overlay fixed inset-0 flex items-center justify-center z-50 transition-opacity">
+    <div class="bookmark-modal-panel">
+      <div class="bookmark-modal-header">
+        <span class="bookmark-modal-badge">Speed Dial</span>
+        <h2 id="modal-title" class="bookmark-modal-title">Додати закладку</h2>
+        <p class="bookmark-modal-subtitle">Налаштуй картку швидкого доступу: назва, адреса, банер і колір.</p>
+      </div>
+
+      <div class="bookmark-modal-body">
+        <div class="bookmark-field">
+          <label class="bookmark-label">Назва сайту <span class="bookmark-note">(необов'язково)</span></label>
+          <input type="text" id="link-title" class="bookmark-modal-input" placeholder="Автоматично визначиться з URL">
         </div>
 
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Банер сайту</label>
-          <div class="space-y-3">
-            <button type="button" id="fetch-banner-btn" class="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium transition-all flex items-center justify-center gap-2 shadow-lg">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Завантажити банер сайту
-            </button>
-            <div id="banner-preview" class="hidden w-full rounded-lg overflow-hidden border-2 border-gray-600 shadow-xl">
-              <img id="banner-preview-img" class="w-full h-32 object-cover" alt="Banner Preview">
-            </div>
-            <p class="text-xs text-gray-500 text-center">Автоматично завантажиться скріншот сайту</p>
+        <div class="bookmark-field">
+          <label class="bookmark-label">URL адреса</label>
+          <input type="url" id="link-url" class="bookmark-modal-input" placeholder="https://youtube.com">
+          <p class="bookmark-field-hint">Підтримується ввід без https://</p>
+        </div>
+
+        <div class="bookmark-field">
+          <label class="bookmark-label">Банер сайту</label>
+          <button type="button" id="fetch-banner-btn" class="bookmark-banner-btn">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Завантажити банер сайту
+          </button>
+          <div id="banner-preview" class="hidden bookmark-banner-preview">
+            <img id="banner-preview-img" class="bookmark-banner-image" alt="Banner Preview">
           </div>
+          <p class="bookmark-banner-hint">Спробуємо автоматично знайти Open Graph банер або згенерувати скріншот.</p>
         </div>
 
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Колір фону</label>
-          <div id="color-picker" class="flex gap-3">
+        <div class="bookmark-field">
+          <label class="bookmark-label">Колір фону</label>
+          <div id="color-picker" class="bookmark-color-picker">
             <!-- Color buttons will be dynamically inserted here -->
           </div>
         </div>
       </div>
 
-      <div class="mt-8 flex justify-end gap-3">
-        <button id="cancel-modal-btn" class="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-white transition-colors">Скасувати</button>
-        <button id="save-link-btn" class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">Зберегти</button>
+      <div class="bookmark-modal-actions">
+        <button id="cancel-modal-btn" class="bookmark-btn-secondary">Скасувати</button>
+        <button id="save-link-btn" class="bookmark-btn-primary">Зберегти</button>
       </div>
     </div>
   </div>
