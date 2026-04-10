@@ -1,44 +1,65 @@
-// Простий тест мемоізації
 const memoize = require('../src/utils/memoize');
 
-function slowFunction(x) {
-    console.log('   Computing for:', x);
-    let result = 0;
-    for(let i = 0; i < 1000000; i++) {
-        result += i;
+function expensiveScore(seed) {
+    console.log('  -> calculate for', seed);
+    let score = 0;
+    for (let i = 0; i < 900000; i++) {
+        score += (i % 7);
     }
-    return result + x;
+    return score + seed;
 }
 
-console.log('=== LRU тест ===');
-const memoizedLRU = memoize(slowFunction, { maxSize: 3, policy: 'lru' });
+function printStats(label, fn) {
+    const stats = fn.stats();
+    console.log(`${label}:`, stats);
+}
 
-console.log('1:', memoizedLRU(5));
-console.log('2:', memoizedLRU(5)); // має бути з кешу
-console.log('3:', memoizedLRU(10));
-console.log('4:', memoizedLRU(15));
-console.log('5:', memoizedLRU(20)); // має витіснити перший
-console.log('6:', memoizedLRU(5)); // має знову обчислитись
+console.log('=== LRU demo ===');
+const lruMemoized = memoize(expensiveScore, { maxSize: 3, policy: 'lru' });
+console.log('A', lruMemoized(5));
+console.log('B', lruMemoized(5), '(from cache)');
+console.log('C', lruMemoized(10));
+console.log('D', lruMemoized(15));
+console.log('E', lruMemoized(20), '(should evict oldest)');
+console.log('F', lruMemoized(5), '(recomputed if evicted)');
+printStats('LRU stats', lruMemoized);
 
-console.log('\n=== LFU тест ===');
-const memoizedLFU = memoize(slowFunction, { maxSize: 3, policy: 'lfu' });
+console.log('\n=== LFU demo ===');
+const lfuMemoized = memoize(expensiveScore, { maxSize: 3, policy: 'lfu' });
+console.log('A', lfuMemoized(100));
+console.log('B', lfuMemoized(100));
+console.log('C', lfuMemoized(200));
+console.log('D', lfuMemoized(300));
+console.log('E', lfuMemoized(400), '(should evict least used)');
+printStats('LFU stats', lfuMemoized);
 
-console.log('1:', memoizedLFU(100));
-console.log('2:', memoizedLFU(100)); // +1 виклик
-console.log('3:', memoizedLFU(200));
-console.log('4:', memoizedLFU(300));
-console.log('5:', memoizedLFU(400)); // має витіснити найменш використаний
-
-console.log('\n=== TIME тест ===');
-const memoizedTime = memoize(slowFunction, {
+console.log('\n=== TIME demo ===');
+const timeMemoized = memoize(expensiveScore, {
     maxSize: 10,
     policy: 'time',
     ttl: 2000
 });
 
-console.log('1:', memoizedTime(1000));
-console.log('2:', memoizedTime(1000)); // з кешу
+console.log('A', timeMemoized(1000));
+console.log('B', timeMemoized(1000), '(from cache)');
 
 setTimeout(() => {
-    console.log('3 (через 3 сек):', memoizedTime(1000)); // має перерахувати
+    console.log('C after 3s', timeMemoized(1000), '(should expire and recalc)');
+    printStats('TIME stats', timeMemoized);
 }, 3000);
+
+console.log('\n=== CUSTOM demo ===');
+const customMemoized = memoize(expensiveScore, {
+    maxSize: 2,
+    policy: 'custom',
+    customEvict(cache) {
+        // Студентський приклад: викидаємо останній ключ за алфавітом.
+        const keys = [...cache.keys()].sort();
+        return keys[keys.length - 1];
+    }
+});
+
+console.log('A', customMemoized(1));
+console.log('B', customMemoized(2));
+console.log('C', customMemoized(3), '(custom eviction should run)');
+printStats('CUSTOM stats', customMemoized);
