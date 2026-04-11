@@ -1,10 +1,5 @@
-// ============================================
-// SPEED DIAL MODULE - Модуль швидкого доступу
-// ============================================
 
 const { ipcRenderer } = require('electron');
-
-// Палітра кольорів з градієнтами для карток
 const availableColors = [
   { class: 'bg-gradient-to-br from-red-500 to-pink-600', name: 'red' },
   { class: 'bg-gradient-to-br from-orange-500 to-yellow-500', name: 'orange' },
@@ -17,8 +12,8 @@ const availableColors = [
 
 let savedLinks = JSON.parse(localStorage.getItem('projectX_speedDial')) || [];
 let currentEditingIndex = null;
-let selectedColor = availableColors[3].class; // Дефолтний колір (blue)
-let currentBannerUrl = null; // Зберігає завантажений банер
+let selectedColor = availableColors[3].class;
+let currentBannerUrl = null;
 
 let speedDialContainer;
 let modal;
@@ -31,8 +26,6 @@ let saveLinkBtn;
 let fetchBannerBtn;
 let bannerPreview;
 let bannerPreviewImg;
-
-// Ініціалізація модуля
 function initSpeedDial() {
   speedDialContainer = document.getElementById('speed-dial');
   modal = document.getElementById('edit-modal');
@@ -50,8 +43,6 @@ function initSpeedDial() {
     console.error('[Speed Dial] Required elements not found');
     return;
   }
-
-  // Підключаємо обробники подій
   if (cancelModalBtn) {
     cancelModalBtn.addEventListener('click', closeModal);
   }
@@ -59,34 +50,23 @@ function initSpeedDial() {
   if (saveLinkBtn) {
     saveLinkBtn.addEventListener('click', saveLink);
   }
-
-  // Закриття модального вікна по Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
       closeModal();
     }
-    // Збереження по Enter (ТІЛЬКИ якщо фокус всередині модального вікна!)
     if (e.key === 'Enter' && !modal.classList.contains('hidden')) {
-      // Перевіряємо чи фокус всередині модального вікна
       if (modal.contains(document.activeElement)) {
         e.preventDefault();
         saveLink();
       }
-      // Якщо фокус поза модалом (наприклад, в URL input) - ігноруємо
     }
   });
-
-  // Закриття по кліку поза модальним вікном
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       closeModal();
     }
   });
-
-  // Валідація URL при введенні
   linkUrlInput.addEventListener('blur', validateAndFormatUrl);
-
-  // Завантаження банеру
   if (fetchBannerBtn) {
     fetchBannerBtn.addEventListener('click', fetchAndPreviewBanner);
   }
@@ -95,8 +75,6 @@ function initSpeedDial() {
   
   console.log('[Speed Dial] Initialized with', savedLinks.length, 'bookmarks');
 }
-
-// Валідація та форматування URL
 function validateAndFormatUrl() {
   let url = linkUrlInput.value.trim();
   
@@ -104,23 +82,17 @@ function validateAndFormatUrl() {
     url = 'https://' + url;
     linkUrlInput.value = url;
   }
-  
-  // Простий візуальний індикатор валідності
   try {
     new URL(url);
-    linkUrlInput.style.borderColor = '#10b981'; // зелений
+    linkUrlInput.style.borderColor = '#10b981';
   } catch {
     if (url) {
-      linkUrlInput.style.borderColor = '#ef4444'; // червоний
+      linkUrlInput.style.borderColor = '#ef4444';
     }
   }
 }
-
-// Завантаження банеру сайту (Open Graph зображення)
 async function fetchBannerUrl(url) {
   try {
-    // Витягуємо Open Graph image (og:image) через Microlink API
-    // Це зображення, яке сайт готує для соціальних мереж - справжній банер
     const response = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}`);
     const data = await response.json();
     
@@ -130,16 +102,12 @@ async function fetchBannerUrl(url) {
     }
     
     console.log('[Speed Dial] No Open Graph image found, using screenshot fallback');
-    // Fallback на скріншот якщо og:image не знайдено
     return `https://image.thum.io/get/width/400/crop/300/${url}`;
   } catch (error) {
     console.error('[Speed Dial] Error fetching banner:', error);
-    // Fallback на скріншот при помилці
     return `https://image.thum.io/get/width/400/crop/300/${url}`;
   }
 }
-
-// Завантаження та показ превʼю банеру
 async function fetchAndPreviewBanner() {
   const url = linkUrlInput.value.trim();
   
@@ -149,8 +117,6 @@ async function fetchAndPreviewBanner() {
     setTimeout(() => linkUrlInput.style.borderColor = '', 2000);
     return;
   }
-  
-  // Показуємо індикатор завантаження
   fetchBannerBtn.disabled = true;
   fetchBannerBtn.innerHTML = `
     <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,7 +142,6 @@ async function fetchAndPreviewBanner() {
     console.error('[Speed Dial] Error fetching banner:', error);
     alert('Помилка завантаження банеру');
   } finally {
-    // Відновлюємо кнопку
     fetchBannerBtn.disabled = false;
     fetchBannerBtn.innerHTML = `
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,8 +151,6 @@ async function fetchAndPreviewBanner() {
     `;
   }
 }
-
-// 1. Рендер карток
 function renderSpeedDial() {
   if (!speedDialContainer) return;
   
@@ -196,15 +159,12 @@ function renderSpeedDial() {
   savedLinks.forEach((link, index) => {
     const card = document.createElement('div');
     card.className = `gx-card aspect-[2/1] flex flex-col items-center justify-end text-white hover:-translate-y-1 hover:shadow-lg transition-all duration-200 cursor-pointer relative group overflow-hidden`;
-    
-    // Якщо є банер - використовуємо його як фон
     if (link.bannerUrl) {
       card.style.backgroundImage = `url(${link.bannerUrl})`;
       card.style.backgroundSize = 'cover';
       card.style.backgroundPosition = 'center';
-      card.style.backgroundColor = '#1f2937'; // Резервний колір
+      card.style.backgroundColor = '#1f2937';
     } else {
-      // Якщо банеру немає - використовуємо градієнт
       card.className += ` ${link.bgColor}`;
     }
     
@@ -247,8 +207,6 @@ function renderSpeedDial() {
     
     speedDialContainer.appendChild(card);
   });
-
-  // Кнопка "+" для додавання нової закладки
   const addBtn = document.createElement('div');
   addBtn.className = 'bg-gray-800/40 hover:bg-gray-700/60 border-2 border-dashed border-gray-600/50 gx-card aspect-[2/1] flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 cursor-pointer backdrop-blur-sm';
   addBtn.innerHTML = `
@@ -260,8 +218,6 @@ function renderSpeedDial() {
   addBtn.addEventListener('click', () => openModal(null));
   speedDialContainer.appendChild(addBtn);
 }
-
-// 2. Генерація кнопок вибору кольору в модалці
 function renderColorPicker() {
   if (!colorPickerContainer) return;
   
@@ -284,21 +240,16 @@ function renderColorPicker() {
     colorPickerContainer.appendChild(btn);
   });
 }
-
-// 3. Відкриття модального вікна
 function openModal(index) {
   currentEditingIndex = index;
   currentBannerUrl = null;
   renderColorPicker();
 
   if (index !== null) {
-    // Режим редагування
     modalTitle.textContent = 'Редагувати закладку';
     linkTitleInput.value = savedLinks[index].title;
     linkUrlInput.value = savedLinks[index].url;
     selectedColor = savedLinks[index].bgColor;
-    
-    // Показуємо банер якщо є
     if (savedLinks[index].bannerUrl) {
       currentBannerUrl = savedLinks[index].bannerUrl;
       bannerPreviewImg.src = savedLinks[index].bannerUrl;
@@ -311,33 +262,24 @@ function openModal(index) {
     
     renderColorPicker();
   } else {
-    // Режим додавання (очищаємо поля)
     modalTitle.textContent = 'Додати закладку';
     linkTitleInput.value = '';
     linkUrlInput.value = '';
     linkUrlInput.style.borderColor = '';
     selectedColor = availableColors[3].class;
-    
-    // Ховаємо превʼю
     bannerPreview.classList.add('hidden');
     bannerPreview.classList.remove('block');
   }
 
   modal.classList.remove('hidden');
-  
-  // Автофокус на перше поле з невеликою затримкою для анімації
   setTimeout(() => {
     linkTitleInput.focus();
   }, 100);
 }
-
-// 4. Закриття
 function closeModal() {
   if (modal) {
     modal.classList.add('hidden');
-    if (linkUrlInput) linkUrlInput.style.borderColor = ''; // скидаємо колір рамки
-    
-    // Очищаємо прев'ю банеру
+    if (linkUrlInput) linkUrlInput.style.borderColor = '';
     currentBannerUrl = null;
     if (bannerPreview) {
       bannerPreview.classList.add('hidden');
@@ -345,8 +287,6 @@ function closeModal() {
     }
   }
 }
-
-// 5. Збереження
 function saveLink() {
   let title = linkTitleInput.value.trim();
   let url = linkUrlInput.value.trim();
@@ -357,13 +297,9 @@ function saveLink() {
     setTimeout(() => linkUrlInput.style.borderColor = '', 2000);
     return;
   }
-
-  // Автоматично додаємо https:// якщо потрібно
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     url = 'https://' + url;
   }
-
-  // Валідація URL
   try {
     new URL(url);
   } catch {
@@ -372,8 +308,6 @@ function saveLink() {
     setTimeout(() => linkUrlInput.style.borderColor = '', 2000);
     return;
   }
-  
-  // Якщо назва не вказана, використовуємо domain з URL
   if (!title) {
     try {
       const urlObj = new URL(url);
@@ -382,13 +316,11 @@ function saveLink() {
       title = url;
     }
   }
-
-  // Створюємо обєкт закладки
   const newLink = { 
     title, 
     url, 
     bgColor: selectedColor,
-    bannerUrl: currentBannerUrl // зберігаємо банер якщо є
+    bannerUrl: currentBannerUrl
   };
 
   if (currentEditingIndex !== null) {
@@ -403,12 +335,8 @@ function saveLink() {
   closeModal();
   renderSpeedDial();
 }
-
-// 6. Видалення
 function deleteLink(index) {
   const link = savedLinks[index];
-  
-  // Створюємо власне модальне підтвердження (замість alert)
   const confirmation = confirm(`Видалити закладку "${link.title}"?`);
   
   if (confirmation) {
@@ -418,16 +346,12 @@ function deleteLink(index) {
     console.log('[Speed Dial] Bookmark deleted:', link.title);
   }
 }
-
-// Функція для безпечного відображення HTML
 function escapeHtml(text) {
   if (!text) return '';
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 }
-
-// Автоматична ініціалізація при завантаженні сторінки
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initSpeedDial);
 } else {

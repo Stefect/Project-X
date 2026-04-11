@@ -21,12 +21,12 @@
             align-items: center;
             height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            -webkit-app-region: drag; /* Дозволяє тягати вікно мишкою */
+            -webkit-app-region: drag; 
             overflow: hidden;
             position: relative;
         }
 
-        /* Фоновий ефект часток */
+        
         .particles {
             position: absolute;
             width: 100%;
@@ -49,7 +49,7 @@
             50% { opacity: 1; }
         }
 
-        /* Контейнер логотипу */
+        
         .splash-content {
             z-index: 10;
             text-align: center;
@@ -58,7 +58,7 @@
             align-items: center;
         }
 
-        /* Логотип */
+        
         .logo {
             display: flex;
             align-items: center;
@@ -82,7 +82,7 @@
             animation: pulse 2s infinite alternate;
         }
 
-        /* Анімація пульсації */
+        
         @keyframes pulse {
             0% { 
                 transform: scale(0.95); 
@@ -94,7 +94,7 @@
             }
         }
 
-        /* Завантажувальний текст */
+        
         .loading-text {
             margin-top: 20px;
             font-size: 14px;
@@ -107,7 +107,7 @@
             50% { opacity: 1; }
         }
 
-        /* Спінер */
+        
         .spinner {
             width: 50px;
             height: 50px;
@@ -129,7 +129,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Прогрес бар */
+        
         .progress-container {
             width: 200px;
             height: 3px;
@@ -153,7 +153,7 @@
             100% { width: 100%; }
         }
 
-        /* Версія */
+        
         .version {
             position: absolute;
             bottom: 20px;
@@ -164,10 +164,10 @@
     </style>
 </head>
 <body>
-    <!-- Частки на фоні -->
+    
     <div class="particles" id="particles"></div>
 
-    <!-- Основний контент -->
+    
     <div class="splash-content">
         <div class="logo">
             <img src="../build/icon.ico" alt="BrowserX" class="logo-icon">
@@ -183,7 +183,6 @@
     <div class="version">v1.0.0</div>
 
     <script>
-        // Генеруємо частки для красивого фону
         const particlesContainer = document.getElementById('particles');
         for (let i = 0; i < 50; i++) {
             const particle = document.createElement('div');
@@ -194,8 +193,6 @@
             particle.style.animationDuration = (Math.random() * 2 + 2) + 's';
             particlesContainer.appendChild(particle);
         }
-
-        // Міняємо текст завантаження
         const loadingTexts = [
             'Ініціалізація систем...',
             'Завантаження Tor...',

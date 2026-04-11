@@ -1,6 +1,6 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
-/* CSS Variables */
+
 :root {
   --dark-bg: #1a1b26;
   --dark-surface: #24283b;
@@ -38,8 +38,8 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       display: flex;
-      flex-direction: column; /* Flexbox: елементи зверху вниз */
-      height: 100vh; /* КРИТИЧНО: фіксуємо висоту */
+      flex-direction: column; 
+      height: 100vh; 
       background: #1a1b26;
       background-size: cover;
       background-position: center;
@@ -48,7 +48,7 @@
       transition: background 0.3s ease;
     }
 
-    /* ЖОРСТКО ЗМУШУЄМО НОВУ ВКЛАДКУ БУТИ ПРОЗОРОЮ НА ВЕСЬ ЕКРАН */
+    
     .newtab-page,
     .newtab-page html {
       width: 100vw !important;
@@ -65,16 +65,16 @@
       color: white;
     }
 
-    /* Всі контейнери всередині newtab теж прозорі */
+    
     .newtab-page .container,
     .newtab-page div {
       background-color: transparent !important;
     }
 
-    /* Main browser container (not for newtab page) */
+    
     body:not(.newtab-page) .container {
       display: flex;
-      height: calc(100vh - 100px); /* 40px tabs + 60px toolbar */
+      height: calc(100vh - 100px); 
     }
 
     .main-content {
@@ -91,15 +91,15 @@
       overflow-y: auto;
       overflow-x: visible;
       transition: right 0.3s ease;
-      position: fixed; /* Змінюємо на fixed щоб був поверх BrowserView */
+      position: fixed; 
       right: 0;
-      top: 100px; /* 40px tabs + 60px toolbar */
+      top: 100px; 
       bottom: 0;
-      z-index: 2147483647; /* Максимальний z-index */
+      z-index: 2147483647; 
       box-shadow: -2px 0 8px rgba(59, 130, 246, 0.05);
     }
 
-    /* ╨Ч╨░ ╨╖╨░╨╝╨╛╨▓╤З╤Г╨▓╨░╨╜╨╜╤П╨╝ ╨┐╨░╨╜╨╡╨╗╤М ╨╖╨│╨╛╤А╨╜╤Г╤В╨░ */
+    
     #notes-sidebar.collapsed,
     #notes-sidebar:not(.expanded) {
       right: -320px;
@@ -459,7 +459,7 @@
       border-color: #565f89;
     }
 
-    /* Inline редактор нотаток */
+    
     .note-editor {
       padding: 12px;
       background: rgba(139, 92, 246, 0.05);
@@ -554,7 +554,7 @@
 
     .toolbar {
       height: 60px;
-      flex-shrink: 0; /* FLEXBOX: забороняємо стискатися */
+      flex-shrink: 0; 
       background: #24283b;
       display: flex;
       align-items: center;
@@ -636,7 +636,7 @@
       color: #565f89;
     }
 
-    /* Розумний пошук */
+    
     #smart-search-box {
       display: none;
       position: absolute;
@@ -723,10 +723,10 @@
       transform: scale(0.95);
     }
 
-    /* ╨Я╨░╨╜╨╡╨╗╤М ╨▓╨║╨╗╨░╨┤╨╛╨║ (╨╖ ╨║╨╜╨╛╨┐╨║╨░╨╝╨╕ ╨▓╤Ц╨║╨╜╨░, ╤П╨║ Chrome) */
+    
     .tabs-bar {
       height: 40px;
-      flex-shrink: 0; /* FLEXBOX: забороняємо стискатися */
+      flex-shrink: 0; 
       background: #1f2335;
       display: flex;
       align-items: flex-end;
@@ -737,12 +737,12 @@
       -webkit-app-region: drag;
       position: relative;
       z-index: 90;
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE and Edge */
+      scrollbar-width: none; 
+      -ms-overflow-style: none; 
     }
 
     .tabs-bar::-webkit-scrollbar {
-      display: none; /* Chrome, Safari, Opera */
+      display: none; 
     }
 
     .menu-section {
@@ -772,7 +772,7 @@
       background: rgba(192, 202, 245, 0.1);
     }
 
-    /* ╨Т╨╕╨┐╨░╨┤╨░╤О╤З╨╡ ╨╝╨╡╨╜╤О */
+    
     .dropdown-menu {
       position: fixed;
       top: 48px;
@@ -880,7 +880,7 @@
       font-weight: 500;
     }
 
-    /* ============ ╨Э╨Ю╨Т╨Р ╨Я╨Р╨Э╨Х╨Ы╨м ╨Э╨Р╨Ы╨Р╨и╨в╨г╨Т╨Р╨Э╨м ============ */
+    
     :root {
       --theme-bg: #1a1b26;
       --theme-accent: #3b82f6;
@@ -949,7 +949,7 @@
       padding: 20px;
     }
 
-    /* Preview Box */
+    
     .preview-box {
       background: var(--theme-bg);
       border-radius: 12px;
@@ -1009,7 +1009,7 @@
       background: var(--theme-bg);
     }
 
-    /* Mode Switch */
+    
     .mode-switch {
       display: flex;
       background: var(--theme-bg);
@@ -1042,7 +1042,7 @@
       background: rgba(255, 255, 255, 0.05);
     }
 
-    /* Section Title */
+    
     .section-title {
       font-size: 13px;
       font-weight: 600;
@@ -1052,7 +1052,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* Color Grid - ╨б╨Я╨Ы╨Ж╨в ╨Ъ╨а╨г╨Ц╨Х╨з╨Ъ╨Ш */
+    
     .color-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -1098,7 +1098,7 @@
       background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red) !important;
     }
 
-    /* Settings Toggle */
+    
     .settings-group {
       margin-bottom: 24px;
     }
@@ -1148,7 +1148,7 @@
       transform: translateX(22px);
     }
 
-    /* Wallpaper Section */
+    
     .wallpaper-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -1255,7 +1255,7 @@
       opacity: 0.9;
     }
 
-    /* Overlay */
+    
     .panel-overlay {
       position: fixed;
       top: 0;
@@ -1290,16 +1290,16 @@
       overflow-y: hidden;
       -webkit-app-region: drag;
       padding: 0 5px;
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE and Edge */
-      scroll-behavior: smooth; /* Плавне прокручування */
+      scrollbar-width: none; 
+      -ms-overflow-style: none; 
+      scroll-behavior: smooth; 
     }
 
     .tabs-container::-webkit-scrollbar {
-      display: none; /* Chrome, Safari, Opera */
+      display: none; 
     }
 
-    /* Кнопки керування вікном (інтегровані в панель вкладок) */
+    
     .window-controls {
       display: flex;
       height: 40px;
@@ -1438,9 +1438,9 @@
       background: rgba(247, 118, 142, 0.2);
     }
 
-/* ========== NEWTAB.HTML STYLES ========== */
 
-/* Newtab body modes */
+
+
 body.light-mode {
   --bg-color: #f5f5f5;
   --text-color: #1f2937;
@@ -1459,19 +1459,19 @@ body.dark-mode {
   --accent-color: #3b82f6;
 }
 
-/* Newtab specific body styles - FLEXBOX CENTER! */
+
 body[class*="mode"] {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
   width: 100vw;
-  height: 100vh; /* Жорстка висота на весь екран */
+  height: 100vh; 
   display: flex;
   flex-direction: column;
-  align-items: center; /* Центруємо по горизонталі */
-  justify-content: center; /* Центруємо по вертикалі - ОСНОВНЕ! */
+  align-items: center; 
+  justify-content: center; 
   
-  /* Красивий теплий градієнт замість темного фону */
+  
   background: linear-gradient(to bottom right, #b44a72, #d88156, #e6b952);
   background-size: cover;
   background-position: center;
@@ -1481,12 +1481,12 @@ body[class*="mode"] {
   overflow: hidden;
 }
 
-/* ПРОЗОРІСТЬ ДЛЯ NEWTAB - перебиваємо градієнт */
+
 body.newtab-page[class*="mode"] {
   background: transparent !important;
 }
 
-/* Newtab container (different from main browser container) */
+
 body[class*="mode"] .container {
   display: flex;
   flex-direction: column;
@@ -1495,12 +1495,12 @@ body[class*="mode"] .container {
   padding: 40px 20px;
   width: 100%;
   max-width: none;
-  min-height: 100vh; /* КРИТИЧНО: задаємо мінімальну висоту для віконного режиму */
+  min-height: 100vh; 
   box-sizing: border-box;
-  background: transparent !important; /* Прозорий контейнер */
+  background: transparent !important; 
 }
 
-/* Newtab logo (different from sidebar logo) */
+
 body[class*="mode"] .logo {
   font-size: 72px;
   font-weight: 300;
@@ -1580,7 +1580,7 @@ body[class*="mode"] .logo {
   opacity: 0.9;
 }
 
-/* Wallpaper overlay for better readability */
+
 body.has-wallpaper::before {
   content: '';
   position: fixed;
@@ -1602,7 +1602,7 @@ body.has-wallpaper.light-mode::before {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* Toast Notifications Animations */
+
 @keyframes slideIn {
   from {
     transform: translateX(400px);
@@ -1625,12 +1625,10 @@ body.has-wallpaper.light-mode::before {
   }
 }
 
-/* ============================================
-   SPEED DIAL STYLES - Стилі швидкого доступу
-   ============================================ */
+
 
 .gx-card {
-  /* Відрізаємо правий нижній кут */
+  
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1642,7 +1640,7 @@ body.has-wallpaper.light-mode::before {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
 
-/* Favicon для карток */
+
 .speed-dial-favicon {
   width: 24px;
   height: 24px;
@@ -1654,19 +1652,19 @@ body.has-wallpaper.light-mode::before {
   margin-bottom: 0.5rem;
 }
 
-/* Стиль для активного кольору в модальному вікні */
+
 .color-btn.ring-2 {
   transform: scale(1.15);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
 }
 
-/* Speed Dial контейнер */
+
 #speed-dial {
   margin-top: 2rem;
   padding: 0 1rem;
 }
 
-/* Модальне вікно Speed Dial */
+
 #edit-modal.bookmark-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1931,7 +1929,7 @@ body.has-wallpaper.light-mode::before {
   }
 }
 
-/* Адаптивність для Speed Dial */
+
 @media (max-width: 640px) {
   #speed-dial {
     grid-template-columns: repeat(2, 1fr);
@@ -1967,28 +1965,28 @@ body.has-wallpaper.light-mode::before {
   }
 }
 
-/* =================== PREMIUM SIDEBAR + WEBVIEW LAYOUT =================== */
 
-/* Контейнер для webview вкладок - ЖОРСТКА ВИСОТА для Chromium */
-/* Стилі для webview тегів */
+
+
+
 webview {
   display: none;
-  background: #ffffff; /* Білий фон для сайтів */
+  background: #ffffff; 
   border: none;
   position: fixed;
-  top: 100px; /* Під tabs (40px) + toolbar (60px) */
+  top: 100px; 
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 10; /* Вище ніж native new tab */
+  z-index: 10; 
 }
 
-/* Активний webview */
+
 webview.active {
-  display: flex; /* Показуємо як flex-елемент */
+  display: flex; 
 }
 
-/* =================== NATIVE NEW TAB (на шпалерах) =================== */
+
 .native-new-tab {
   width: 100%;
   display: flex;
@@ -1998,10 +1996,10 @@ webview.active {
   padding-top: 10vh;
   padding-bottom: 5vh;
   color: white;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); /* Тінь для читабельності на будь-якому фоні */
-  z-index: 1; /* Нижче ніж webview */
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); 
+  z-index: 1; 
   position: fixed;
-  top: 100px; /* Під tabs + toolbar */
+  top: 100px; 
   left: 0;
   right: 0;
   bottom: 0;
@@ -2082,12 +2080,12 @@ webview.active {
 }
 
 
-/* Сам сайдбар "плаває" зліва поверх webview */
+
 #side-toolbar {
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  left: -260px; /* Ховаємо панель */
+  left: -260px; 
   width: 250px;
   height: auto;
   display: flex;
@@ -2095,27 +2093,27 @@ webview.active {
   transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   z-index: 9999;
   
-  /* 🪟 GLASSMORPHISM: Робимо сайдбар скляним */
+  
   background: rgba(20, 20, 30, 0.3) !important;
   backdrop-filter: blur(15px) !important;
   -webkit-backdrop-filter: blur(15px) !important;
 }
 
-/* Відкритий стан */
+
 #side-toolbar.open {
-  left: 0; /* Прилипає до краю */
+  left: 0; 
 }
 
-/* Панель з ефектом матового скла (Glassmorphism) */
+
 .sidebar-content {
-  /* Напівпрозорий фон */
+  
   background: rgba(15, 15, 25, 0.4) !important;
   
-  /* 🪟 МАГІЯ СКЛА: розмиваємо тло під панеллю */
+  
   backdrop-filter: blur(15px) !important;
   -webkit-backdrop-filter: blur(15px) !important;
   
-  /* Тонка напівпрозора рамка для ефекту скла */
+  
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-left: none;
   border-radius: 0 16px 16px 0;
@@ -2125,13 +2123,13 @@ webview.active {
   flex-direction: column;
   gap: 8px;
   
-  /* М'яка тінь для відділення від фону */
+  
   box-shadow: 
     5px 0 20px rgba(0, 0, 0, 0.3),
     inset -1px 0 1px rgba(255, 255, 255, 0.05);
 }
 
-/* 🔨 ЯДЕРНИЙ УДАР: Очищаємо фони всіх вкладених елементів */
+
 #side-toolbar div,
 #side-toolbar nav,
 #side-toolbar section,
@@ -2142,11 +2140,11 @@ webview.active {
   background: transparent !important;
 }
 
-/* Кнопки з м'яким світінням при наведенні */
+
 .sidebar-content button,
 #side-toolbar button,
 .sidebar-btn {
-  background: rgba(255, 255, 255, 0.05) !important; /* Ледь помітний прозорий фон */
+  background: rgba(255, 255, 255, 0.05) !important; 
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 10px;
   padding: 12px 16px;
@@ -2162,11 +2160,11 @@ webview.active {
   transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Ефект при наведенні миші - акцентне підсвічування */
+
 .sidebar-content button:hover,
 #side-toolbar button:hover,
 .sidebar-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important; /* Трохи світліше при наведенні */
+  background: rgba(255, 255, 255, 0.1) !important; 
   border: 1px solid rgba(59, 130, 246, 0.4) !important;
   color: #ffffff;
   box-shadow: 
@@ -2174,7 +2172,7 @@ webview.active {
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* Кнопка-стрілочка з акцентним підсвічуванням */
+
 #sidebar-toggle {
   position: absolute;
   top: 50%;
@@ -2211,7 +2209,7 @@ webview.active {
     inset -1px 0 1px rgba(255, 255, 255, 0.1);
 }
 
-/* Розділювач */
+
 .divider {
   border: 0;
   height: 1px;
@@ -2219,7 +2217,7 @@ webview.active {
   margin: 6px 0;
 }
 
-/* ===== AI News Sidebar ===== */
+
 #news-sidebar {
   width: 340px;
   background: linear-gradient(to bottom, #1f2335 0%, #1a1b26 100%);
@@ -2369,7 +2367,7 @@ webview.active {
   to   { opacity: 1; transform: translateY(0);   }
 }
 
-/* Category filter pills */
+
 .news-categories {
   display: flex;
   flex-wrap: wrap;
@@ -2402,7 +2400,7 @@ webview.active {
   color: #7aa2f7;
 }
 
-/* News card meta row */
+
 .news-meta {
   display: flex;
   align-items: center;

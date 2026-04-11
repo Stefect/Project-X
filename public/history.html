@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -204,20 +204,15 @@
   </div>
 
   <script>
-    // Використовуємо API через preload
     const historyList = document.getElementById('history-list');
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-btn');
 
     let allHistory = [];
-
-    // Завантажуємо історію
     async function loadHistory() {
       allHistory = await window.browserStorage.getHistory(1000);
       renderHistory(allHistory);
     }
-
-    // Форматуємо час
     function formatTime(timestamp) {
       const date = new Date(timestamp);
       const now = new Date();
@@ -234,8 +229,6 @@
       
       return date.toLocaleDateString('uk-UA');
     }
-
-    // Групуємо історію по датах
     function groupByDate(history) {
       const groups = {
         today: [],
@@ -266,8 +259,6 @@
 
       return groups;
     }
-
-    // Відображаємо історію
     function renderHistory(history) {
       if (history.length === 0) {
         historyList.innerHTML = `
@@ -304,8 +295,6 @@
 
       historyList.innerHTML = html;
     }
-
-    // Створюємо HTML елемент історії
     function createHistoryItem(item) {
       const faviconUrl = item.favicon || getFaviconFromUrl(item.url);
       const escapedUrl = escapeHtml(item.url).replace(/'/g, '&apos;');
@@ -321,8 +310,6 @@
         </div>
       `;
     }
-
-    // Отримуємо favicon з URL
     function getFaviconFromUrl(url) {
       try {
         const urlObj = new URL(url);
@@ -331,30 +318,21 @@
         return 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22></text></svg>';
       }
     }
-
-    // Екрануємо HTML
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
-
-    // Відкриваємо URL
     function openUrl(url) {
       window.browserStorage.openUrl(url);
     }
-
-    // Видаляємо елемент
     function deleteItem(url) {
       if (confirm('Видалити цей запис з історії?')) {
         allHistory = allHistory.filter(item => item.url !== url);
         renderHistory(allHistory);
-        // Видаляємо з storage
         window.browserStorage.deleteHistoryItem(url);
       }
     }
-
-    // Пошук
     searchInput.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase();
       if (!query) {
@@ -368,25 +346,19 @@
       );
       renderHistory(filtered);
     });
-
-    // Event delegation для кліків на історію
     historyList.addEventListener('click', (e) => {
       const historyItem = e.target.closest('.history-item');
       const deleteBtn = e.target.closest('.delete-btn');
 
       if (deleteBtn && historyItem) {
-        // Клік на кнопку видалення
         e.stopPropagation();
         const url = deleteBtn.dataset.url.replace(/&apos;/g, "'");
         deleteItem(url);
       } else if (historyItem && !deleteBtn) {
-        // Клік на елемент історії
         const url = historyItem.dataset.url.replace(/&apos;/g, "'");
         openUrl(url);
       }
     });
-
-    // Очистити історію
     clearBtn.addEventListener('click', async () => {
       if (confirm('Ви впевнені що хочете очистити всю історію?')) {
         window.browserStorage.clearHistory();
@@ -394,8 +366,6 @@
         renderHistory([]);
       }
     });
-
-    // Завантажуємо при старті
     loadHistory();
   </script>
 </body>
