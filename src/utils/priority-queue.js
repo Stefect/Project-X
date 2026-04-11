@@ -1,37 +1,47 @@
 class BiDirectionalPriorityQueue {
-    static MODES = {
+    static MODES = Object.freeze({
         HIGHEST: 'highest',
         LOWEST: 'lowest',
         OLDEST: 'oldest',
         NEWEST: 'newest'
-    };
+    });
 
-    constructor() {
+    constructor(seed = []) {
         this.items = [];
         this.insertCounter = 0;
+
+        if (Array.isArray(seed)) {
+            seed.forEach((entry) => {
+                if (!entry || typeof entry !== 'object') return;
+                if (!Object.prototype.hasOwnProperty.call(entry, 'priority')) return;
+                this.enqueue(entry.item, entry.priority);
+            });
+        }
     }
 
-    enqueue(item, priority) {
-        if (!Number.isFinite(priority)) {
+    enqueue(item, priority = 0) {
+        const numericPriority = Number(priority);
+        if (!Number.isFinite(numericPriority)) {
             throw new TypeError('Priority must be a finite number');
         }
 
         this.items.push({
             item,
-            priority,
+            priority: numericPriority,
             order: this.insertCounter++
         });
 
         return this.items.length;
     }
 
-    _normalizeMode(type) {
-        const value = String(type || '').toLowerCase();
-        const validModes = Object.values(BiDirectionalPriorityQueue.MODES);
-        return validModes.includes(value) ? value : BiDirectionalPriorityQueue.MODES.HIGHEST;
+    _normalizeMode(mode) {
+        const raw = String(mode || '').toLowerCase();
+        return Object.values(BiDirectionalPriorityQueue.MODES).includes(raw)
+            ? raw
+            : BiDirectionalPriorityQueue.MODES.HIGHEST;
     }
 
-    _isBetterCandidate(current, candidate, mode) {
+    _isCandidateBetter(current, candidate, mode) {
         if (mode === BiDirectionalPriorityQueue.MODES.HIGHEST) {
             if (candidate.priority !== current.priority) {
                 return candidate.priority > current.priority;
@@ -57,34 +67,83 @@ class BiDirectionalPriorityQueue {
         return false;
     }
 
-    _findIndex(type) {
+    _findIndex(mode) {
         if (this.items.length === 0) {
             return -1;
         }
 
-        const mode = this._normalizeMode(type);
+        const normalized = this._normalizeMode(mode);
+        let selectedIndex = 0;
 
-        let targetIndex = 0;
-        for (let i = 1; i < this.items.length; i++) {
-            if (this._isBetterCandidate(this.items[targetIndex], this.items[i], mode)) {
-                targetIndex = i;
+        for (let i = 1; i < this.items.length; i += 1) {
+            if (this._isCandidateBetter(this.items[selectedIndex], this.items[i], normalized)) {
+                selectedIndex = i;
             }
         }
 
-        return targetIndex;
+        return selectedIndex;
     }
 
-    peek(type) {
-        const index = this._findIndex(type);
-        return index !== -1 ? this.items[index].item : null;
-    }
-
-    dequeue(type) {
-        const index = this._findIndex(type);
-        if (index !== -1) {
-            return this.items.splice(index, 1)[0].item;
+    _pickEntry(mode) {
+        const index = this._findIndex(mode);
+        if (index === -1) {
+            return null;
         }
-        return null;
+
+        return {
+            index,
+            entry: this.items[index]
+        };
+    }
+
+    peek(mode) {
+        const picked = this._pickEntry(mode);
+        return picked ? picked.entry.item : null;
+    }
+
+    peekEntry(mode) {
+        const picked = this._pickEntry(mode);
+        return picked
+            ? {
+                item: picked.entry.item,
+                priority: picked.entry.priority,
+                order: picked.entry.order
+            }
+            : null;
+    }
+
+    dequeue(mode) {
+        const picked = this._pickEntry(mode);
+        if (!picked) {
+            return null;
+        }
+
+        const [removed] = this.items.splice(picked.index, 1);
+        return removed.item;
+    }
+
+    dequeueEntry(mode) {
+        const picked = this._pickEntry(mode);
+        if (!picked) {
+            return null;
+        }
+
+        const [removed] = this.items.splice(picked.index, 1);
+        return {
+            item: removed.item,
+            priority: removed.priority,
+            order: removed.order
+        };
+    }
+
+    removeWhere(predicate) {
+        if (typeof predicate !== 'function') {
+            throw new TypeError('Predicate must be a function');
+        }
+
+        const before = this.items.length;
+        this.items = this.items.filter((entry) => !predicate(entry.item, entry.priority, entry.order));
+        return before - this.items.length;
     }
 
     isEmpty() {
@@ -101,7 +160,7 @@ class BiDirectionalPriorityQueue {
     }
 
     toArray() {
-        return this.items.map(entry => ({
+        return this.items.map((entry) => ({
             item: entry.item,
             priority: entry.priority,
             order: entry.order
