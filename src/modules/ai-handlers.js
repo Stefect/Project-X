@@ -1,4 +1,3 @@
-// AI обробники для резюме та стрічки
 const { ipcMain } = require('electron');
 const memoize = require('../utils/memoize');
 
@@ -38,7 +37,6 @@ async function summarizeArticle(title, groqClient) {
     const responseText = completion.choices[0]?.message?.content || '';
     
     try {
-      // Пробуємо розпарсити JSON
       const cleanJson = responseText.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
       return {
@@ -46,7 +44,6 @@ async function summarizeArticle(title, groqClient) {
         summary: parsed.summary || `Аналіз: ${title.substring(0, 30)}...`
       };
     } catch (parseError) {
-      // Якщо не вдалось розпарсити, використовуємо просто як summary
       return {
         translatedTitle: title,
         summary: responseText || `Аналіз: ${title.substring(0, 30)}...`
@@ -60,8 +57,6 @@ async function summarizeArticle(title, groqClient) {
     };
   }
 }
-
-// реєстрація AI IPC handlers
 function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
 
   const cachedSummarizeArticle = memoize(
@@ -69,7 +64,44 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
     { maxSize: 100, policy: 'lru' }
   );
 
-  // резюмування нотаток
+  ipcMain.handle('predict-completion', async (event, text) => {
+    const input = String(text || '').trim();
+    if (!input) return '';
+
+    const lastTokenMatch = input.match(/(\S+)$/);
+    const lastToken = lastTokenMatch ? lastTokenMatch[1] : '';
+    if (lastToken.length < 2) return '';
+
+    if (!groqClient) return '';
+
+    try {
+      const completion = await groqClient.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: `Ти модуль автодоповнення тексту. Поверни ОДНЕ завершене слово для останнього фрагмента. Без пояснень, без markdown, без пунктуації навколо.`
+          },
+          {
+            role: 'user',
+            content: `Контекст: ${input}\nФрагмент: ${lastToken}`
+          }
+        ],
+        model: 'llama-3.1-8b-instant',
+        temperature: 0.2,
+        max_tokens: 10
+      });
+
+      const raw = completion.choices[0]?.message?.content || '';
+      let candidate = raw.replace(/[\r\n]+/g, ' ').trim().split(/\s+/)[0] || '';
+      candidate = candidate.replace(/^[^a-zA-Zа-яА-ЯёЁіІїЇєЄґҐ0-9'-]+|[^a-zA-Zа-яА-ЯёЁіІїЇєЄґҐ0-9'-]+$/g, '');
+
+      if (!candidate) return '';
+      return candidate;
+    } catch (error) {
+      console.warn('[AI] predict-completion error:', error.message);
+      return '';
+    }
+  });
   
   ipcMain.handle('ask-ai', async (event, prompt) => {
     try {
@@ -94,8 +126,6 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
       throw new Error(`Не вдалося отримати відповідь від AI: ${error.message}`);
     }
   });
-
-  // організація вкладок
   
   ipcMain.handle('organize-tabs', async (event) => {
     try {
@@ -126,8 +156,6 @@ function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
       }));
 
       const tabsListString = tabsData.map(t => `ID: ${t.id}, Title: "${t.title}", URL: "${t.url}"`).join('\n');
-
-      // Промпт для AI
       const prompt = `Ти — менеджер вкладок браузера. Я дам тобі список відкритих вкладок.
 Твоє завдання: згрупувати їх за змістом та тематикою.
 
@@ -168,8 +196,6 @@ ${tabsListString}`;
           message: 'Помилка отримання відповіді від AI' 
         };
       }
-
-      // Чистимо markdown теги
       responseText = responseText.replace(/```json|```/g, '').trim();
       console.log('[AI] Cleaned response:', responseText?.substring(0, 150) + '...');
 
@@ -206,8 +232,6 @@ ${tabsListString}`;
     }
   });
 
-  // нескінченна стрічка
-
   ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], customSources = []) => {
     if (isFeedRunning) {
       console.log('стрічка вже працює');
@@ -225,11 +249,8 @@ ${tabsListString}`;
     if (customSources && customSources.length > 0) {
       console.log(`стрічка Custom sources: ${customSources.length}`);
     }
-
-    // таймаут для обробки статей
     
     (async () => {
-      // for await - споживає async generator infiniteArticleGenerator
       for await (const article of currentFeedGenerator) {
         if (!isFeedRunning) {
           console.log('стрічка Stopped by user');
@@ -239,7 +260,6 @@ ${tabsListString}`;
         console.log(`стрічка Received: ${article.title.substring(0, 50)}...`);
 
         try {
-          // Promise.race - таймаут 5 секунд для перекладу та AI обробки
           const result = await Promise.race([
             cachedSummarizeArticle(article.title),
             new Promise((_, reject) => 
@@ -279,17 +299,12 @@ ${tabsListString}`;
     
     return { success: true, message: 'Стрічка зупинена' };
   });
-
-  // X-RAY опис посилань
-
-  // функція для опису URL через AI
   async function describeURL(url, linkText, context) {
     if (!url || url.startsWith('file://') || url.startsWith('javascript:') || url.startsWith('#')) {
       return null;
     }
 
     if (!groqClient) {
-      // Без AI — показуємо текст посилання або домен
       const domain = new URL(url).hostname;
       const title = linkText || domain;
       return { title, description: `Перейти на ${domain}` };
@@ -298,8 +313,6 @@ ${tabsListString}`;
     console.log('x-ray Describing:', url.substring(0, 80));
     if (linkText) console.log('x-ray Link text:', linkText.substring(0, 60));
     if (context) console.log('x-ray Context:', context.substring(0, 80));
-
-    // Формуємо запит з контекстом
     let userMessage = `URL: ${url}`;
     if (linkText && linkText.trim()) {
       userMessage += `\nТекст посилання: «${linkText.trim()}»`;
@@ -351,9 +364,6 @@ ${tabsListString}`;
     console.log('x-ray Result:', result.title);
     return result;
   }
-
-  // мемоізація для describeURL
-  // багато посилань повторюються
   const cachedDescribeURL = memoize(describeURL, {
     maxSize: 200,
     policy: 'lru'
