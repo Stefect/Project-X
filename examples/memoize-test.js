@@ -53,7 +53,6 @@ const customMemoized = memoize(expensiveScore, {
     maxSize: 2,
     policy: 'custom',
     customEvict(cache) {
-        // Студентський приклад: викидаємо останній ключ за алфавітом.
         const keys = [...cache.keys()].sort();
         return keys[keys.length - 1];
     }

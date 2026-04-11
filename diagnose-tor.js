@@ -1,14 +1,9 @@
-/**
- * Діагностика модуля tor-manager.js
- * Перевірка цілісності та функціональності
- */
+
 
 const torManager = require('./src/modules/tor-manager');
 const privacyGuard = require('./src/modules/privacy-guard');
 
 console.log('=== 🔧 TOR MANAGER MODULE DIAGNOSTICS ===\n');
-
-// Перевірка 1: Експорти модуля
 console.log('📋 Check 1: Module Exports');
 const expectedExports = ['startTor', 'toggleTor', 'getTorStatus', 'isTorEnabled', 'stopTor'];
 const actualExports = Object.keys(torManager);
@@ -23,14 +18,10 @@ expectedExports.forEach(exp => {
     console.log(`  ❌ ${exp} - MISSING!`);
   }
 });
-
-// Перевірка додаткових експортів
 const extraExports = actualExports.filter(e => !expectedExports.includes(e));
 if (extraExports.length > 0) {
   console.log('  ℹ️ Extra exports:', extraExports);
 }
-
-// Перевірка 2: Типи функцій
 console.log('\n📋 Check 2: Function Types');
 expectedExports.forEach(exp => {
   if (torManager[exp]) {
@@ -42,8 +33,6 @@ expectedExports.forEach(exp => {
     }
   }
 });
-
-// Перевірка 3: Privacy Guard
 console.log('\n📋 Check 3: Privacy Guard Module');
 const privacyExports = Object.keys(privacyGuard);
 console.log('Privacy Guard exports:', privacyExports);
@@ -64,8 +53,6 @@ expectedPrivacyExports.forEach(exp => {
     console.log(`  ⚠️ ${exp} - not found`);
   }
 });
-
-// Перевірка 4: Tor Binary
 console.log('\n📋 Check 4: Tor Binary');
 const fs = require('fs');
 const path = require('path');
@@ -80,8 +67,6 @@ if (fs.existsSync(torPath)) {
   const stats = fs.statSync(torPath);
   console.log(`  ℹ️ Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
   console.log(`  ℹ️ Modified: ${stats.mtime.toISOString()}`);
-  
-  // Перевіряємо права на виконання (Unix)
   if (!isWindows) {
     const mode = stats.mode;
     const isExecutable = !!(mode & parseInt('111', 8));
@@ -95,8 +80,6 @@ if (fs.existsSync(torPath)) {
   console.log(`  ❌ Tor binary NOT FOUND: ${torPath}`);
   console.log('  💡 Download from: https://www.torproject.org/download/tor/');
 }
-
-// Перевірка 5: Tor Data Files
 console.log('\n📋 Check 5: Tor Data Files');
 const dataFiles = ['geoip', 'geoip6', 'torrc-defaults'];
 
@@ -109,8 +92,6 @@ dataFiles.forEach(file => {
     console.log(`  ⚠️ ${file} - NOT FOUND`);
   }
 });
-
-// Перевірка 6: Tor Data Directory
 console.log('\n📋 Check 6: Tor Data Directory');
 const torDataDir = path.join(__dirname, 'bin', 'tor', 'data');
 
@@ -136,8 +117,6 @@ if (fs.existsSync(torDataDir)) {
 } else {
   console.log('  ℹ️ Data directory will be created on first run');
 }
-
-// Перевірка 7: Pluggable Transports (Bridges)
 console.log('\n📋 Check 7: Pluggable Transports');
 const ptDir = path.join(__dirname, 'bin', 'tor', 'pluggable_transports');
 
@@ -173,8 +152,6 @@ if (fs.existsSync(ptDir)) {
 } else {
   console.log('  ⚠️ PT directory not found');
 }
-
-// Перевірка 8: Network Ports
 console.log('\n📋 Check 8: Network Ports');
 const net = require('net');
 
@@ -205,8 +182,6 @@ function checkPort(port, name) {
 (async () => {
   await checkPort(9050, 'SOCKS');
   await checkPort(9051, 'Control');
-  
-  // Підсумок
   console.log('\n=== 📊 DIAGNOSTIC SUMMARY ===\n');
   
   const issues = [];

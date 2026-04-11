@@ -1,11 +1,6 @@
-/**
- * Тест модуля Tor та DuckDuckGo через проксі
- * Запускати через DevTools Console або як окремий скрипт
- */
+
 
 console.log('=== 🔍 TOR MODULE TEST ===\n');
-
-// Тест 1: Перевірка статусу Tor
 async function testTorStatus() {
   console.log('📋 Test 1: Tor Status');
   try {
@@ -30,8 +25,6 @@ async function testTorStatus() {
     return null;
   }
 }
-
-// Тест 2: Перевірка IP адреси
 async function testIPAddress() {
   console.log('\n📋 Test 2: IP Address Check');
   try {
@@ -42,8 +35,6 @@ async function testIPAddress() {
     
     console.log(`  ✓ IP: ${data.ip}`);
     console.log(`  ✓ Response time: ${responseTime} ms`);
-    
-    // Перевіряємо геолокацію
     try {
       const geoResponse = await fetch(`https://ipapi.co/${data.ip}/json/`);
       const geoData = await geoResponse.json();
@@ -73,8 +64,6 @@ async function testIPAddress() {
     return null;
   }
 }
-
-// Тест 3: Перевірка DuckDuckGo
 async function testDuckDuckGo() {
   console.log('\n📋 Test 3: DuckDuckGo Connection');
   try {
@@ -105,8 +94,6 @@ async function testDuckDuckGo() {
     return null;
   }
 }
-
-// Тест 4: Перевірка DNS leak
 async function testDNSLeak() {
   console.log('\n📋 Test 4: DNS Leak Test');
   try {
@@ -131,8 +118,6 @@ async function testDNSLeak() {
     return null;
   }
 }
-
-// Тест 5: Перевірка WebRTC leak
 async function testWebRTCLeak() {
   console.log('\n📋 Test 5: WebRTC Leak Test');
   
@@ -145,7 +130,6 @@ async function testWebRTCLeak() {
     
     pc.onicecandidate = (ice) => {
       if (!ice || !ice.candidate || !ice.candidate.candidate) {
-        // Завершено
         setTimeout(() => {
           pc.close();
           
@@ -182,8 +166,6 @@ async function testWebRTCLeak() {
     };
   });
 }
-
-// Запускаємо всі тести
 async function runAllTests() {
   console.log('⏱️ Starting tests...\n');
   const startTime = Date.now();
@@ -222,8 +204,6 @@ async function runAllTests() {
   
   console.log('\n=== END OF TESTS ===\n');
 }
-
-// Експортуємо функції для ручного запуску
 window.torTests = {
   runAll: runAllTests,
   testStatus: testTorStatus,
