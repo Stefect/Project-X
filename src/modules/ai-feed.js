@@ -1,7 +1,8 @@
 const fetch = require('node-fetch');
 
-const FEED_LOOP_DELAY_MS = 2000;
+const FEED_LOOP_DELAY_MS = 1800;
 const MAX_SEEN_ARTICLES = 1500;
+const WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const NEWS_SOURCES = [
   {
@@ -34,25 +35,71 @@ function normalizeSourceList(customSources = []) {
   return sanitized.length > 0 ? sanitized : NEWS_SOURCES;
 }
 
-function* roundRobinSourceGenerator(sources) {
-  if (!Array.isArray(sources) || sources.length === 0) {
-    throw new Error('Source list must contain at least one source');
+function* cycleGenerator(items, startIndex = 0) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('Items must be a non-empty array');
   }
 
-  let index = 0;
+  const length = items.length;
+  let index = ((Math.floor(Number(startIndex) || 0) % length) + length) % length;
+
   while (true) {
-    yield sources[index % sources.length];
-    index += 1;
+    yield items[index];
+    index = (index + 1) % length;
   }
 }
+
+function* roundRobinSourceGenerator(sources) {
+  yield* cycleGenerator(sources);
+}
+
 function* incrementalCounterGenerator(start = 0, step = 1) {
-  let value = Number(start) || 0;
-  const stride = Number(step) || 1;
+  let value = Number.isFinite(Number(start)) ? Number(start) : 0;
+  const strideRaw = Number(step);
+  const stride = Number.isFinite(strideRaw) && strideRaw !== 0 ? strideRaw : 1;
 
   while (true) {
     yield value;
     value += stride;
   }
+}
+
+function* dayCycleGenerator(startDay = 'Monday') {
+  const normalized = String(startDay || '').toLowerCase();
+  const startIndex = WEEK_DAYS.findIndex((day) => day.toLowerCase() === normalized);
+  const safeStartIndex = startIndex === -1 ? 0 : startIndex;
+
+  yield* cycleGenerator(WEEK_DAYS, safeStartIndex);
+}
+
+function* randomNumberGenerator(min = 0, max = 1) {
+  const minValue = Number(min);
+  const maxValue = Number(max);
+
+  const safeMin = Number.isFinite(minValue) ? minValue : 0;
+  const safeMax = Number.isFinite(maxValue) ? maxValue : 1;
+  const low = Math.min(safeMin, safeMax);
+  const high = Math.max(safeMin, safeMax);
+
+  while (true) {
+    yield Math.random() * (high - low) + low;
+  }
+}
+
+function normalizeIteratorSource(iteratorLike) {
+  if (typeof iteratorLike === 'function') {
+    return normalizeIteratorSource(iteratorLike());
+  }
+
+  if (iteratorLike && typeof iteratorLike[Symbol.asyncIterator] === 'function') {
+    return iteratorLike[Symbol.asyncIterator]();
+  }
+
+  if (iteratorLike && typeof iteratorLike[Symbol.iterator] === 'function') {
+    return iteratorLike[Symbol.iterator]();
+  }
+
+  throw new TypeError('Expected an iterator, async iterator, or generator function');
 }
 
 async function fetchJson(url, options = {}) {
@@ -176,30 +223,45 @@ async function* infiniteArticleGenerator(categories = ['all'], customSources = [
   }
 }
 
-async function consumeGeneratorWithTimeout(generator, timeoutMs, processItem = null) {
-  if (!generator || typeof generator[Symbol.asyncIterator] !== 'function') {
-    throw new TypeError('Expected an async iterator');
-  }
-
+async function consumeGeneratorWithTimeout(iteratorLike, timeoutMs, processItem = null) {
   const timeout = Math.max(0, Number(timeoutMs) || 0);
   if (timeout === 0) {
     return [];
   }
 
-  const startedAt = Date.now();
+  const iterator = normalizeIteratorSource(iteratorLike);
+  const deadline = Date.now() + timeout;
   const collected = [];
-
   let iteration = 0;
-  for await (const value of generator) {
-    if (Date.now() - startedAt >= timeout) {
-      break;
+
+  try {
+    while (Date.now() < deadline) {
+      const nextState = await iterator.next();
+      if (nextState.done) {
+        break;
+      }
+
+      const value = nextState.value;
+      collected.push(value);
+      iteration += 1;
+
+      if (typeof processItem === 'function') {
+        const hookResult = await processItem(value, iteration);
+        if (hookResult === false) {
+          break;
+        }
+      }
+
+      if (iteration % 250 === 0) {
+        await Promise.resolve();
+      }
     }
-
-    collected.push(value);
-    iteration += 1;
-
-    if (typeof processItem === 'function') {
-      await processItem(value, iteration);
+  } finally {
+    if (typeof iterator.return === 'function') {
+      try {
+        await iterator.return();
+      } catch (_error) {
+      }
     }
   }
 
@@ -208,8 +270,11 @@ async function consumeGeneratorWithTimeout(generator, timeoutMs, processItem = n
 
 module.exports = {
   NEWS_SOURCES,
+  cycleGenerator,
   roundRobinSourceGenerator,
   incrementalCounterGenerator,
+  dayCycleGenerator,
+  randomNumberGenerator,
   infiniteArticleGenerator,
   consumeGeneratorWithTimeout
 };
