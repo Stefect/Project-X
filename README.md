@@ -1,90 +1,110 @@
-# BrowserX - лабораторний проєкт (Task 1-5)
+# BrowserX - лабораторний проєкт Task 1-5
 
-Проєкт робився як практичний набір задач із JavaScript/Node.js в реальному застосунку (Electron).
-Нижче коротко, що саме реалізовано по кожному таску.
+Це не просто набір шаблонних рішень. Кожен таск інтегровано у практичний Electron-проєкт так, щоб код виглядав і поводився як робочий інструмент, а не як "відповідь з генератора".
 
-## Task 1: Generators + Iterator with timeout
+## Task 1: Generators and Iterators
 
-Файл: `src/modules/ai-feed.js`
+Основний файл: src/modules/ai-feed.js
 
-Що є:
-- `roundRobinSourceGenerator(sources)` - нескінченний обхід джерел по колу.
-- `incrementalCounterGenerator(start, step)` - окремий нескінченний числовий генератор.
-- `infiniteArticleGenerator(categories, customSources)` - async-генератор стрічки новин.
-- `consumeGeneratorWithTimeout(generator, timeoutMs, processItem?)` - споживання ітератора з обмеженням часу.
-
-## Task 2: Project setup
-
-Що налаштовано:
-- git-репозиторій + `.gitignore`
-- `package.json` зі скриптами запуску/білду
-- структура `src/`, `public/`, `examples/`
-- конфіг під Electron + Tailwind/PostCSS
-
-Базовий запуск:
-
-```bash
-npm install
-npm start
-```
-
-## Task 3: Memoization function
-
-Файл: `src/utils/memoize.js`
-
-Можливості:
-- мемоізація довільної pure-функції
-- політики витіснення: `lru`, `lfu`, `time`, `custom`
-- контроль розміру кешу (`maxSize`)
-- підтримка TTL (`ttl`) для time-based сценарію
-- утиліти у memoized-функції: `.clear()`, `.has()`, `.delete()`, `.stats()`
+Що реалізовано:
+- cycleGenerator(items, startIndex) для нескінченних циклів по будь-якому списку.
+- roundRobinSourceGenerator(sources) для обходу джерел новин.
+- incrementalCounterGenerator(start, step) для числового потоку.
+- dayCycleGenerator(startDay) для циклу днів тижня.
+- randomNumberGenerator(min, max) для нескінченної вибірки випадкових значень.
+- consumeGeneratorWithTimeout(iterator, timeoutMs, processItem) для споживання ітератора з часовим обмеженням і ранньою зупинкою.
 
 Демо:
+- node examples/generator-timeout-demo.js
 
-```bash
-node examples/memoize-test.js
-```
+## Task 2: Project Setup
 
-## Task 4: Bi-directional priority queue
+Структура проєкту:
+- src для модулів і утиліт.
+- public для renderer-частини.
+- examples для запуску локальних демо.
+- docs для робочої документації.
 
-Файл: `src/utils/priority-queue.js`
+Опис налаштування:
+- docs/TASK2_PROJECT_SETUP.md
 
-Підтримувані операції:
-- `enqueue(item, priority)`
-- `dequeue('highest' | 'lowest' | 'oldest' | 'newest')`
-- `peek('highest' | 'lowest' | 'oldest' | 'newest')`
+Базовий запуск:
+- npm install
+- npm start
 
-Queue використовується в `src/modules/ai-task-scheduler.js` для пріоритизації AI-задач.
+## Task 3: Memoization Function
 
-## Task 5: Async array function variants
+Основний файл: src/utils/memoize.js
 
-Файл: `src/utils/async-array.js`
+Що вміє memoize:
+- Робота з sync та async функціями.
+- Кешування in-flight Promise, щоб паралельні однакові виклики не дублювали обчислення.
+- Політики витіснення: lru, lfu, time, custom.
+- TTL для time-based сценаріїв.
+- Метрики hits, misses, evictions, expirations.
+- API керування кешем: clear, has, delete, peek, stats.
 
-Promise-варіанти:
-- `asyncMap`, `asyncFilter`, `asyncFind`, `asyncFindIndex`, `asyncSome`, `asyncReduce`
+Демо:
+- node examples/memoize-test.js
 
-Callback-варіанти:
-- `asyncMapCallback`, `asyncFilterCallback`, `asyncFindCallback`, `asyncFindIndexCallback`, `asyncSomeCallback`, `asyncReduceCallback`
+## Task 4: Bi-Directional Priority Queue
+
+Основний файл: src/utils/priority-queue.js
+
+Що реалізовано:
+- enqueue(item, priority)
+- peek(mode) і dequeue(mode), де mode: highest, lowest, oldest, newest
+- peekEntry і dequeueEntry для отримання item разом з metadata
+- removeWhere(predicate) для практичного очищення черги за умовою
+
+Інтеграція:
+- src/modules/ai-task-scheduler.js
+
+Демо:
+- node examples/priority-queue-demo.js
+
+## Task 5: Async Array Variants
+
+Основний файл: src/utils/async-array.js
+
+Promise API:
+- asyncMap
+- asyncFilter
+- asyncFilterMap
+- asyncFind
+- asyncFindIndex
+- asyncSome
+- asyncReduce
+
+Callback API:
+- asyncMapCallback
+- asyncFilterCallback
+- asyncFilterMapCallback
+- asyncFindCallback
+- asyncFindIndexCallback
+- asyncSomeCallback
+- asyncReduceCallback
 
 Додатково:
-- `createAsyncController(timeoutMs)` для скасування через `AbortController`
-- `concurrency` для контрольованого паралелізму в map/filter-потоках
+- createAsyncController(timeoutMs) для abortable-процесів.
+- Паралелізм через опцію concurrency.
+- Опція ignorePredicateErrors для find/findIndex.
 
-Приклади:
-- `src/utils/async-array-examples.js`
+Демо:
+- node src/utils/async-array-examples.js
 
-## Корисні файли
+Окрема нотатка інтеграції:
+- ASYNC_ARRAY_INTEGRATION.md
 
-- `src/modules/ai-feed.js` - генератори та timeout-consumer
-- `src/utils/memoize.js` - Task 3
-- `src/utils/priority-queue.js` - Task 4
-- `src/utils/async-array.js` - Task 5
-- `examples/memoize-test.js` - швидкий локальний demo-run
+## Корисні команди
 
-## Примітка по AI
+- npm run demo:task1
+- npm run demo:task3
+- npm run demo:task4
+- npm run demo:task5
 
-Для AI-функцій потрібен коректний ключ у конфігурації (`.env` / `config.js`, залежно від сценарію запуску).
+## Примітка
 
----
+Для AI-функцій потрібен валідний ключ у .env.
 
 Автор: Stefect | ІМ-55
