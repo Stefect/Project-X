@@ -1,9 +1,9 @@
-const POLICY = {
+const POLICY = Object.freeze({
     LRU: 'lru',
     LFU: 'lfu',
     TIME: 'time',
     CUSTOM: 'custom'
-};
+});
 
 function normalizeMaxSize(rawMaxSize) {
     if (rawMaxSize === undefined || rawMaxSize === null) return Infinity;
@@ -16,8 +16,42 @@ function normalizePolicy(rawPolicy) {
     return Object.values(POLICY).includes(policy) ? policy : POLICY.LRU;
 }
 
-function defaultKeyResolver(args) {
-    return JSON.stringify(args);
+function createDefaultKeyResolver() {
+    const objectIds = new WeakMap();
+    let sequence = 0;
+
+    const getObjectId = (value) => {
+        if (!objectIds.has(value)) {
+            sequence += 1;
+            objectIds.set(value, sequence);
+        }
+        return objectIds.get(value);
+    };
+
+    const encode = (value) => {
+        if (value === null) return 'null';
+
+        const type = typeof value;
+        if (type === 'undefined') return 'u';
+        if (type === 'number') return Number.isNaN(value) ? 'n:NaN' : `n:${value}`;
+        if (type === 'bigint') return `bi:${value.toString()}`;
+        if (type === 'string') return `s:${value}`;
+        if (type === 'boolean') return `b:${value}`;
+        if (type === 'symbol') return `sym:${String(value.description || '')}`;
+        if (type === 'function') return `fn#${getObjectId(value)}`;
+
+        if (Array.isArray(value)) {
+            return `arr:[${value.map(encode).join(',')}]`;
+        }
+
+        if (value instanceof Date) {
+            return `date:${value.getTime()}`;
+        }
+
+        return `obj#${getObjectId(value)}`;
+    };
+
+    return (args) => Array.from(args, encode).join('|');
 }
 
 function createEntry(value, now) {
@@ -31,14 +65,21 @@ function createEntry(value, now) {
 
 function isExpired(entry, now, ttlMs) {
     if (!Number.isFinite(ttlMs)) return false;
-    return now - entry.createdAt > ttlMs;
+    return now - entry.createdAt >= ttlMs;
 }
 
-function selectEvictionKey(cache, policy, customEvict) {
+function isPromiseLike(value) {
+    return Boolean(value && typeof value.then === 'function');
+}
+
+function pickEvictionKey(cache, policy, customEvict) {
     if (cache.size === 0) return undefined;
 
     if (policy === POLICY.CUSTOM && typeof customEvict === 'function') {
-        return customEvict(cache);
+        const chosen = customEvict(cache);
+        if (cache.has(chosen)) {
+            return chosen;
+        }
     }
 
     let selectedKey;
@@ -51,20 +92,11 @@ function selectEvictionKey(cache, policy, customEvict) {
             continue;
         }
 
-        if (policy === POLICY.LRU) {
-            if (entry.lastAccessAt < selectedEntry.lastAccessAt) {
-                selectedKey = key;
-                selectedEntry = entry;
-            }
-            continue;
-        }
-
         if (policy === POLICY.LFU) {
-            const lessFrequent = entry.accessCount < selectedEntry.accessCount;
-            const sameFrequencyOlder = entry.accessCount === selectedEntry.accessCount
+            const fewerHits = entry.accessCount < selectedEntry.accessCount;
+            const sameHitsOlder = entry.accessCount === selectedEntry.accessCount
                 && entry.lastAccessAt < selectedEntry.lastAccessAt;
-
-            if (lessFrequent || sameFrequencyOlder) {
+            if (fewerHits || sameHitsOlder) {
                 selectedKey = key;
                 selectedEntry = entry;
             }
@@ -76,6 +108,12 @@ function selectEvictionKey(cache, policy, customEvict) {
                 selectedKey = key;
                 selectedEntry = entry;
             }
+            continue;
+        }
+
+        if (entry.lastAccessAt < selectedEntry.lastAccessAt) {
+            selectedKey = key;
+            selectedEntry = entry;
         }
     }
 
@@ -93,7 +131,7 @@ function memoize(fn, options = {}) {
     const customEvict = options.customEvict;
     const keyResolver = typeof options.keyResolver === 'function'
         ? options.keyResolver
-        : defaultKeyResolver;
+        : createDefaultKeyResolver();
     const ttlMs = Number.isFinite(options.ttl)
         ? Math.max(0, Number(options.ttl))
         : (policy === POLICY.TIME ? 60000 : Infinity);
@@ -120,9 +158,9 @@ function memoize(fn, options = {}) {
         if (!Number.isFinite(maxSize)) return;
 
         while (cache.size > maxSize) {
-            const keyToRemove = selectEvictionKey(cache, policy, customEvict);
-            if (keyToRemove === undefined) break;
-            cache.delete(keyToRemove);
+            const keyToDelete = pickEvictionKey(cache, policy, customEvict);
+            if (keyToDelete === undefined) break;
+            cache.delete(keyToDelete);
             stats.evictions += 1;
         }
     };
@@ -133,35 +171,36 @@ function memoize(fn, options = {}) {
             return fn.apply(this, args);
         }
 
-        const key = keyResolver(args);
         const now = Date.now();
+        const key = keyResolver(args);
 
         removeExpiredEntries(now);
 
-        if (cache.has(key)) {
-            const entry = cache.get(key);
-            entry.accessCount += 1;
-            entry.lastAccessAt = now;
+        const cached = cache.get(key);
+        if (cached) {
+            cached.accessCount += 1;
+            cached.lastAccessAt = now;
             stats.hits += 1;
-            return entry.value;
+            return cached.value;
         }
 
         stats.misses += 1;
-        const value = fn.apply(this, args);
-        if (value && typeof value.then === 'function') {
-            const guarded = value.catch((error) => {
+        const produced = fn.apply(this, args);
+
+        if (isPromiseLike(produced)) {
+            const guardedPromise = Promise.resolve(produced).catch((error) => {
                 cache.delete(key);
                 throw error;
             });
 
-            cache.set(key, createEntry(guarded, now));
+            cache.set(key, createEntry(guardedPromise, now));
             enforceMaxSize();
-            return guarded;
+            return guardedPromise;
         }
 
-        cache.set(key, createEntry(value, now));
+        cache.set(key, createEntry(produced, now));
         enforceMaxSize();
-        return value;
+        return produced;
     };
 
     memoizedFn._cache = cache;
@@ -178,6 +217,11 @@ function memoize(fn, options = {}) {
     memoizedFn.has = (...args) => {
         const key = keyResolver(args);
         return cache.has(key);
+    };
+
+    memoizedFn.peek = (...args) => {
+        const key = keyResolver(args);
+        return cache.get(key)?.value;
     };
 
     memoizedFn.stats = () => ({
