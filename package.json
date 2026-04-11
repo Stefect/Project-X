@@ -8,6 +8,10 @@
     "build:css": "postcss ./public/css/styles.css -o ./public/css/output.css --verbose",
     "build:css:watch": "postcss ./public/css/styles.css -o ./public/css/output.css --watch --verbose",
     "dev": "npm run build:css:watch & electron .",
+    "demo:task1": "node examples/generator-timeout-demo.js",
+    "demo:task3": "node examples/memoize-test.js",
+    "demo:task4": "node examples/priority-queue-demo.js",
+    "demo:task5": "node src/utils/async-array-examples.js",
     "build": "npm run build:css && electron-builder --win",
     "build:portable": "npm run build:css && electron-builder --win portable",
     "build:all": "npm run build:css && electron-builder --win --publish never"
