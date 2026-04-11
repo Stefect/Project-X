@@ -16,22 +16,16 @@ const CATEGORIES = {
 };
 
 const SOURCES = [
-  // Tech
   { id: 'reddit-tech',        category: 'tech',    label: 'r/technology',      type: 'reddit',     url: 'https://www.reddit.com/r/technology/hot.json?limit=15' },
   { id: 'reddit-programming', category: 'tech',    label: 'r/programming',     type: 'reddit',     url: 'https://www.reddit.com/r/programming/hot.json?limit=15' },
   { id: 'hackernews',         category: 'tech',    label: 'Hacker News',       type: 'hackernews', url: 'https://hacker-news.firebaseio.com/v0/topstories.json' },
   { id: 'devto',              category: 'tech',    label: 'Dev.to',            type: 'devto',      url: 'https://dev.to/api/articles?top=7&per_page=10' },
-  // AI
   { id: 'reddit-ai',          category: 'ai',      label: 'r/artificial',      type: 'reddit',     url: 'https://www.reddit.com/r/artificial/hot.json?limit=10' },
   { id: 'reddit-ml',          category: 'ai',      label: 'r/MachineLearning', type: 'reddit',     url: 'https://www.reddit.com/r/MachineLearning/hot.json?limit=10' },
-  // Science
   { id: 'reddit-science',     category: 'science', label: 'r/science',         type: 'reddit',     url: 'https://www.reddit.com/r/science/hot.json?limit=10' },
-  // Gaming
   { id: 'reddit-gaming',      category: 'gaming',  label: 'r/gaming',          type: 'reddit',     url: 'https://www.reddit.com/r/gaming/hot.json?limit=10' },
   { id: 'reddit-games',       category: 'gaming',  label: 'r/Games',           type: 'reddit',     url: 'https://www.reddit.com/r/Games/hot.json?limit=10' },
-  // Ukraine
   { id: 'reddit-ukraine',     category: 'ukraine', label: 'r/ukraine',         type: 'reddit',     url: 'https://www.reddit.com/r/ukraine/hot.json?limit=10' },
-  // Crypto
   { id: 'reddit-crypto',      category: 'crypto',  label: 'r/CryptoCurrency',  type: 'reddit',     url: 'https://www.reddit.com/r/CryptoCurrency/hot.json?limit=10' },
   { id: 'reddit-bitcoin',     category: 'crypto',  label: 'r/Bitcoin',         type: 'reddit',     url: 'https://www.reddit.com/r/Bitcoin/hot.json?limit=10' },
 ];
@@ -118,8 +112,6 @@ async function fetchNewsArticles(selectedCategories, count = 15) {
   const all = results
     .filter(r => r.status === 'fulfilled')
     .flatMap(r => r.value);
-
-  // Fisher-Yates shuffle for variety
   for (let i = all.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [all[i], all[j]] = [all[j], all[i]];

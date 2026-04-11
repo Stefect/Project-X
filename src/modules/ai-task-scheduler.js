@@ -45,7 +45,6 @@ class AITaskScheduler {
         this.taskQueue.enqueue(task, normalizedPriority);
 
         if (!this.isProcessing) {
-            // Відпускаємо цикл обробки в мікротаску, щоб addTask залишався швидким.
             Promise.resolve().then(() => this.processQueue());
         }
 

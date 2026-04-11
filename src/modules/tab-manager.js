@@ -1,8 +1,4 @@
-/**
- * Tab Manager - Система управління вкладками (WEBVIEW VERSION)
- * Створення, перемикання, закриття, відновлення сесій
- * Використовує <webview> HTML теги замість BrowserView
- */
+
 
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -12,8 +8,6 @@ const SEARCH_ENGINES = {
   tor: 'https://duckduckgo.com/?q=',
   regular: 'https://www.google.com/search?q='
 };
-
-// Стан вкладок
 let tabs = [];
 let activeTabId = 1;
 let nextTabId = 2;
@@ -72,26 +66,17 @@ function buildTabState(id, url, title = null) {
   };
 }
 
-/**
- * Ініціалізує систему вкладок
- */
+
 function init(mainWindow) {
   mainWindowRef = mainWindow;
   console.log('[TAB] Webview tab manager initialized');
 }
 
-/**
- * Створює HTML елемент <webview> для вкладки
- */
+
 function createWebviewElement(tabId, url) {
-  // Визначаємо inline стилі залежно від того, чи це активна вкладка
   const isActive = tabId === activeTabId;
-  // Порожні вкладки (без URL) завжди приховані — показується native new tab
   const hasUrl = url && url !== 'about:blank';
   const displayStyle = (isActive && hasUrl) ? 'flex' : 'none';
-
-  // Для порожніх вкладок використовуємо data URI замість about:blank
-  // щоб ініціалізувати guest-процес (потрібно для preload) без ERR_ABORTED
   const srcValue = hasUrl ? url : 'data:text/html,';
 
   return `
@@ -107,49 +92,32 @@ function createWebviewElement(tabId, url) {
   `;
 }
 
-/**
- * Ініціалізує першу вкладку
- */
+
 function initFirstTab(browserView, startUrl) {
-  // Більше не використовуємо browserView, створюємо webview через HTML
   tabs = [buildTabState(1, startUrl, DEFAULT_TAB_TITLE)];
   activeTabId = 1;
   nextTabId = 2;
-  
-  // Відправляємо команду на створення webview елемента
   const webviewHTML = createWebviewElement(1, startUrl);
   sendToRenderer('create-webview', { tabId: 1, html: webviewHTML, url: startUrl });
   
   console.log('[TAB] First tab initialized');
 }
 
-/**
- * Створює нову вкладку
- */
+
 function createTab(mainWindow, url = null, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel, sidebarWidth }) {
   const targetUrl = url || null;
 
   const newTab = buildTabState(nextTabId, targetUrl);
   
   tabs.push(newTab);
-  
-  // Встановлюємо як активну ПЕРЕД створенням HTML (щоб отримала клас "active")
   activeTabId = newTab.id;
-  
-  // Створюємо HTML елемент webview
   const webviewHTML = createWebviewElement(newTab.id, targetUrl);
-  
-  // Відправляємо на UI для створення
   mainWindow.webContents.send('create-webview', { 
     tabId: newTab.id,
     html: webviewHTML,
     url: targetUrl
   });
-  
-  // Активуємо webview (на випадок якщо HTML створився без класу)
   mainWindow.webContents.send('switch-webview', { tabId: newTab.id });
-  
-  // Налаштовуємо обробники подій
   setupTabEventHandlers(newTab, mainWindow, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel });
   
   console.log('[TAB] Created tab:', newTab.id);
@@ -158,30 +126,18 @@ function createTab(mainWindow, url = null, { storage, themeManager, injectUnifie
   return { id: newTab.id, url: targetUrl, title: newTab.title };
 }
 
-/**
- * Налаштовує обробники подій для вкладки
- * Для webview події приходять через IPC з renderer process
- */
+
 function setupTabEventHandlers(tabOrId, mainWindow, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel }) {
   const id = typeof tabOrId === 'object' ? tabOrId.id : tabOrId;
-  
-  // Обробники налаштовуються через IPC events в main.js
-  // Тут просто зберігаємо посилання на callbacks
   console.log('[TAB] Handlers are managed in renderer for tab:', id);
 }
 
-/**
- * Реєструє обробник window.open (не потрібен для webview)
- */
+
 function registerWindowOpenHandler(browserView, mainWindow) {
-  // Webview має власну логіку обробки нових вікон через атрибут 'new-window'
-  // Обробляється на стороні renderer process
   console.log('[TAB] window.open is handled by renderer/webview');
 }
 
-/**
- * Перемикає на вкладку за ID
- */
+
 function switchTab(tabId, mainWindow, sidebarWidth) {
   const tab = getTabById(tabId);
   if (!tab) {
@@ -190,21 +146,15 @@ function switchTab(tabId, mainWindow, sidebarWidth) {
   }
   
   activeTabId = tabId;
-
-  // Відправляємо команду на UI для перемикання класу .active
   mainWindow.webContents.send('switch-webview', { tabId });
   mainWindow.webContents.send('tab-activated', tabId);
-
-  // Оновлюємо URL bar
   mainWindow.webContents.send('update-url-bar', tab.url || '');
   
   console.log('[TAB] Switched to tab:', tabId);
   return true;
 }
 
-/**
- * Закриває вкладку
- */
+
 function closeTab(tabId, mainWindow) {
   const tabIndex = tabs.findIndex(t => t.id === tabId);
   
@@ -212,27 +162,19 @@ function closeTab(tabId, mainWindow) {
     console.warn('[TAB] Tried to close unknown tab:', tabId);
     return false;
   }
-  
-  // Якщо це остання вкладка - повертаємо true
   if (tabs.length <= 1) {
     console.log('[TAB] Last tab closed, app can quit');
     return true;
   }
 
   let fallbackTabId = null;
-  
-  // Якщо це активна вкладка, перемкнемось на іншу
   if (activeTabId === tabId) {
     const newActiveTab = tabs[tabIndex + 1] || tabs[tabIndex - 1];
     if (newActiveTab) {
       fallbackTabId = newActiveTab.id;
     }
   }
-  
-  // Видаляємо webview елемент з DOM
   mainWindow.webContents.send('remove-webview', { tabId });
-  
-  // Видаляємо з масиву
   tabs.splice(tabIndex, 1);
 
   if (fallbackTabId) {
@@ -243,9 +185,7 @@ function closeTab(tabId, mainWindow) {
   return false;
 }
 
-/**
- * Перевпорядковує вкладки
- */
+
 function reorderTabs(newOrder) {
   try {
     const byId = new Map(tabs.map(tab => [tab.id, tab]));
@@ -258,8 +198,6 @@ function reorderTabs(newOrder) {
         byId.delete(tabId);
       }
     });
-
-    // Якщо у newOrder чогось немає, не губимо вкладки.
     byId.forEach(tab => reorderedTabs.push(tab));
 
     tabs = reorderedTabs;
@@ -271,9 +209,7 @@ function reorderTabs(newOrder) {
   }
 }
 
-/**
- * Навігує активну вкладку до URL
- */
+
 function navigate(input, isTorActive) {
   const activeTab = getActiveTabSafe();
   if (!activeTab) {
@@ -286,37 +222,25 @@ function navigate(input, isTorActive) {
   activeTab.title = activeTab.title || 'Loading...';
 
   console.log('[TAB] Navigation:', input, '->', url);
-  
-  // Відправляємо команду на webview для навігації
   sendToRenderer('webview-navigate', { tabId: activeTabId, url });
   sendToRenderer('update-url-bar', url);
 }
 
-/**
- * Навігація назад
- */
+
 function goBack() {
   const activeTab = getActiveTabSafe();
   if (!activeTab) return;
-
-  // Відправляємо команду webview
   sendToRenderer('webview-go-back', { tabId: activeTabId });
 }
 
-/**
- * Навігація вперед
- */
+
 function goForward() {
   const activeTab = getActiveTabSafe();
   if (!activeTab) return;
-  
-  // Відправляємо команду webview
   sendToRenderer('webview-go-forward', { tabId: activeTabId });
 }
 
-/**
- * Перезавантаження активної вкладки
- */
+
 function reload() {
   const activeTab = getActiveTabSafe();
   if (activeTab) {
@@ -325,23 +249,15 @@ function reload() {
   }
 }
 
-/**
- * Оновлює розміри активної вкладки (не потрібно для webview - CSS handled)
- */
+
 function updateActiveTabBounds(mainWindow, sidebarWidth, offsetRight = 0) {
-  // Webview розміри керуються через CSS, не потрібно вручну
 }
 
-/**
- * Встановлює висоту топбара (не потрібно для webview - CSS handled)
- */
+
 function setTopbarHeight(height) {
-  // Розміри webview керуються CSS у renderer process.
 }
 
-/**
- * Отримує дані для збереження сесії
- */
+
 function getSessionData() {
   return tabs
     .map(tab => ({
@@ -354,9 +270,7 @@ function getSessionData() {
     .filter(tab => isRestorableUrl(tab.url));
 }
 
-/**
- * Відновлює сесію зі збережених вкладок
- */
+
 function restoreSession(sessionData, mainWindow, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel, sidebarWidth }) {
   const sessionTabs = Array.isArray(sessionData?.tabs) ? sessionData.tabs : [];
   const savedActiveIndex = Number.isInteger(sessionData?.activeTabIndex)
@@ -420,9 +334,7 @@ function restoreSession(sessionData, mainWindow, { storage, themeManager, inject
   console.log('[TAB] Session restored successfully');
 }
 
-/**
- * Оновлює інформацію про вкладку (викликається з IPC)
- */
+
 function updateTabInfo(tabId, url, title) {
   const tab = getTabById(tabId);
   if (tab) {
@@ -432,23 +344,17 @@ function updateTabInfo(tabId, url, title) {
   }
 }
 
-/**
- * Отримує всі вкладки
- */
+
 function getAllTabs() {
   return tabs;
 }
 
-/**
- * Отримує активну вкладку
- */
+
 function getActiveTab() {
   return getActiveTabSafe();
 }
 
-/**
- * Отримує ID активної вкладки
- */
+
 function getActiveTabId() {
   return activeTabId;
 }

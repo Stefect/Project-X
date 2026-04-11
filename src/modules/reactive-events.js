@@ -1,7 +1,4 @@
-/**
- * Reactive Events System - Live Dashboard для відстеження мережевих подій
- * Відстежує трекери, завантаження, блокування реклами в реальному часі
- */
+
 
 const { session } = require('electron');
 const EventEmitter = require('events');
@@ -9,8 +6,6 @@ const EventEmitter = require('events');
 const REACTIVE_EVENT_LIMIT = 50;
 const reactiveEventBus = new EventEmitter();
 const reactiveEventBuffer = [];
-
-// Список доменів трекерів для виявлення
 const trackerHostMarkers = [
   'doubleclick.net',
   'google-analytics.com',
@@ -30,9 +25,7 @@ const trackerPathMarkers = ['/collect', '/g/collect', '/tr', '/pixel', '/adsct']
 const trackerEmitCooldownMs = 5000;
 const trackerLastEmitted = new Map();
 
-/**
- * Витягує хост з URL
- */
+
 function getHostFromUrl(url) {
   try {
     return new URL(url).hostname;
@@ -41,9 +34,7 @@ function getHostFromUrl(url) {
   }
 }
 
-/**
- * Перевіряє чи URL схожий на трекер
- */
+
 function isLikelyTrackerUrl(url) {
   const host = getHostFromUrl(url);
   if (!host) return false;
@@ -55,9 +46,7 @@ function isLikelyTrackerUrl(url) {
   return trackerPathMarkers.some(marker => lowerUrl.includes(marker));
 }
 
-/**
- * Перевіряє чи можна випустити подію для цього хосту (cooldown)
- */
+
 function shouldEmitTrackerEvent(host) {
   if (!host) return false;
   const lastTime = trackerLastEmitted.get(host) || 0;
@@ -67,9 +56,7 @@ function shouldEmitTrackerEvent(host) {
   return true;
 }
 
-/**
- * Форматує URL для відображення
- */
+
 function formatUrlLabel(url) {
   try {
     const parsed = new URL(url);
@@ -79,9 +66,7 @@ function formatUrlLabel(url) {
   }
 }
 
-/**
- * Випускає реактивну подію в буфер і надсилає в UI
- */
+
 function emitReactiveEvent(payload, mainWindow) {
   const event = {
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -103,13 +88,9 @@ function emitReactiveEvent(payload, mainWindow) {
   return event;
 }
 
-/**
- * Налаштовує обробники мережевих подій для відстеження в реальному часі
- */
+
 function setupReactiveNetworkEvents(mainWindow) {
   if (!session || !session.defaultSession) return;
-
-  // Блокування трекерів через webRequest
   session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
     const url = details.url || '';
     const isMainFrame = details.resourceType === 'mainFrame';
@@ -130,8 +111,6 @@ function setupReactiveNetworkEvents(mainWindow) {
 
     callback({});
   });
-
-  // Відстеження завантажень
   session.defaultSession.on('will-download', (event, item) => {
     const filename = item.getFilename();
 
@@ -159,9 +138,7 @@ function setupReactiveNetworkEvents(mainWindow) {
   });
 }
 
-/**
- * Отримати буфер останніх подій
- */
+
 function getReactiveEventBuffer() {
   return reactiveEventBuffer.slice(0, 20);
 }

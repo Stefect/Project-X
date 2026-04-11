@@ -1,15 +1,10 @@
-/**
- * Tor Manager - Інтеграція з Tor для анонімного перегляду
- * Керує процесом Tor і проксі налаштуваннями
- */
+
 
 const { spawn, execSync } = require('child_process');
 const { session, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
-
-// Privacy Guard для блокування витоків
 let privacyGuard = null;
 try {
   privacyGuard = require('./privacy-guard');
@@ -26,9 +21,7 @@ let bootstrapStatus = 'Not started';
 let socksPort = 9050;
 let mainWindowRef = null;
 
-/**
- * Перевіряє чи порт доступний
- */
+
 function checkPortAvailable(port) {
   return new Promise((resolve) => {
     const server = net.createServer();
@@ -47,9 +40,7 @@ function checkPortAvailable(port) {
   });
 }
 
-/**
- * Парсить рядок Bootstrap з логів Tor
- */
+
 function parseBootstrapLine(line) {
   const match = line.match(/Bootstrapped (\d+)%(?:\s*\(([^)]+)\))?:?\s*(.*)/);
   if (match) {
@@ -58,8 +49,6 @@ function parseBootstrapLine(line) {
     bootstrapStatus = match[3] || match[2] || 'Connecting...';
     
     console.log(`[TOR] Bootstrap: ${bootstrapProgress}% - ${bootstrapStatus}`);
-    
-    // Відправляємо прогрес в UI
     if (mainWindowRef && mainWindowRef.webContents) {
       mainWindowRef.webContents.send('tor-bootstrap-progress', {
         progress: bootstrapProgress,
@@ -73,13 +62,9 @@ function parseBootstrapLine(line) {
   return null;
 }
 
-/**
- * Запускає процес Tor
- */
+
 function startTor(exitCountry = null, options = {}) {
   const { mainWindow } = options;
-  
-  // Зберігаємо посилання на mainWindow
   if (mainWindow) {
     mainWindowRef = mainWindow;
   }
@@ -88,16 +73,12 @@ function startTor(exitCountry = null, options = {}) {
   const isWindows = process.platform === 'win32';
   const torBinary = isWindows ? 'tor.exe' : 'tor';
   const torPath = path.join(__dirname, '..', '..', 'bin', 'tor', torBinary);
-  
-  // Перевіряємо чи існує tor
   if (!fs.existsSync(torPath)) {
     console.log(`[TOR] Tor not found at path: ${torPath}`);
     console.log('[TOR] Download Tor Expert Bundle and place binary in bin/tor/ folder');
     console.log(`   Windows: tor.exe | macOS/Linux: tor`);
     return;
   }
-  
-  // Для Unix систем встановлюємо права на виконання
   if (!isWindows) {
     try {
       fs.chmodSync(torPath, 0o755);
@@ -120,8 +101,6 @@ function startTor(exitCountry = null, options = {}) {
   const spawnOptions = {
     cwd: path.join(__dirname, '..', '..', 'bin', 'tor')
   };
-  
-  // Приховуємо консольне вікно тільки на Windows
   if (isWindows) {
     spawnOptions.windowsHide = true;
   }
@@ -131,17 +110,11 @@ function startTor(exitCountry = null, options = {}) {
   torProcess.stdout.on('data', (data) => {
     const output = data.toString('utf8');
     console.log('Tor:', output);
-    
-    // Парсимо Bootstrap прогрес
     parseBootstrapLine(output);
-    
-    // Перевіряємо чи Tor готовий
     if (bootstrapProgress === 100) {
       isTorReady = true;
       bootstrapStatus = 'Connected';
       console.log('[TOR] ✓ Tor successfully connected and ready!');
-      
-      // Сповіщаємо UI що Tor готовий
       if (mainWindowRef && mainWindowRef.webContents) {
         mainWindowRef.webContents.send('tor-ready', true);
       }
@@ -150,7 +123,6 @@ function startTor(exitCountry = null, options = {}) {
   
   torProcess.stderr.on('data', (data) => {
     const output = data.toString('utf8');
-    // Tor виводить багато інформації в stderr - це нормально
     if (output.includes('[err]') || output.includes('ERROR')) {
       console.error('Tor Error:', output);
     }
@@ -170,31 +142,24 @@ function startTor(exitCountry = null, options = {}) {
   });
 }
 
-/**
- * Перемикає Tor режим
- */
+
 async function toggleTor(mainWindow, tabManager = null) {
   const defaultSes = session.defaultSession;
-  const webviewSes = session.fromPartition('persist:main'); // Сесія для webview
+  const webviewSes = session.fromPartition('persist:main');
   
   if (isTorActive) {
-    // Вимикаємо Tor - пряме підключення для ОБОХ сесій
     await Promise.all([
       defaultSes.setProxy({ mode: 'direct' }),
       webviewSes.setProxy({ mode: 'direct' })
     ]);
     isTorActive = false;
     console.log('[TOR] ✅ Tor disabled - regular connection (both sessions)');
-    
-    // Вимикаємо Privacy Mode
     if (privacyGuard) {
       privacyGuard.disablePrivacyMode(mainWindow);
     }
-    
-    // Оновлюємо placeholder адресної строки
     if (mainWindow) {
       mainWindow.webContents.send('update-search-engine', 'Google');
-      mainWindow.webContents.send('tor-active', false); // ВИПРАВЛЕНО: false коли вимикаємо
+      mainWindow.webContents.send('tor-active', false);
     }
     
     return { 
@@ -202,12 +167,9 @@ async function toggleTor(mainWindow, tabManager = null) {
       message: 'Tor вимкнено. Пошук: Google' 
     };
   } else {
-    // Якщо Tor процес НЕ запущений, запускаємо його зараз
     if (!torProcess || torProcess.exitCode !== null) {
       console.log('[TOR] Tor process not running, starting now...');
       startTor('DE', { mainWindow });
-      
-      // Повідомляємо користувача що Tor запускається
       return {
         status: false,
         message: 'Запуск Tor... Зачекайте 10-30 секунд',
@@ -215,8 +177,6 @@ async function toggleTor(mainWindow, tabManager = null) {
         bootstrapStatus: 'Starting Tor process...'
       };
     }
-    
-    // Перевіряємо чи Tor готовий
     if (!isTorReady) {
       console.warn('[TOR] Tor is not ready yet. Please wait for connection...');
       console.warn(`[TOR] Current bootstrap: ${bootstrapProgress}% - ${bootstrapStatus}`);
@@ -227,11 +187,8 @@ async function toggleTor(mainWindow, tabManager = null) {
         bootstrapStatus: bootstrapStatus
       };
     }
-    
-    // Додаткова перевірка: чи слухається порт 9050
     const portAvailable = await checkPortAvailable(socksPort);
     if (portAvailable) {
-      // Порт ВІЛЬНИЙ - це погано, означає що Tor НЕ слухає
       console.error('[TOR] ❌ SOCKS port is not listening! Tor process may have crashed.');
       console.error('[TOR] Bootstrap was 100% but port is not responding.');
       return {
@@ -242,21 +199,17 @@ async function toggleTor(mainWindow, tabManager = null) {
     
     console.log('[TOR] ✅ Port 9050 is listening (Tor ready)');
     console.log('[TOR] Applying SOCKS5 proxy configuration...');
-    
-    // Очищаємо ВСІ типи кешу перед підключенням до Tor (ОБІ СЕСІЇ)
-    // Це запобігає fingerprinting та витоку даних з попередньої сесії
-    // КРИТИЧНО: localStorage може містити закешовану геолокацію!
     try {
       const storageTypes = [
-        'appcache',       // Application cache
-        'cookies',        // Cookies
-        'filesystem',     // FileSystem API
-        'indexdb',        // IndexedDB
-        'localstorage',   // LocalStorage (КРИТИЧНО для геолокації!)
-        'shadercache',    // Shader cache
-        'websql',         // WebSQL
-        'serviceworkers', // Service Workers
-        'cachestorage'    // Cache Storage API
+        'appcache',
+        'cookies',
+        'filesystem',
+        'indexdb',
+        'localstorage',
+        'shadercache',
+        'websql',
+        'serviceworkers',
+        'cachestorage'
       ];
       
       await Promise.all([
@@ -267,8 +220,6 @@ async function toggleTor(mainWindow, tabManager = null) {
     } catch (err) {
       console.warn('[PRIVACY] Failed to clear storage:', err.message);
     }
-    
-    // Вмикаємо Tor - SOCKS5 proxy для ОБОХ сесій
     await Promise.all([
       defaultSes.setProxy({
         proxyRules: 'socks5://127.0.0.1:9050',
@@ -282,22 +233,16 @@ async function toggleTor(mainWindow, tabManager = null) {
     
     console.log('[TOR] ✅ SOCKS5 proxy applied to BOTH sessions: socks5://127.0.0.1:9050');
     console.log('[TOR] ✅ DNS resolution: Via Tor SOCKS5 (no DNS leak)');
-    
-    // Чекаємо 500ms щоб proxy точно застосувався
     await new Promise(resolve => setTimeout(resolve, 500));
     
     isTorActive = true;
     console.log('[TOR] ✅ Tor enabled successfully');
-    
-    // Вмикаємо Privacy Mode (блокує геолокацію та небезпечні дозволи)
     if (privacyGuard) {
       privacyGuard.enablePrivacyMode(mainWindow);
     }
-    
-    // Оновлюємо placeholder адресної строки
     if (mainWindow) {
       mainWindow.webContents.send('update-search-engine', 'DuckDuckGo');
-      mainWindow.webContents.send('tor-active', true); // ВИПРАВЛЕНО: true коли увімкнено
+      mainWindow.webContents.send('tor-active', true);
     }
     
     return { 
@@ -308,9 +253,7 @@ async function toggleTor(mainWindow, tabManager = null) {
   }
 }
 
-/**
- * Отримує статус Tor
- */
+
 function getTorStatus() {
   return { 
     active: isTorActive,
@@ -322,16 +265,12 @@ function getTorStatus() {
   };
 }
 
-/**
- * Перевіряє чи активний Tor для вибору пошукової системи
- */
+
 function isTorEnabled() {
   return isTorActive;
 }
 
-/**
- * Зупиняє процес Tor
- */
+
 function stopTor() {
   if (torProcess) {
     console.log('[TOR] Closing Tor...');

@@ -94,9 +94,6 @@ function memoize(fn, options = {}) {
     const keyResolver = typeof options.keyResolver === 'function'
         ? options.keyResolver
         : defaultKeyResolver;
-
-    // Для policy=time TTL очікується завжди. Для інших режимів TTL вимкнено,
-    // поки явно не передано options.ttl.
     const ttlMs = Number.isFinite(options.ttl)
         ? Math.max(0, Number(options.ttl))
         : (policy === POLICY.TIME ? 60000 : Infinity);
@@ -151,9 +148,6 @@ function memoize(fn, options = {}) {
 
         stats.misses += 1;
         const value = fn.apply(this, args);
-
-        // Якщо функція повертає Promise і він завершується помилкою,
-        // прибираємо результат з кешу, щоб не "закешувати" failed state.
         if (value && typeof value.then === 'function') {
             const guarded = value.catch((error) => {
                 cache.delete(key);

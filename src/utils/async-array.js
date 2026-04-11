@@ -184,8 +184,6 @@ async function asyncFind(arr, asyncPredicate, options = {}) {
         return array[i];
       }
     } catch (_error) {
-      // Зберігаємо попередню поведінку: пропускаємо помилковий елемент
-      // і продовжуємо пошук.
     }
   }
 
@@ -218,7 +216,6 @@ async function asyncFindIndex(arr, asyncPredicate, options = {}) {
         return i;
       }
     } catch (_error) {
-      // Поведінка аналогічна asyncFind: помилки елемента не валять весь пошук.
     }
   }
 

@@ -45,8 +45,6 @@ function* roundRobinSourceGenerator(sources) {
     index += 1;
   }
 }
-
-// Додатковий нескінченний генератор для лабораторного Task 1.
 function* incrementalCounterGenerator(start = 0, step = 1) {
   let value = Number(start) || 0;
   const stride = Number(step) || 1;
