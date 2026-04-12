@@ -1,6 +1,7 @@
 
 
 const { ipcMain, shell, BrowserWindow } = require('electron');
+const { analyzeHistoryNdjsonFile } = require('../utils/large-data-stream');
 
 function getMainWindow() {
   return BrowserWindow.getAllWindows()[0] || null;
@@ -163,6 +164,17 @@ function registerStorageHandlers(storage, tabManager) {
       return { success: true };
     } catch (error) {
       console.error('[NAVIGATE] Error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('analyze-history-stream', async (_event, payload = {}) => {
+    try {
+      const { filePath, topN = 10 } = payload;
+      const stats = await analyzeHistoryNdjsonFile(filePath, { topN });
+      return { success: true, stats };
+    } catch (error) {
+      console.error('[STREAM] analyze-history-stream error:', error.message);
       return { success: false, error: error.message };
     }
   });

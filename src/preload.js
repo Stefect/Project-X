@@ -24,6 +24,7 @@ const mainAPI = {
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   openInBrowser: (url) => ipcRenderer.invoke('open-in-browser', url),
   describeUrl: (url, linkText, context) => ipcRenderer.invoke('describe-url', url, linkText, context),
+  analyzeHistoryStream: (filePath, topN = 10) => ipcRenderer.invoke('analyze-history-stream', { filePath, topN }),
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
   fetchNews: (categories, count) => ipcRenderer.invoke('fetch-news', { categories, count }),
   getNewsCategories: () => ipcRenderer.invoke('get-news-categories'),
