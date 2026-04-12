@@ -232,7 +232,7 @@ ${tabsListString}`;
     }
   });
 
-  ipcMain.handle('start-infinite-feed', async (event, categories = ['all'], customSources = []) => {
+  ipcMain.handle('start-infinite-feed', async (event, categories = ['all']) => {
     if (isFeedRunning) {
       console.log('стрічка вже працює');
       return { success: false, message: 'Стрічка вже активна' };
@@ -243,12 +243,8 @@ ${tabsListString}`;
     }
     
     isFeedRunning = true;
-    currentFeedGenerator = infiniteArticleGenerator(categories, customSources);
+    currentFeedGenerator = infiniteArticleGenerator(categories);
     console.log(`стрічка Starting for categories: ${categories.join(', ')}`);
-    
-    if (customSources && customSources.length > 0) {
-      console.log(`стрічка Custom sources: ${customSources.length}`);
-    }
     
     (async () => {
       for await (const article of currentFeedGenerator) {

@@ -1,7 +1,7 @@
-const BiDirectionalPriorityQueue = require('../src/utils/priority-queue');
+const BrowserXTaskQueue = require('../src/utils/priority-queue');
 
 function main() {
-  const queue = new BiDirectionalPriorityQueue();
+  const queue = new BrowserXTaskQueue();
 
   queue.enqueue({ id: 'sync-settings' }, 4);
   queue.enqueue({ id: 'open-history' }, 2);

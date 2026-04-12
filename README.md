@@ -1,18 +1,16 @@
 # BrowserX - лабораторний проєкт Task 1-5
 
-Це не просто набір шаблонних рішень. Кожен таск інтегровано у практичний Electron-проєкт так, щоб код виглядав і поводився як робочий інструмент, а не як "відповідь з генератора".
+Ці таски підключені до реального потоку BrowserX: модулі використовуються у runtime, а демо-скрипти показують поведінку на практичних сценаріях.
 
 ## Task 1: Generators and Iterators
 
 Основний файл: src/modules/ai-feed.js
 
 Що реалізовано:
-- cycleGenerator(items, startIndex) для нескінченних циклів по будь-якому списку.
-- roundRobinSourceGenerator(sources) для обходу джерел новин.
-- incrementalCounterGenerator(start, step) для числового потоку.
-- dayCycleGenerator(startDay) для циклу днів тижня.
-- randomNumberGenerator(min, max) для нескінченної вибірки випадкових значень.
-- consumeGeneratorWithTimeout(iterator, timeoutMs, processItem) для споживання ітератора з часовим обмеженням і ранньою зупинкою.
+- infiniteArticleGenerator(categories, customSources) для безперервного потоку новин.
+- Ротація джерел новин у round-robin режимі без дублювання статей.
+- Фільтрація по категоріях для AI feed у BrowserX.
+- Локальна оптимізація пам'яті через обмежений буфер already-seen елементів.
 
 Демо:
 - node examples/generator-timeout-demo.js
@@ -47,15 +45,15 @@
 Демо:
 - node examples/memoize-test.js
 
-## Task 4: Bi-Directional Priority Queue
+## Task 4: BrowserX Task Queue
 
 Основний файл: src/utils/priority-queue.js
 
 Що реалізовано:
 - enqueue(item, priority)
 - peek(mode) і dequeue(mode), де mode: highest, lowest, oldest, newest
-- peekEntry і dequeueEntry для отримання item разом з metadata
-- removeWhere(predicate) для практичного очищення черги за умовою
+- size, isEmpty, clear, toArray для керування життєвим циклом черги
+- Стабільна поведінка для однакового priority через порядок вставки
 
 Інтеграція:
 - src/modules/ai-task-scheduler.js
@@ -69,26 +67,16 @@
 
 Promise API:
 - asyncMap
-- asyncFilter
 - asyncFilterMap
 - asyncFind
-- asyncFindIndex
-- asyncSome
-- asyncReduce
 
 Callback API:
 - asyncMapCallback
-- asyncFilterCallback
-- asyncFilterMapCallback
-- asyncFindCallback
-- asyncFindIndexCallback
-- asyncSomeCallback
-- asyncReduceCallback
 
 Додатково:
 - createAsyncController(timeoutMs) для abortable-процесів.
 - Паралелізм через опцію concurrency.
-- Опція ignorePredicateErrors для find/findIndex.
+- Вузький публічний API тільки для активних BrowserX-сценаріїв.
 
 Демо:
 - node src/utils/async-array-examples.js
@@ -102,9 +90,8 @@ Callback API:
 - npm run demo:task3
 - npm run demo:task4
 - npm run demo:task5
+- npm run test:edge
 
 ## Примітка
 
 Для AI-функцій потрібен валідний ключ у .env.
-
-Автор: Stefect | ІМ-55

@@ -1,4 +1,4 @@
-class BiDirectionalPriorityQueue {
+class BrowserXTaskQueue {
     static MODES = Object.freeze({
         HIGHEST: 'highest',
         LOWEST: 'lowest',
@@ -36,31 +36,31 @@ class BiDirectionalPriorityQueue {
 
     _normalizeMode(mode) {
         const raw = String(mode || '').toLowerCase();
-        return Object.values(BiDirectionalPriorityQueue.MODES).includes(raw)
+        return Object.values(BrowserXTaskQueue.MODES).includes(raw)
             ? raw
-            : BiDirectionalPriorityQueue.MODES.HIGHEST;
+            : BrowserXTaskQueue.MODES.HIGHEST;
     }
 
     _isCandidateBetter(current, candidate, mode) {
-        if (mode === BiDirectionalPriorityQueue.MODES.HIGHEST) {
+        if (mode === BrowserXTaskQueue.MODES.HIGHEST) {
             if (candidate.priority !== current.priority) {
                 return candidate.priority > current.priority;
             }
             return candidate.order < current.order;
         }
 
-        if (mode === BiDirectionalPriorityQueue.MODES.LOWEST) {
+        if (mode === BrowserXTaskQueue.MODES.LOWEST) {
             if (candidate.priority !== current.priority) {
                 return candidate.priority < current.priority;
             }
             return candidate.order < current.order;
         }
 
-        if (mode === BiDirectionalPriorityQueue.MODES.OLDEST) {
+        if (mode === BrowserXTaskQueue.MODES.OLDEST) {
             return candidate.order < current.order;
         }
 
-        if (mode === BiDirectionalPriorityQueue.MODES.NEWEST) {
+        if (mode === BrowserXTaskQueue.MODES.NEWEST) {
             return candidate.order > current.order;
         }
 
@@ -101,17 +101,6 @@ class BiDirectionalPriorityQueue {
         return picked ? picked.entry.item : null;
     }
 
-    peekEntry(mode) {
-        const picked = this._pickEntry(mode);
-        return picked
-            ? {
-                item: picked.entry.item,
-                priority: picked.entry.priority,
-                order: picked.entry.order
-            }
-            : null;
-    }
-
     dequeue(mode) {
         const picked = this._pickEntry(mode);
         if (!picked) {
@@ -120,30 +109,6 @@ class BiDirectionalPriorityQueue {
 
         const [removed] = this.items.splice(picked.index, 1);
         return removed.item;
-    }
-
-    dequeueEntry(mode) {
-        const picked = this._pickEntry(mode);
-        if (!picked) {
-            return null;
-        }
-
-        const [removed] = this.items.splice(picked.index, 1);
-        return {
-            item: removed.item,
-            priority: removed.priority,
-            order: removed.order
-        };
-    }
-
-    removeWhere(predicate) {
-        if (typeof predicate !== 'function') {
-            throw new TypeError('Predicate must be a function');
-        }
-
-        const before = this.items.length;
-        this.items = this.items.filter((entry) => !predicate(entry.item, entry.priority, entry.order));
-        return before - this.items.length;
     }
 
     isEmpty() {
@@ -168,4 +133,4 @@ class BiDirectionalPriorityQueue {
     }
 }
 
-module.exports = BiDirectionalPriorityQueue;
+module.exports = BrowserXTaskQueue;

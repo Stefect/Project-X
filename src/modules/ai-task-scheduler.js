@@ -1,4 +1,4 @@
-const BiDirectionalPriorityQueue = require('../utils/priority-queue');
+const BrowserXTaskQueue = require('../utils/priority-queue');
 
 const PRIORITY = {
     LOW: 1,
@@ -16,7 +16,7 @@ function toPriorityOrDefault(priority) {
 
 class AITaskScheduler {
     constructor() {
-        this.taskQueue = new BiDirectionalPriorityQueue();
+        this.taskQueue = new BrowserXTaskQueue();
         this.isProcessing = false;
         this.maxQueueSize = 100;
         this.stats = {

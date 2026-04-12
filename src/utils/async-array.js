@@ -332,17 +332,7 @@ module.exports = {
   ABORT_MESSAGE,
   asyncMap,
   asyncMapCallback,
-  asyncFilter,
-  asyncFilterCallback,
   asyncFilterMap,
-  asyncFilterMapCallback,
   asyncFind,
-  asyncFindCallback,
-  asyncFindIndex,
-  asyncFindIndexCallback,
-  asyncSome,
-  asyncSomeCallback,
-  asyncReduce,
-  asyncReduceCallback,
   createAsyncController
 };
