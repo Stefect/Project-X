@@ -1,13 +1,19 @@
-# BrowserX - лабораторний проєкт Task 1-5
+BrowserX - лабораторний проєкт Task 1-6
 
 Ці таски підключені до реального потоку BrowserX: модулі використовуються у runtime, а демо-скрипти показують поведінку на практичних сценаріях.
 
-## Task 1: Generators and Iterators
+Оновлення по Task 6:
+- Task 6 інтегровано в проєкт і доступно для локального запуску.
+- Основа: потокова обробка NDJSON через async iterators.
+- Інтеграція: IPC метод window.api.analyzeHistoryStream(...).
+- Демо запуск: npm run demo:task6.
+
+Task 1: Generators and Iterators
 
 Основний файл: src/modules/ai-feed.js
 
 Що реалізовано:
-- infiniteArticleGenerator(categories, customSources) для безперервного потоку новин.
+- infiniteArticleGenerator(categories) для безперервного потоку новин.
 - Ротація джерел новин у round-robin режимі без дублювання статей.
 - Фільтрація по категоріях для AI feed у BrowserX.
 - Локальна оптимізація пам'яті через обмежений буфер already-seen елементів.
@@ -15,22 +21,18 @@
 Демо:
 - node examples/generator-timeout-demo.js
 
-## Task 2: Project Setup
-
-Структура проєкту:
-- src для модулів і утиліт.
-- public для renderer-частини.
-- examples для запуску локальних демо.
-- docs для робочої документації.
-
-Опис налаштування:
-- docs/TASK2_PROJECT_SETUP.md
+Task 2: Project Setup
 
 Базовий запуск:
 - npm install
 - npm start
 
-## Task 3: Memoization Function
+Структура проєкту:
+- src для модулів і утиліт.
+- public для renderer-частини.
+- examples для запуску локальних демо.
+
+Task 3: Memoization Function
 
 Основний файл: src/utils/memoize.js
 
@@ -45,7 +47,7 @@
 Демо:
 - node examples/memoize-test.js
 
-## Task 4: BrowserX Task Queue
+Task 4: BrowserX Task Queue
 
 Основний файл: src/utils/priority-queue.js
 
@@ -61,7 +63,7 @@
 Демо:
 - node examples/priority-queue-demo.js
 
-## Task 5: Async Array Variants
+Task 5: Async Array Variants
 
 Основний файл: src/utils/async-array.js
 
@@ -81,17 +83,29 @@ Callback API:
 Демо:
 - node src/utils/async-array-examples.js
 
-Окрема нотатка інтеграції:
-- ASYNC_ARRAY_INTEGRATION.md
+Task 6: Large Data Processing with Streams / Async Iterators
 
-## Корисні команди
+Основний файл:
+- src/utils/large-data-stream.js
+
+Що реалізовано:
+- Потокове читання NDJSON через async iterator без завантаження всього файлу у пам'ять.
+- Інкрементальна агрегація великих журналів історії (top domains, валідні/невалідні рядки).
+- Пакетна обробка через batchAsyncIterator.
+- IPC інтеграція для виклику з renderer: window.api.analyzeHistoryStream(...).
+
+Демо:
+- node examples/task6-large-history-stream-demo.js
+
+Корисні команди
 
 - npm run demo:task1
 - npm run demo:task3
 - npm run demo:task4
 - npm run demo:task5
+- npm run demo:task6
 - npm run test:edge
 
-## Примітка
+Примітка
 
 Для AI-функцій потрібен валідний ключ у .env.
