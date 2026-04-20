@@ -8,6 +8,7 @@
     "build:css": "postcss ./public/css/styles.css -o ./public/css/output.css --verbose",
     "build:css:watch": "postcss ./public/css/styles.css -o ./public/css/output.css --watch --verbose",
     "dev": "npm run build:css:watch & electron .",
+    "check:encoding": "node scripts/check-encoding.js",
     "demo:task1": "node examples/generator-timeout-demo.js",
     "demo:task3": "node examples/memoize-test.js",
     "demo:task4": "node examples/priority-queue-demo.js",

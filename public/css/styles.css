@@ -826,7 +826,7 @@
     }
 
     .menu-item.has-submenu::after {
-      content: 'тА║';
+      content: '›';
       font-size: 18px;
       color: #565f89;
     }

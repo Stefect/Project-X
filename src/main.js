@@ -104,7 +104,7 @@ async function createWindow() {
     defaultSes.setProxy({ mode: 'direct' }),
     webviewSes.setProxy({ mode: 'direct' })
   ]);
-  console.log('[PROXY] тЬЕ Direct connection enabled for both sessions');
+  console.log('[PROXY] ✅ Direct connection enabled for both sessions');
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -243,12 +243,12 @@ app.whenReady().then(async () => {
         
         if (isTorEnabled) {
           const url = webContents.getURL();
-          console.log(`[PRIVACY] тЭМ BLOCKED geolocation request from: ${url}`);
+          console.log(`[PRIVACY] ❌ BLOCKED geolocation request from: ${url}`);
           console.log('[PRIVACY] Reason: Tor is active, geolocation would reveal real location');
           callback(false);
           return;
         } else {
-          console.log('[PRIVACY] тЪая╕П Geolocation request (Tor OFF, allowing)');
+          console.log('[PRIVACY] ⚠️ Geolocation request (Tor OFF, allowing)');
         }
       }
       callback(true);
@@ -292,7 +292,7 @@ app.whenReady().then(async () => {
                 configurable: false,
                 enumerable: true
               });
-              console.log('[PRIVACY GUARD] тЬУ Geolocation API has been disabled');
+              console.log('[PRIVACY GUARD] ✓ Geolocation API has been disabled');
             } catch (e) {
               console.error('[PRIVACY GUARD] Failed to block geolocation:', e);
             }
@@ -305,7 +305,7 @@ app.whenReady().then(async () => {
     });
   });
   
-  console.log('[PRIVACY] тЬУ Global web-contents-created handler registered');
+  console.log('[PRIVACY] ✓ Global web-contents-created handler registered');
   app.on('session-created', (customSession) => {
     console.log('[PRIVACY] New session created, applying permission handler...');
     
@@ -315,7 +315,7 @@ app.whenReady().then(async () => {
         
         if (isTorEnabled) {
           const url = webContents.getURL();
-          console.log(`[PRIVACY] тЭМ BLOCKED geolocation in custom session from: ${url}`);
+          console.log(`[PRIVACY] ❌ BLOCKED geolocation in custom session from: ${url}`);
           callback(false);
           return;
         }
@@ -324,7 +324,7 @@ app.whenReady().then(async () => {
     });
   });
   
-  console.log('[PRIVACY] тЬУ Global session-created handler registered');
+  console.log('[PRIVACY] ✓ Global session-created handler registered');
   
   await createWindow();
   console.log('[TOR] Tor auto-start DISABLED. User will enable manually via button.');
@@ -373,38 +373,38 @@ ipcMain.on('show-context-menu', (event, params) => {
   const { tabId, selectionText, linkURL, linkText, srcURL, mediaType, isEditable, pageURL } = params;
   const template = [];
   if (selectionText) {
-    const label = selectionText.length > 30 ? selectionText.substring(0, 30) + 'тАж' : selectionText;
+    const label = selectionText.length > 30 ? selectionText.substring(0, 30) + '…' : selectionText;
     if (isEditable) {
-      template.push({ label: '╨Т╨╕╤А╤Ц╨╖╨░╤В╨╕', click: () => mainWindow.webContents.send('context-menu-action', { action: 'cut', tabId }) });
+      template.push({ label: 'Вирізати', click: () => mainWindow.webContents.send('context-menu-action', { action: 'cut', tabId }) });
     }
-    template.push({ label: '╨Ъ╨╛╨┐╤Ц╤О╨▓╨░╤В╨╕', click: () => mainWindow.webContents.send('context-menu-action', { action: 'copy', tabId }) });
+    template.push({ label: 'Копіювати', click: () => mainWindow.webContents.send('context-menu-action', { action: 'copy', tabId }) });
     template.push({ type: 'separator' });
     template.push({
-      label: `╨Ч╨╜╨░╨╣╤В╨╕: "${label}"`,
+      label: `Знайти: "${label}"`,
       click: () => mainWindow.webContents.send('context-menu-action', { action: 'search', tabId, text: selectionText })
     });
     template.push({
-      label: `╨Я╨╡╤А╨╡╨║╨╗╨░╤Б╤В╨╕: "${label}"`,
+      label: `Перекласти: "${label}"`,
       click: () => mainWindow.webContents.send('context-menu-action', { action: 'translate', tabId, text: selectionText })
     });
   }
   if (isEditable) {
-    template.push({ label: '╨Т╤Б╤В╨░╨▓╨╕╤В╨╕', click: () => mainWindow.webContents.send('context-menu-action', { action: 'paste', tabId }) });
-    template.push({ label: '╨Т╨╕╨┤╤Ц╨╗╨╕╤В╨╕ ╨▓╤Б╨╡', click: () => mainWindow.webContents.send('context-menu-action', { action: 'select-all', tabId }) });
+    template.push({ label: 'Вставити', click: () => mainWindow.webContents.send('context-menu-action', { action: 'paste', tabId }) });
+    template.push({ label: 'Виділити все', click: () => mainWindow.webContents.send('context-menu-action', { action: 'select-all', tabId }) });
   }
   if (linkURL) {
     if (template.length > 0) template.push({ type: 'separator' });
     template.push({
-      label: '╨Т╤Ц╨┤╨║╤А╨╕╤В╨╕ ╨┐╨╛╤Б╨╕╨╗╨░╨╜╨╜╤П ╨▓ ╨╜╨╛╨▓╤Ц╨╣ ╨▓╨║╨╗╨░╨┤╤Ж╤Ц',
+      label: 'Відкрити посилання в новій вкладці',
       click: () => mainWindow.webContents.send('context-menu-action', { action: 'open-link-new-tab', tabId, url: linkURL })
     });
     template.push({
-      label: '╨Ъ╨╛╨┐╤Ц╤О╨▓╨░╤В╨╕ ╨░╨┤╤А╨╡╤Б╤Г ╨┐╨╛╤Б╨╕╨╗╨░╨╜╨╜╤П',
+      label: 'Копіювати адресу посилання',
       click: () => clipboard.writeText(linkURL)
     });
     if (linkText) {
       template.push({
-        label: '╨Ъ╨╛╨┐╤Ц╤О╨▓╨░╤В╨╕ ╤В╨╡╨║╤Б╤В ╨┐╨╛╤Б╨╕╨╗╨░╨╜╨╜╤П',
+        label: 'Копіювати текст посилання',
         click: () => clipboard.writeText(linkText)
       });
     }
@@ -412,34 +412,34 @@ ipcMain.on('show-context-menu', (event, params) => {
   if (mediaType === 'image' && srcURL) {
     if (template.length > 0) template.push({ type: 'separator' });
     template.push({
-      label: '╨Т╤Ц╨┤╨║╤А╨╕╤В╨╕ ╨╖╨╛╨▒╤А╨░╨╢╨╡╨╜╨╜╤П ╨▓ ╨╜╨╛╨▓╤Ц╨╣ ╨▓╨║╨╗╨░╨┤╤Ж╤Ц',
+      label: 'Відкрити зображення в новій вкладці',
       click: () => mainWindow.webContents.send('context-menu-action', { action: 'open-link-new-tab', tabId, url: srcURL })
     });
     template.push({
-      label: '╨Ъ╨╛╨┐╤Ц╤О╨▓╨░╤В╨╕ ╨░╨┤╤А╨╡╤Б╤Г ╨╖╨╛╨▒╤А╨░╨╢╨╡╨╜╨╜╤П',
+      label: 'Копіювати адресу зображення',
       click: () => clipboard.writeText(srcURL)
     });
     template.push({
-      label: '╨Ч╨▒╨╡╤А╨╡╨│╤В╨╕ ╨╖╨╛╨▒╤А╨░╨╢╨╡╨╜╨╜╤П ╤П╨║тАж',
+      label: 'Зберегти зображення як…',
       click: () => mainWindow.webContents.send('context-menu-action', { action: 'save-image', tabId, url: srcURL })
     });
   }
   if (template.length > 0) template.push({ type: 'separator' });
-  template.push({ label: '╨Э╨░╨╖╨░╨┤',    click: () => tabManager.goBack()   });
-  template.push({ label: '╨Т╨┐╨╡╤А╨╡╨┤',  click: () => tabManager.goForward() });
-  template.push({ label: '╨Ю╨╜╨╛╨▓╨╕╤В╨╕', click: () => tabManager.reload()    });
+  template.push({ label: 'Назад',    click: () => tabManager.goBack()   });
+  template.push({ label: 'Вперед',  click: () => tabManager.goForward() });
+  template.push({ label: 'Оновити', click: () => tabManager.reload()    });
 
   template.push({ type: 'separator' });
   template.push({
-    label: '╨Ъ╨╛╨┐╤Ц╤О╨▓╨░╤В╨╕ ╨░╨┤╤А╨╡╤Б╤Г ╤Б╤В╨╛╤А╤Ц╨╜╨║╨╕',
+    label: 'Копіювати адресу сторінки',
     click: () => clipboard.writeText(pageURL)
   });
   template.push({
-    label: '╨Я╨╡╤А╨╡╨│╨╗╤П╨╜╤Г╤В╨╕ ╨▓╨╕╤Е╤Ц╨┤╨╜╨╕╨╣ ╨║╨╛╨┤',
+    label: 'Переглянути вихідний код',
     click: () => mainWindow.webContents.send('context-menu-action', { action: 'view-source', tabId, url: pageURL })
   });
   template.push({
-    label: '╨Ж╨╜╤Б╤В╤А╤Г╨╝╨╡╨╜╤В╨╕ ╤А╨╛╨╖╤А╨╛╨▒╨╜╨╕╨║╨░',
+    label: 'Інструменти розробника',
     click: () => mainWindow.webContents.send('toggle-webview-devtools')
   });
 
@@ -490,14 +490,14 @@ ipcMain.on('switch-tab', (event, tabId) => {
 });
 
 ipcMain.on('close-tab', (event, tabId) => {
-  console.log('[IPC] ЁЯУи Received close-tab request for tabId:', tabId);
+  console.log('[IPC] 📨 Received close-tab request for tabId:', tabId);
   const shouldClose = tabManager.closeTab(tabId, mainWindow);
   console.log('[IPC] Tab manager returned shouldClose:', shouldClose);
   if (shouldClose) {
-    console.log('[TAB] ЁЯЪк Last tab closed - quitting application');
+    console.log('[TAB] 🚪 Last tab closed - quitting application');
     app.quit();
   } else {
-    console.log('[TAB] тЬЕ Tab closed successfully, continuing');
+    console.log('[TAB] ✅ Tab closed successfully, continuing');
   }
 });
 
@@ -506,14 +506,14 @@ ipcMain.on('reorder-tabs', (event, newOrder) => {
 });
 
 ipcMain.on('navigate', (event, input) => {
-  console.log('ЁЯУи [╨Ф╨Ж╨Р╨У╨Э╨Ю╨б╨в╨Ш╨Ъ╨Р MAIN] ╨Ю╤В╤А╨╕╨╝╨░╨╜╨╛ IPC navigate ╨▓╤Ц╨┤ renderer');
-  console.log('ЁЯУи [╨Ф╨Ж╨Р╨У╨Э╨Ю╨б╨в╨Ш╨Ъ╨Р MAIN] Input URL:', input);
-  console.log('ЁЯУи [╨Ф╨Ж╨Р╨У╨Э╨Ю╨б╨в╨Ш╨Ъ╨Р MAIN] Tor enabled:', torManager.isTorEnabled());
-  console.log('ЁЯУи [╨Ф╨Ж╨Р╨У╨Э╨Ю╨б╨в╨Ш╨Ъ╨Р MAIN] ╨Т╨╕╨║╨╗╨╕╨║╨░╤Ф╨╝╨╛ tabManager.navigate()...');
+  console.log('📨 [ДІАГНОСТИКА MAIN] Отримано IPC navigate від renderer');
+  console.log('📨 [ДІАГНОСТИКА MAIN] Input URL:', input);
+  console.log('📨 [ДІАГНОСТИКА MAIN] Tor enabled:', torManager.isTorEnabled());
+  console.log('📨 [ДІАГНОСТИКА MAIN] Викликаємо tabManager.navigate()...');
   
   tabManager.navigate(input, torManager.isTorEnabled());
   
-  console.log('тЬЕ [╨Ф╨Ж╨Р╨У╨Э╨Ю╨б╨в╨Ш╨Ъ╨Р MAIN] tabManager.navigate() ╨▓╨╕╨║╨╛╨╜╨░╨╜╨╛');
+  console.log('✅ [ДІАГНОСТИКА MAIN] tabManager.navigate() виконано');
 });
 
 ipcMain.on('go-back', () => {
@@ -597,31 +597,31 @@ ipcMain.handle('check-ip', async () => {
       const torData = await fetchWithProxy('https://check.torproject.org/api/ip', true);
       ip = torData.IP;
       responseTime = Date.now() - startTime;
-      console.log('[IP CHECK] тЬУ Got IP from Tor Project API:', ip);
+      console.log('[IP CHECK] ✓ Got IP from Tor Project API:', ip);
     } catch (err1) {
       console.warn('[IP CHECK] Tor Project API failed:', err1.message);
       
       try {
         ip = await fetchWithProxy('https://ident.me/', false);
         responseTime = Date.now() - startTime;
-        console.log('[IP CHECK] тЬУ Got IP from ident.me:', ip);
+        console.log('[IP CHECK] ✓ Got IP from ident.me:', ip);
       } catch (err2) {
         console.warn('[IP CHECK] ident.me failed:', err2.message);
         ip = await fetchWithProxy('https://icanhazip.com/', false);
         responseTime = Date.now() - startTime;
-        console.log('[IP CHECK] тЬУ Got IP from icanhazip.com:', ip);
+        console.log('[IP CHECK] ✓ Got IP from icanhazip.com:', ip);
       }
     }
     
     if (!ip) {
-      throw new Error('╨Э╨╡ ╨▓╨┤╨░╨╗╨╛╤Б╤П ╨╛╤В╤А╨╕╨╝╨░╤В╨╕ IP ╨░╨┤╤А╨╡╤Б╤Г');
+      throw new Error('Не вдалося отримати IP адресу');
     }
     const torStatus = torManager.getTorStatus();
     let geoData = {
-      country_name: torStatus.active ? 'Tor Network' : '╨Э╨╡╨▓╤Ц╨┤╨╛╨╝╨╛',
-      city: torStatus.active ? 'Anonymous' : '╨Э╨╡╨▓╤Ц╨┤╨╛╨╝╨╛',
+      country_name: torStatus.active ? 'Tor Network' : 'Невідомо',
+      city: torStatus.active ? 'Anonymous' : 'Невідомо',
       region: '',
-      org: torStatus.active ? 'Tor Exit Node' : '╨Э╨╡╨▓╤Ц╨┤╨╛╨╝╨╛',
+      org: torStatus.active ? 'Tor Exit Node' : 'Невідомо',
       asn: ''
     };
     
@@ -649,13 +649,13 @@ ipcMain.handle('check-ip', async () => {
                 const jsonData = JSON.parse(data);
                 resolve(jsonData);
               } catch (err) {
-                console.warn('[IP CHECK] Geo API ╨┐╨╛╨▓╨╡╤А╨╜╤Г╨▓ ╨╜╨╡-JSON:', data.substring(0, 100));
+                console.warn('[IP CHECK] Geo API повернув не-JSON:', data.substring(0, 100));
                 resolve(null);
               }
             } else {
-              console.warn(`[IP CHECK] Geo API ╨╖╨░╨▒╨╗╨╛╨║╤Г╨▓╨░╨▓ ╨╖╨░╨┐╨╕╤В (HTTP ${statusCode})`);
+              console.warn(`[IP CHECK] Geo API заблокував запит (HTTP ${statusCode})`);
               if (statusCode === 403) {
-                console.warn('[IP CHECK] Cloudflare ╨▒╨╗╨╛╨║╤Г╤Ф Tor ╤В╤А╨░╤Д╤Ц╨║ - ╨▓╨╕╨║╨╛╤А╨╕╤Б╤В╨╛╨▓╤Г╤Ф╨╝╨╛ ╨┤╨╡╤Д╨╛╨╗╤В╨╜╤Ц ╨╖╨╜╨░╤З╨╡╨╜╨╜╤П');
+                console.warn('[IP CHECK] Cloudflare блокує Tor трафік - використовуємо дефолтні значення');
               }
               resolve(null);
             }
@@ -671,9 +671,9 @@ ipcMain.handle('check-ip', async () => {
       });
       if (geoResult && geoResult.country_name) {
         geoData = geoResult;
-        console.log('[IP CHECK] тЬУ Got geo data:', geoData.country_name, geoData.city);
+        console.log('[IP CHECK] ✓ Got geo data:', geoData.country_name, geoData.city);
       } else {
-        console.log('[IP CHECK] тЖТ Using default geo data for Tor');
+        console.log('[IP CHECK] → Using default geo data for Tor');
       }
     } catch (geoErr) {
       console.warn('[IP CHECK] Geo lookup exception:', geoErr.message);
@@ -682,66 +682,66 @@ ipcMain.handle('check-ip', async () => {
     return {
       ip: ip,
       responseTime: responseTime,
-      country: geoData.country_name || '╨Э╨╡╨▓╤Ц╨┤╨╛╨╝╨╛',
-      city: geoData.city || '╨Э╨╡╨▓╤Ц╨┤╨╛╨╝╨╛',
+      country: geoData.country_name || 'Невідомо',
+      city: geoData.city || 'Невідомо',
       region: geoData.region || '',
-      org: geoData.org || '╨Э╨╡╨▓╤Ц╨┤╨╛╨╝╨╛',
+      org: geoData.org || 'Невідомо',
       asn: geoData.asn || ''
     };
   } catch (error) {
     console.error('[IP CHECK] Error:', error);
-    throw new Error(`╨Э╨╡ ╨▓╨┤╨░╨╗╨╛╤Б╤П ╨┐╨╡╤А╨╡╨▓╤Ц╤А╨╕╤В╨╕ IP: ${error.message}`);
+    throw new Error(`Не вдалося перевірити IP: ${error.message}`);
   }
 });
 ipcHandlers.registerStorageHandlers(storage, tabManager);
 ipcHandlers.registerAISchedulerHandlers(aiScheduler);
 registerNewsHandlers();
 setTimeout(() => {
-  console.log('\n[TEST] ЁЯзк ╨Ф╨╡╨╝╨╛╨╜╤Б╤В╤А╨░╤Ж╤Ц╤П AI Task Scheduler...\n');
+  console.log('\n[TEST] 🧪 Демонстрація AI Task Scheduler...\n');
   aiScheduler.addTask({
-    name: '╨б╨░╨╝╨╝╨░╤А╤Ц ╤Д╨╛╨╜╨╛╨▓╨╛╤Ч ╨▓╨║╨╗╨░╨┤╨║╨╕ #1',
+    name: 'Саммарі фонової вкладки #1',
     type: 'summary',
     execute: async () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('   ЁЯУЭ ╨б╨░╨╝╨╝╨░╤А╤Ц ╨│╨╛╤В╨╛╨▓╨╕╨╣');
+      console.log('   📝 Саммарі готовий');
     }
   }, 1);
 
   aiScheduler.addTask({
-    name: '╨б╨░╨╝╨╝╨░╤А╤Ц ╤Д╨╛╨╜╨╛╨▓╨╛╤Ч ╨▓╨║╨╗╨░╨┤╨║╨╕ #2',
+    name: 'Саммарі фонової вкладки #2',
     type: 'summary',
     execute: async () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('   ЁЯУЭ ╨б╨░╨╝╨╝╨░╤А╤Ц ╨│╨╛╤В╨╛╨▓╨╕╨╣');
+      console.log('   📝 Саммарі готовий');
     }
   }, 1);
   aiScheduler.addTask({
-    name: '╨Я╨╡╤А╨╡╨║╨╗╨░╨┤ ╤Б╤В╨╛╤А╤Ц╨╜╨║╨╕',
+    name: 'Переклад сторінки',
     type: 'translation',
     execute: async () => {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('   ЁЯМР ╨Я╨╡╤А╨╡╨║╨╗╨░╨┤ ╨╖╨░╨▓╨╡╤А╤И╨╡╨╜╨╛');
+      console.log('   🌐 Переклад завершено');
     }
   }, 5);
   aiScheduler.addTask({
-    name: 'T9 ╨Р╨▓╤В╨╛╨┤╨╛╨┐╨╛╨▓╨╜╨╡╨╜╨╜╤П ╤В╨╡╨║╤Б╤В╤Г',
+    name: 'T9 Автодоповнення тексту',
     type: 't9',
     execute: async () => {
       await new Promise(resolve => setTimeout(resolve, 800));
-      console.log('   тЪб T9 ╨┐╤Ц╨┤╨║╨░╨╖╨║╨░ ╨│╨╛╤В╨╛╨▓╨░');
+      console.log('   ⚡ T9 підказка готова');
     }
   }, 10);
 
   aiScheduler.addTask({
-    name: '╨Р╨╜╨░╨╗╤Ц╨╖ ╨║╨╛╨╜╤В╨╡╨╜╤В╤Г',
+    name: 'Аналіз контенту',
     type: 'analysis',
     execute: async () => {
       await new Promise(resolve => setTimeout(resolve, 1200));
-      console.log('   ЁЯФН ╨Р╨╜╨░╨╗╤Ц╨╖ ╨╖╨░╨▓╨╡╤А╤И╨╡╨╜╨╛');
+      console.log('   🔍 Аналіз завершено');
     }
   }, 2);
 
-  console.log('[TEST] тЬЕ ╨Ч╨░╨▓╨┤╨░╨╜╨╜╤П ╨┤╨╛╨┤╨░╨╜╤Ц. ╨Т╨╕╨║╨╛╨╜╨░╨╜╨╜╤П ╨╖╨░ ╨┐╤А╤Ц╨╛╤А╨╕╤В╨╡╤В╨╛╨╝.\n');
+  console.log('[TEST] ✅ Завдання додані. Виконання за пріоритетом.\n');
 }, 5000);
 
 console.log('[CONSOLE] BrowserX main process initialized');
