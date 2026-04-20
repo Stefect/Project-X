@@ -1,9 +1,3 @@
-/**
- * Theme Manager - Керування темами оформлення
- * Застосовує теми, світлий/темний режим, фони, акцентні кольори
- */
-
-// Глобальні налаштування теми (синхронізуються з UI)
 let themeSettings = {
   mode: 'dark',
   bg: '#1a1b26',
@@ -11,47 +5,33 @@ let themeSettings = {
   wallpaper: 'none'
 };
 
-/**
- * Оновлює налаштування теми
- */
+
 function updateThemeSettings(settings) {
   themeSettings = { ...themeSettings, ...settings };
   console.log('[THEME] Settings updated:', themeSettings);
   return themeSettings;
 }
 
-/**
- * Отримує поточні налаштування теми
- */
+
 function getThemeSettings() {
   return { ...themeSettings };
 }
 
-/**
- * Інжектує налаштування теми в newtab сторінку
- */
+
 function injectThemeToNewtab(browserView) {
   const script = `
     (function() {
       const settings = ${JSON.stringify(themeSettings)};
-      
-      // Застосовуємо режим
       document.body.classList.remove('light-mode', 'dark-mode');
       if (settings.mode === 'light') {
         document.body.classList.add('light-mode');
       } else {
         document.body.classList.add('dark-mode');
       }
-      
-      // Застосовуємо акцентний колір
       document.documentElement.style.setProperty('--accent-color', settings.accent);
-      
-      // Застосовуємо фон
       if (settings.bg) {
         document.body.style.backgroundColor = settings.bg;
       }
-      
-      // Застосовуємо шпалери
       if (settings.wallpaper && settings.wallpaper !== 'none') {
         const wallpaperGradients = {
           'abstract1': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -83,9 +63,7 @@ function injectThemeToNewtab(browserView) {
   });
 }
 
-/**
- * Інжектує світлу тему (інверсія кольорів)
- */
+
 function injectLightTheme(targetView) {
   const lightThemeCSS = `
     html {

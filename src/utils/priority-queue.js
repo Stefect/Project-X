@@ -1,63 +1,114 @@
-class BiDirectionalPriorityQueue {
-    constructor() {
+class BrowserXTaskQueue {
+    static MODES = Object.freeze({
+        HIGHEST: 'highest',
+        LOWEST: 'lowest',
+        OLDEST: 'oldest',
+        NEWEST: 'newest'
+    });
+
+    constructor(seed = []) {
         this.items = [];
         this.insertCounter = 0;
+
+        if (Array.isArray(seed)) {
+            seed.forEach((entry) => {
+                if (!entry || typeof entry !== 'object') return;
+                if (!Object.prototype.hasOwnProperty.call(entry, 'priority')) return;
+                this.enqueue(entry.item, entry.priority);
+            });
+        }
     }
 
-    enqueue(item, priority) {
+    enqueue(item, priority = 0) {
+        const numericPriority = Number(priority);
+        if (!Number.isFinite(numericPriority)) {
+            throw new TypeError('Priority must be a finite number');
+        }
+
         this.items.push({
             item,
-            priority,
+            priority: numericPriority,
             order: this.insertCounter++
         });
+
+        return this.items.length;
     }
 
-    _findIndex(type) {
-        if (this.items.length === 0) return -1;
+    _normalizeMode(mode) {
+        const raw = String(mode || '').toLowerCase();
+        return Object.values(BrowserXTaskQueue.MODES).includes(raw)
+            ? raw
+            : BrowserXTaskQueue.MODES.HIGHEST;
+    }
 
-        let targetIndex = 0;
-        for (let i = 1; i < this.items.length; i++) {
-            switch (type) {
-                case 'highest':
-                    if (this.items[i].priority > this.items[targetIndex].priority) {
-                        targetIndex = i;
-                    }
-                    break;
+    _isCandidateBetter(current, candidate, mode) {
+        if (mode === BrowserXTaskQueue.MODES.HIGHEST) {
+            if (candidate.priority !== current.priority) {
+                return candidate.priority > current.priority;
+            }
+            return candidate.order < current.order;
+        }
 
-                case 'lowest':
-                    if (this.items[i].priority < this.items[targetIndex].priority) {
-                        targetIndex = i;
-                    }
-                    break;
+        if (mode === BrowserXTaskQueue.MODES.LOWEST) {
+            if (candidate.priority !== current.priority) {
+                return candidate.priority < current.priority;
+            }
+            return candidate.order < current.order;
+        }
 
-                case 'oldest':
-                    if (this.items[i].order < this.items[targetIndex].order) {
-                        targetIndex = i;
-                    }
-                    break;
+        if (mode === BrowserXTaskQueue.MODES.OLDEST) {
+            return candidate.order < current.order;
+        }
 
-                case 'newest':
-                    if (this.items[i].order > this.items[targetIndex].order) {
-                        targetIndex = i;
-                    }
-                    break;
+        if (mode === BrowserXTaskQueue.MODES.NEWEST) {
+            return candidate.order > current.order;
+        }
+
+        return false;
+    }
+
+    _findIndex(mode) {
+        if (this.items.length === 0) {
+            return -1;
+        }
+
+        const normalized = this._normalizeMode(mode);
+        let selectedIndex = 0;
+
+        for (let i = 1; i < this.items.length; i += 1) {
+            if (this._isCandidateBetter(this.items[selectedIndex], this.items[i], normalized)) {
+                selectedIndex = i;
             }
         }
 
-        return targetIndex;
+        return selectedIndex;
     }
 
-    peek(type) {
-        const index = this._findIndex(type);
-        return index !== -1 ? this.items[index].item : null;
-    }
-
-    dequeue(type) {
-        const index = this._findIndex(type);
-        if (index !== -1) {
-            return this.items.splice(index, 1)[0].item;
+    _pickEntry(mode) {
+        const index = this._findIndex(mode);
+        if (index === -1) {
+            return null;
         }
-        return null;
+
+        return {
+            index,
+            entry: this.items[index]
+        };
+    }
+
+    peek(mode) {
+        const picked = this._pickEntry(mode);
+        return picked ? picked.entry.item : null;
+    }
+
+    dequeue(mode) {
+        const picked = this._pickEntry(mode);
+        if (!picked) {
+            return null;
+        }
+
+        const [removed] = this.items.splice(picked.index, 1);
+        return removed.item;
     }
 
     isEmpty() {
@@ -72,6 +123,14 @@ class BiDirectionalPriorityQueue {
         this.items = [];
         this.insertCounter = 0;
     }
+
+    toArray() {
+        return this.items.map((entry) => ({
+            item: entry.item,
+            priority: entry.priority,
+            order: entry.order
+        }));
+    }
 }
 
-module.exports = BiDirectionalPriorityQueue;
+module.exports = BrowserXTaskQueue;

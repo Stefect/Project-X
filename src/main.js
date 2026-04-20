@@ -1,15 +1,7 @@
-/**
- * BrowserX Main Process
- * ╨Ъ╨╛╨╛╤А╨┤╨╕╨╜╨░╤В╨╛╤А ╨╝╨╛╨┤╤Г╨╗╤Ц╨▓ ╤В╨░ app lifecycle
- */
-
-// ╨Ч╨░╨▓╨░╨╜╤В╨░╨╢╤Г╤Ф╨╝╨╛ ╨╖╨╝╤Ц╨╜╨╜╤Ц ╤Б╨╡╤А╨╡╨┤╨╛╨▓╨╕╤Й╨░
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const { app, BrowserWindow, ipcMain, Menu, session, net, protocol, clipboard } = require('electron');
-
-// Register app:// as a privileged scheme
 if (protocol) {
   protocol.registerSchemesAsPrivileged([
     {
@@ -25,8 +17,6 @@ if (protocol) {
 }
 const fs = require('fs');
 const Groq = require('groq-sdk');
-
-// ╨Ь╨╛╨┤╤Г╨╗╤Ц
 const storage = require('./modules/storage');
 const reactiveEvents = require('./modules/reactive-events');
 const torManager = require('./modules/tor-manager');
@@ -36,25 +26,22 @@ const ipcHandlers = require('./modules/ipc-handlers');
 const privacyGuard = require('./modules/privacy-guard');
 const { registerNewsHandlers } = require('./modules/news-handlers');
 const aiScheduler = require('./modules/ai-task-scheduler');
+const { infiniteArticleGenerator } = require('./modules/ai-feed');
+const { registerAIHandlers } = require('./modules/ai-handlers');
 
 console.log('[CONSOLE] Starting BrowserX...');
-
-// ╨Ю╤З╨╕╤Й╨░╤Ф╨╝╨╛ ╨║╨╡╤И config
 delete require.cache[require.resolve('./config')];
 const config = require('./config');
-
-// ╨У╨╗╨╛╨▒╨░╨╗╤М╨╜╤Ц ╨╖╨╝╤Ц╨╜╨╜╤Ц
 let mainWindow;
-let splashWindow; // ╨Т╤Ц╨║╨╜╨╛ ╨╖╨░╤Б╤В╨░╨▓╨║╨╕
+let splashWindow;
 let groqClient;
-let splashStartTime = 0; // ╨з╨░╤Б ╨┐╨╛╨║╨░╨╖╤Г splash
+let aiHandlersRegistered = false;
+let splashStartTime = 0;
 
-/**
- * ╨б╤В╨▓╨╛╤А╤О╤Ф splash screen (╨╖╨░╤Б╤В╨░╨▓╨║╤Г ╨┐╤А╨╕ ╨╖╨░╨▓╨░╨╜╤В╨░╨╢╨╡╨╜╨╜╤Ц)
- */
+
 function createSplashWindow() {
   console.log('[SPLASH] Creating splash window...');
-  splashStartTime = Date.now(); // ╨Ч╨░╨┐╨░╨╝тАЩ╤П╤В╨╛╨▓╤Г╤Ф╨╝╨╛ ╤З╨░╤Б ╤Б╤В╨░╤А╤В╤Г
+  splashStartTime = Date.now();
   
   splashWindow = new BrowserWindow({
     width: 500,
@@ -83,20 +70,13 @@ function createSplashWindow() {
   console.log('[SPLASH] Splash screen created');
 }
 
-/**
- * ╨Ж╨╜╨╢╨╡╨║╤В╤Г╤Ф unified-t9 ╤Б╨║╤А╨╕╨┐╤В ╤Г webview (╨▓╨╕╨║╨╗╨╕╨║╨░╤Ф╤В╤М╤Б╤П ╨╖ renderer process)
- */
+
 function injectUnifiedT9(webviewId) {
-  // ╨Ф╨╗╤П webview ╤Ц╨╜╨╢╨╡╨║╤Ж╤Ц╤П ╨▓╤Ц╨┤╨▒╤Г╨▓╨░╤Ф╤В╤М╤Б╤П ╤З╨╡╤А╨╡╨╖ renderer process
-  // ╨ж╤П ╤Д╤Г╨╜╨║╤Ж╤Ц╤П ╨╖╨░╨╗╨╕╤И╨╡╨╜╨░ ╨┤╨╗╤П ╤Б╤Г╨╝╤Ц╤Б╨╜╨╛╤Б╤В╤Ц
   console.log('[T9] Injection requested for webview:', webviewId);
 }
 
-/**
- * ╨б╤В╨▓╨╛╤А╤О╤Ф ╨│╨╛╨╗╨╛╨▓╨╜╨╡ ╨▓╤Ц╨║╨╜╨╛ ╨▒╤А╨░╤Г╨╖╨╡╤А╨░
- */
+
 async function createWindow() {
-  // ╨Ж╨╜╤Ц╤Ж╤Ц╨░╨╗╤Ц╨╖╤Г╤Ф╨╝╨╛ Groq AI
   console.log('[GROQ] Starting initialization...');
   console.log('[GROQ] config.GROQ_API_KEY:', config.GROQ_API_KEY ? `EXISTS (${config.GROQ_API_KEY.substring(0, 15)}...)` : 'NOT FOUND');
   
@@ -112,7 +92,11 @@ async function createWindow() {
     console.error('[ERROR] Groq initialization error:', error.message);
   }
 
-  // тЬЕ ╨Т╨Р╨Ц╨Ы╨Ш╨Т╨Ю: ╨Я╤А╨╕ ╤Б╤В╨░╤А╤В╤Ц ╨▒╤А╨░╤Г╨╖╨╡╤А╨░ ╨Ч╨Р╨Т╨Ц╨Ф╨Ш ╨▓╨╕╨║╨╛╤А╨╕╤Б╤В╨╛╨▓╤Г╤Ф╨╝╨╛ ╨┐╤А╤П╨╝╨╡ ╨╖'╤Ф╨┤╨╜╨░╨╜╨╜╤П (╨▒╨╡╨╖ ╨┐╤А╨╛╨║╤Б╤Ц)
+  if (!aiHandlersRegistered) {
+    registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
+    aiHandlersRegistered = true;
+    console.log('[IPC] AI handlers wired in createWindow()');
+  }
   console.log('[PROXY] Setting direct connection (no proxy) on startup...');
   const defaultSes = session.defaultSession;
   const webviewSes = session.fromPartition('persist:main');
@@ -121,65 +105,48 @@ async function createWindow() {
     webviewSes.setProxy({ mode: 'direct' })
   ]);
   console.log('[PROXY] тЬЕ Direct connection enabled for both sessions');
-
-  // ╨б╤В╨▓╨╛╤А╤О╤Ф╨╝╨╛ ╨▓╤Ц╨║╨╜╨╛ (frameless, ╨░╨╗╨╡ ╤Б╨┐╨╛╤З╨░╤В╨║╤Г ╨╜╨╡╨▓╨╕╨┤╨╕╨╝╨╡)
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     frame: false,
     titleBarStyle: 'hidden',
-    show: false, // ╨Т╨Р╨Ц╨Ы╨Ш╨Т╨Ю: ╤Е╨╛╨▓╨░╤Ф╨╝╨╛ ╨┤╨╛ ╨┐╨╛╨▓╨╜╨╛╨│╨╛ ╨╖╨░╨▓╨░╨╜╤В╨░╨╢╨╡╨╜╨╜╤П
-    backgroundColor: '#1a1b26', // ╨д╨╛╨╜ ╤Й╨╛╨▒ ╨╜╨╡ ╨▒╤Г╨╗╨╛ ╨▒╤Ц╨╗╨╛╨│╨╛ ╤Б╨┐╨░╨╗╨░╤Е╤Г
+    show: false,
+    backgroundColor: '#1a1b26',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      webviewTag: true // ╨Ъ╨а╨Ш╨в╨Ш╨з╨Э╨Ю: ╨▒╨╡╨╖ ╤Ж╤М╨╛╨│╨╛ <webview> ╤В╨╡╨│╨╕ ╨╜╨╡ ╨┐╤А╨░╤Ж╤О╤О╤В╤М
+      webviewTag: true
     }
   });
-
-  // ╨з╨╡╨║╨░╤Ф╨╝╨╛ ╨╜╨░ ╨Я╨Ю╨Т╨Э╨Х ╨╖╨░╨▓╨░╨╜╤В╨░╨╢╨╡╨╜╨╜╤П ╨▓╤Б╤Ц╤Е ╤А╨╡╤Б╤Г╤А╤Б╤Ц╨▓ (CSS, JS, ╨╖╨╛╨▒╤А╨░╨╢╨╡╨╜╨╜╤П)
   mainWindow.webContents.once('did-finish-load', () => {
     console.log('[MAIN] All resources loaded (did-finish-load)');
-    
-    // ╨Ф╨╛╨┤╨░╤Ф╨╝╨╛ ╨╜╨╡╨▓╨╡╨╗╨╕╨║╤Г ╨╖╨░╤В╤А╨╕╨╝╨║╤Г ╨┐╤Ц╤Б╨╗╤П ╨╖╨░╨▓╨░╨╜╤В╨░╨╢╨╡╨╜╨╜╤П, ╤Й╨╛╨▒ ╨▓╤Б╨╡ ╨▓╤Б╤В╨╕╨│╨╗╨╛ ╤Ц╨╜╤Ц╤Ж╤Ц╨░╨╗╤Ц╨╖╤Г╨▓╨░╤В╨╕╤Б╤П
     setTimeout(() => {
       console.log('[MAIN] App fully initialized, closing splash');
-      
-      // ╨Ч╨░╨║╤А╨╕╨▓╨░╤Ф╨╝╨╛ splash
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.close();
         splashWindow = null;
       }
-      
-      // ╨Я╨╛╨║╨░╨╖╤Г╤Ф╨╝╨╛ ╨│╨╛╨╗╨╛╨▓╨╜╨╡ ╨▓╤Ц╨║╨╜╨╛
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.show();
         mainWindow.focus();
       }
-    }, 800); // 800╨╝╤Б ╨┐╤Ц╤Б╨╗╤П ╨╖╨░╨▓╨░╨╜╤В╨░╨╢╨╡╨╜╨╜╤П ╨┤╨╗╤П ╤Ц╨╜╤Ц╤Ж╤Ц╨░╨╗╤Ц╨╖╨░╤Ж╤Ц╤Ч ╤Б╨║╤А╨╕╨┐╤В╤Ц╨▓
+    }, 800);
   });
-
-  // ╨Ю╨▒╤А╨╛╨▒╨╜╨╕╨║ ╨╖╨░╨║╤А╨╕╤В╤В╤П ╨│╨╛╨╗╨╛╨▓╨╜╨╛╨│╨╛ ╨▓╤Ц╨║╨╜╨░
   mainWindow.on('closed', () => {
-    // ╨п╨║╤Й╨╛ splash ╤З╨╛╨╝╤Г╤Б╤М ╤Й╨╡ ╨▓╤Ц╨┤╨║╤А╨╕╤В╨╕╨╣ - ╨╖╨░╨║╤А╨╕╨▓╨░╤Ф╨╝╨╛ ╨╣╨╛╨│╨╛
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.close();
       splashWindow = null;
     }
     mainWindow = null;
   });
-
-  // ╨Э╨░ ╨▓╨╕╨┐╨░╨┤╨╛╨║ ╨┐╨╛╨╝╨╕╨╗╨║╨╕ ╨╖╨░╨▓╨░╨╜╤В╨░╨╢╨╡╨╜╨╜╤П - ╨▓╤Б╨╡ ╨╛╨┤╨╜╨╛ ╨╖╨░╨║╤А╨╕╨▓╨░╤Ф╨╝╨╛ splash
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
     console.error('[ERROR] Main window failed to load:', errorDescription);
     if (splashWindow && !splashWindow.isDestroyed()) {
       splashWindow.close();
       splashWindow = null;
     }
-    mainWindow.show(); // ╨Я╨╛╨║╨░╨╖╤Г╤Ф╨╝╨╛ ╨╜╨░╨▓╤Ц╤В╤М ╨╖ ╨┐╨╛╨╝╨╕╨╗╨║╨╛╤О
+    mainWindow.show();
   });
-
-  // ╨б╤В╨▓╨╛╤А╤О╤Ф╨╝╨╛ ╨╝╨╡╨╜╤О (F12 ╨┤╨╗╤П DevTools)
   const template = [
     {
       label: 'View',
@@ -199,7 +166,6 @@ async function createWindow() {
           label: 'Toggle WebView DevTools',
           accelerator: 'Ctrl+Shift+I',
           click: () => {
-            // DevTools ╨┤╨╗╤П webview ╨▓╤Ц╨┤╨║╤А╨╕╨▓╨░╤О╤В╤М╤Б╤П ╤З╨╡╤А╨╡╨╖ renderer process
             mainWindow.webContents.send('toggle-webview-devtools');
           }
         },
@@ -211,17 +177,8 @@ async function createWindow() {
   ];
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
-
-  // ╨Ч╨░╨▓╨░╨╜╤В╨░╨╢╤Г╤Ф╨╝╨╛ UI
   mainWindow.loadFile(path.join(__dirname, '..', 'public', 'index.html'));
-
-  // ╨Ж╨╜╤Ц╤Ж╤Ц╨░╨╗╤Ц╨╖╤Г╤Ф╨╝╨╛ ╤Б╨╕╤Б╤В╨╡╨╝╤Г ╨▓╨║╨╗╨░╨┤╨╛╨║ (webview)
   tabManager.init(mainWindow);
-  
-  // Webview ╨╛╨▒╤А╨╛╨▒╨╜╨╕╨║╨╕ ╨╜╨░╨╗╨░╤И╤В╨╛╨▓╤Г╤О╤В╤М╤Б╤П ╨▓ renderer process (index.html)
-  // ╨Я╨╡╤А╤И╨░ ╨▓╨║╨╗╨░╨┤╨║╨░ ╤Б╤В╨▓╨╛╤А╤О╤Ф╤В╤М╤Б╤П ╨▓ restoreSessionSmart() ╨┐╤Ц╤Б╨╗╤П ╨╖╨░╨▓╨░╨╜╤В╨░╨╢╨╡╨╜╨╜╤П renderer
-
-  // ╨Р╨▓╤В╨╛╨╖╨▒╨╡╤А╨╡╨╢╨╡╨╜╨╜╤П ╤Б╨╡╤Б╤Ц╤Ч ╨┐╤А╨╕ ╨╖╨░╨║╤А╨╕╤В╤В╤Ц
   mainWindow.on('close', () => {
     const sessionTabs = tabManager.getSessionData();
     console.log('[SESSION] Before save:');
@@ -234,9 +191,7 @@ async function createWindow() {
   });
 }
 
-/**
- * ╨а╨╛╨╖╤Г╨╝╨╜╨╡ ╨▓╤Ц╨┤╨╜╨╛╨▓╨╗╨╡╨╜╨╜╤П ╤Б╨╡╤Б╤Ц╤Ч
- */
+
 function restoreSessionSmart() {
   try {
     const session = storage.getSession();
@@ -256,10 +211,6 @@ function restoreSessionSmart() {
     console.error('[ERROR] Session restore error:', error.message);
   }
 }
-
-// ==================== APP LIFECYCLE ====================
-
-// ╨Ч╨░╨▒╨╡╨╖╨┐╨╡╤З╤Г╤Ф╨╝╨╛ ╨╛╨┤╨╕╨╜ ╨╡╨║╨╖╨╡╨╝╨┐╨╗╤П╤А ╨┤╨╛╨┤╨░╤В╨║╤Г
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -270,15 +221,9 @@ if (!gotTheLock) {
 }
 
 app.whenReady().then(async () => {
-  // Serve internal app pages (newtab.html, history.html, etc.)
-  // via the custom app:// protocol so webviews can load them without ERR_ABORTED.
-  // The file:// protocol is blocked by Electron's security model for <webview> elements,
-  // especially when the installation path contains non-ASCII characters or spaces.
   const publicDir = path.resolve(path.join(__dirname, '..', 'public'));
   const appProtocolHandler = (request) => {
     const { pathname } = new URL(request.url);
-    // Resolve the full path and verify it stays within the public directory
-    // to prevent directory traversal attacks
     const resolved = path.resolve(path.join(publicDir, pathname));
     if (!resolved.startsWith(publicDir + path.sep) && resolved !== publicDir) {
       return new Response('Not Found', { status: 404 });
@@ -286,22 +231,12 @@ app.whenReady().then(async () => {
     return net.fetch('file://' + resolved);
   };
   protocol.handle('app', appProtocolHandler);
-  // Also register for the webview partition session so webviews can load app:// URLs
   session.fromPartition('persist:main').protocol.handle('app', appProtocolHandler);
   console.log('[PROTOCOL] app:// protocol registered for internal pages');
-
-  // ╨б╨┐╨╛╤З╨░╤В╨║╤Г ╨┐╨╛╨║╨░╨╖╤Г╤Ф╨╝╨╛ splash screen
   createSplashWindow();
-  
-  // ╨Э╨╡╨▓╨╡╨╗╨╕╨║╨░ ╨╖╨░╤В╤А╨╕╨╝╨║╨░ ╨┐╨╡╤А╨╡╨┤ ╤Ц╨╜╤Ц╤Ж╤Ц╨░╨╗╤Ц╨╖╨░╤Ж╤Ц╤Ф╤О ╨▓╨░╨╢╨║╨╕╤Е ╨║╨╛╨╝╨┐╨╛╨╜╨╡╨╜╤В╤Ц╨▓
   await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // ╨Ж╨╜╤Ц╤Ж╤Ц╨░╨╗╤Ц╨╖╤Г╤Ф╨╝╨╛ ╨╖╨░╤Е╨╕╤Б╤В ╨║╨╛╨╜╤Д╤Ц╨┤╨╡╨╜╤Ж╤Ц╨╣╨╜╨╛╤Б╤В╤Ц ╨Я╨Х╨а╨Х╨Ф ╨╖╨░╨┐╤Г╤Б╨║╨╛╨╝ Tor
   privacyGuard.initializePrivacyProtection();
-  
-  // ╨У╨╗╨╛╨▒╨░╨╗╤М╨╜╨╡ ╨▒╨╗╨╛╨║╤Г╨▓╨░╨╜╨╜╤П ╨│╨╡╨╛╨╗╨╛╨║╨░╤Ж╤Ц╤Ч ╨┤╨╗╤П ╨Т╨б╨Ж╨е ╨▓╨║╨╗╨░╨┤╨╛╨║ (BrowserView, webview, etc.)
   app.on('web-contents-created', (event, contents) => {
-    // ╨Я╨╡╤А╨╡╤Е╨╛╨┐╨╗╤О╤Ф╨╝╨╛ ╨╖╨░╨┐╨╕╤В╨╕ ╨┤╨╛╨╖╨▓╨╛╨╗╤Ц╨▓ ╨┤╨╗╤П ╨║╨╛╨╢╨╜╨╛╨│╨╛ ╨╜╨╛╨▓╨╛╨│╨╛ webContents
     contents.session.setPermissionRequestHandler((webContents, permission, callback) => {
       if (permission === 'geolocation') {
         const isTorEnabled = torManager.isTorEnabled();
@@ -310,16 +245,14 @@ app.whenReady().then(async () => {
           const url = webContents.getURL();
           console.log(`[PRIVACY] тЭМ BLOCKED geolocation request from: ${url}`);
           console.log('[PRIVACY] Reason: Tor is active, geolocation would reveal real location');
-          callback(false); // ╨Ц╨╛╤А╤Б╤В╨║╨░ ╨▓╤Ц╨┤╨╝╨╛╨▓╨░
+          callback(false);
           return;
         } else {
           console.log('[PRIVACY] тЪая╕П Geolocation request (Tor OFF, allowing)');
         }
       }
-      callback(true); // ╨Ф╨╛╨╖╨▓╨╛╨╗╤П╤Ф╨╝╨╛ ╤Ц╨╜╤И╤Ц ╨┤╨╛╨╖╨▓╨╛╨╗╨╕
+      callback(true);
     });
-    
-    // ╨Ж╨╜╨╢╨╡╨║╤В╤Г╤Ф╨╝╨╛ ╨▒╨╗╨╛╨║╤Г╨▓╨░╨╜╨╜╤П ╨│╨╡╨╛╨╗╨╛╨║╨░╤Ж╤Ц╤Ч ╤З╨╡╤А╨╡╨╖ JavaScript ╨┤╨╗╤П ╨║╨╛╨╢╨╜╨╛╤Ч ╨╜╨╛╨▓╨╛╤Ч ╨▓╨║╨╗╨░╨┤╨║╨╕
     contents.on('did-finish-load', () => {
       const isTorEnabled = torManager.isTorEnabled();
       if (isTorEnabled) {
@@ -373,8 +306,6 @@ app.whenReady().then(async () => {
   });
   
   console.log('[PRIVACY] тЬУ Global web-contents-created handler registered');
-  
-  // ╨У╨╗╨╛╨▒╨░╨╗╤М╨╜╨╕╨╣ ╨╛╨▒╤А╨╛╨▒╨╜╨╕╨║ ╨┤╨╗╤П ╨Т╨б╨Ж╨е ╨╜╨╛╨▓╨╕╤Е ╤Б╨╡╤Б╤Ц╨╣ (╨▓╨║╨╗╤О╤З╨╜╨╛ ╨╖ ╨║╨░╤Б╤В╨╛╨╝╨╜╨╕╨╝╨╕)
   app.on('session-created', (customSession) => {
     console.log('[PRIVACY] New session created, applying permission handler...');
     
@@ -395,16 +326,10 @@ app.whenReady().then(async () => {
   
   console.log('[PRIVACY] тЬУ Global session-created handler registered');
   
-  await createWindow(); // ╨б╤В╨▓╨╛╤А╤О╤Ф╨╝╨╛ ╨▓╤Ц╨║╨╜╨╛ (╤В╨╡╨┐╨╡╤А async)
-  
-  // тЭМ ╨Э╨Х ╨╖╨░╨┐╤Г╤Б╨║╨░╤Ф╨╝╨╛ Tor ╨░╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╜╨╛! ╨Ъ╨╛╤А╨╕╤Б╤В╤Г╨▓╨░╤З ╤Г╨▓╤Ц╨╝╨║╨╜╨╡ ╨╣╨╛╨│╨╛ ╨║╨╜╨╛╨┐╨║╨╛╤О.
-  // Tor ╨╖╨░╨┐╤Г╤Б╨║╨░╤Ф╤В╤М╤Б╤П ╨в╨Ж╨Ы╨м╨Ъ╨Ш ╨┐╤А╨╕ ╨┐╨╡╤А╤И╨╛╨╝╤Г toggle ╤З╨╡╤А╨╡╨╖ toggleTor()
-  // await torManager.startTor('DE', { mainWindow });
+  await createWindow();
   console.log('[TOR] Tor auto-start DISABLED. User will enable manually via button.');
   
   reactiveEvents.setupReactiveNetworkEvents(mainWindow);
-  
-  // ╨Т╤Ц╨┤╨╜╨╛╨▓╨╗╤О╤Ф╨╝╨╛ ╤Б╨╡╤Б╤Ц╤О
   mainWindow.webContents.once('did-finish-load', () => {
     setTimeout(() => restoreSessionSmart(), 500);
   });
@@ -426,8 +351,6 @@ app.on('will-quit', () => {
   torManager.stopTor();
 });
 
-// ==================== WINDOW IPC HANDLERS ====================
-
 ipcMain.on('window-minimize', () => {
   mainWindow.minimize();
 });
@@ -446,13 +369,9 @@ ipcMain.on('window-close', () => {
   app.quit();
 });
 
-// ==================== CONTEXT MENU ====================
-
 ipcMain.on('show-context-menu', (event, params) => {
   const { tabId, selectionText, linkURL, linkText, srcURL, mediaType, isEditable, pageURL } = params;
   const template = [];
-
-  // --- ╨в╨╡╨║╤Б╤В ╨▓╨╕╨┤╤Ц╨╗╨╡╨╜╨╛ ---
   if (selectionText) {
     const label = selectionText.length > 30 ? selectionText.substring(0, 30) + 'тАж' : selectionText;
     if (isEditable) {
@@ -469,14 +388,10 @@ ipcMain.on('show-context-menu', (event, params) => {
       click: () => mainWindow.webContents.send('context-menu-action', { action: 'translate', tabId, text: selectionText })
     });
   }
-
-  // --- ╨а╨╡╨┤╨░╨│╨╛╨▓╨░╨╜╨╡ ╨┐╨╛╨╗╨╡ ---
   if (isEditable) {
     template.push({ label: '╨Т╤Б╤В╨░╨▓╨╕╤В╨╕', click: () => mainWindow.webContents.send('context-menu-action', { action: 'paste', tabId }) });
     template.push({ label: '╨Т╨╕╨┤╤Ц╨╗╨╕╤В╨╕ ╨▓╤Б╨╡', click: () => mainWindow.webContents.send('context-menu-action', { action: 'select-all', tabId }) });
   }
-
-  // --- ╨Я╨╛╤Б╨╕╨╗╨░╨╜╨╜╤П ---
   if (linkURL) {
     if (template.length > 0) template.push({ type: 'separator' });
     template.push({
@@ -494,8 +409,6 @@ ipcMain.on('show-context-menu', (event, params) => {
       });
     }
   }
-
-  // --- ╨Ч╨╛╨▒╤А╨░╨╢╨╡╨╜╨╜╤П ---
   if (mediaType === 'image' && srcURL) {
     if (template.length > 0) template.push({ type: 'separator' });
     template.push({
@@ -511,8 +424,6 @@ ipcMain.on('show-context-menu', (event, params) => {
       click: () => mainWindow.webContents.send('context-menu-action', { action: 'save-image', tabId, url: srcURL })
     });
   }
-
-  // --- ╨Э╨░╨▓╤Ц╨│╨░╤Ж╤Ц╤П ╤В╨░ ╤Ц╨╜╤Б╤В╤А╤Г╨╝╨╡╨╜╤В╨╕ (╨╖╨░╨▓╨╢╨┤╨╕) ---
   if (template.length > 0) template.push({ type: 'separator' });
   template.push({ label: '╨Э╨░╨╖╨░╨┤',    click: () => tabManager.goBack()   });
   template.push({ label: '╨Т╨┐╨╡╤А╨╡╨┤',  click: () => tabManager.goForward() });
@@ -535,8 +446,6 @@ ipcMain.on('show-context-menu', (event, params) => {
   Menu.buildFromTemplate(template).popup({ window: mainWindow });
 });
 
-// ==================== THEME IPC HANDLERS ====================
-
 ipcMain.on('apply-theme', (event, theme) => {
   console.log('[THEME] Applying:', theme.name);
   mainWindow.webContents.send('theme-changed', theme);
@@ -544,17 +453,12 @@ ipcMain.on('apply-theme', (event, theme) => {
 
 ipcMain.on('update-theme-settings', (event, settings) => {
   themeManager.updateThemeSettings(settings);
-  
-  // ╨Э╨░╨┤╤Б╨╕╨╗╨░╤Ф╨╝╨╛ ╨║╨╛╨╝╨░╨╜╨┤╤Г ╨▓ renderer process ╨┤╨╗╤П ╨╛╨╜╨╛╨▓╨╗╨╡╨╜╨╜╤П ╤В╨╡╨╝ ╤Г ╨▓╤Б╤Ц╤Е webview ╨╖ newtab.html
   if (mainWindow) {
     mainWindow.webContents.send('update-newtab-themes', settings);
   }
 });
 
-// ==================== UI LAYOUT IPC HANDLERS ====================
-
 ipcMain.on('sidebar-toggled', (event, isCollapsed) => {
-  // Webview ╨║╨╡╤А╤Г╤Ф╤В╤М╤Б╤П CSS, ╨╜╨╡ ╨┐╨╛╤В╤А╤Ц╨▒╨╜╤Ц bounds ╨╛╨╜╨╛╨▓╨╗╨╡╨╜╨╜╤П
   console.log(`[UI-WEBVIEW] Sidebar ${isCollapsed ? 'collapsed' : 'expanded'}`);
 });
 
@@ -570,8 +474,6 @@ ipcMain.on('topbar-height-changed', (event, height) => {
   tabManager.setTopbarHeight(height);
   console.log(`[UI-WEBVIEW] Topbar height changed to: ${height}px`);
 });
-
-// ==================== TAB IPC HANDLERS ====================
 
 ipcMain.handle('create-tab', async (event, url = null) => {
   return tabManager.createTab(mainWindow, url, {
@@ -603,8 +505,6 @@ ipcMain.on('reorder-tabs', (event, newOrder) => {
   tabManager.reorderTabs(newOrder);
 });
 
-// ==================== NAVIGATION IPC HANDLERS ====================
-
 ipcMain.on('navigate', (event, input) => {
   console.log('ЁЯУи [╨Ф╨Ж╨Р╨У╨Э╨Ю╨б╨в╨Ш╨Ъ╨Р MAIN] ╨Ю╤В╤А╨╕╨╝╨░╨╜╨╛ IPC navigate ╨▓╤Ц╨┤ renderer');
   console.log('ЁЯУи [╨Ф╨Ж╨Р╨У╨Э╨Ю╨б╨в╨Ш╨Ъ╨Р MAIN] Input URL:', input);
@@ -628,13 +528,9 @@ ipcMain.on('reload', () => {
   tabManager.reload();
 });
 
-// ==================== REACTIVE EVENTS ====================
-
 ipcMain.handle('get-reactive-events', () => {
   return reactiveEvents.getReactiveEventBuffer();
 });
-
-// ==================== TOR IPC HANDLERS ====================
 
 ipcMain.handle('toggle-tor', async () => {
   return await torManager.toggleTor(mainWindow, tabManager);
@@ -651,8 +547,6 @@ ipcMain.handle('is-tor-enabled', () => {
 ipcMain.handle('check-ip', async () => {
   try {
     const startTime = Date.now();
-    
-    // ╨Т╨╕╨║╨╛╤А╨╕╤Б╤В╨╛╨▓╤Г╤Ф╨╝╨╛ net.request, ╤П╨║╨╕╨╣ ╨░╨▓╤В╨╛╨╝╨░╤В╨╕╤З╨╜╨╛ ╨▓╨╕╨║╨╛╤А╨╕╤Б╤В╨╛╨▓╤Г╤Ф session ╨┐╤А╨╛╨║╤Б╤Ц
     const fetchWithProxy = (url, isJson = true) => {
       return new Promise((resolve, reject) => {
         const request = net.request({
@@ -699,10 +593,7 @@ ipcMain.handle('check-ip', async () => {
     
     let ip = null;
     let responseTime = 0;
-    
-    // ╨б╨┐╤А╨╛╨▒╤Г╤Ф╨╝╨╛ ╨║╤Ц╨╗╤М╨║╨░ Tor-friendly API ╨┤╨╗╤П ╨╛╤В╤А╨╕╨╝╨░╨╜╨╜╤П IP
     try {
-      // ╨Т╨░╤А╤Ц╨░╨╜╤В 1: Tor Project API (╨╜╨░╨╣╨║╤А╨░╤Й╨╡ ╨┤╨╗╤П Tor)
       const torData = await fetchWithProxy('https://check.torproject.org/api/ip', true);
       ip = torData.IP;
       responseTime = Date.now() - startTime;
@@ -711,14 +602,11 @@ ipcMain.handle('check-ip', async () => {
       console.warn('[IP CHECK] Tor Project API failed:', err1.message);
       
       try {
-        // ╨Т╨░╤А╤Ц╨░╨╜╤В 2: ident.me (╤В╨╡╨║╤Б╤В╨╛╨▓╨░ ╨▓╤Ц╨┤╨┐╨╛╨▓╤Ц╨┤╤М)
         ip = await fetchWithProxy('https://ident.me/', false);
         responseTime = Date.now() - startTime;
         console.log('[IP CHECK] тЬУ Got IP from ident.me:', ip);
       } catch (err2) {
         console.warn('[IP CHECK] ident.me failed:', err2.message);
-        
-        // ╨Т╨░╤А╤Ц╨░╨╜╤В 3: icanhazip.com
         ip = await fetchWithProxy('https://icanhazip.com/', false);
         responseTime = Date.now() - startTime;
         console.log('[IP CHECK] тЬУ Got IP from icanhazip.com:', ip);
@@ -728,8 +616,6 @@ ipcMain.handle('check-ip', async () => {
     if (!ip) {
       throw new Error('╨Э╨╡ ╨▓╨┤╨░╨╗╨╛╤Б╤П ╨╛╤В╤А╨╕╨╝╨░╤В╨╕ IP ╨░╨┤╤А╨╡╤Б╤Г');
     }
-    
-    // ╨Ю╤В╤А╨╕╨╝╤Г╤Ф╨╝╨╛ ╨│╨╡╨╛╨╗╨╛╨║╨░╤Ж╤Ц╤О ╨╖ graceful fallback
     const torStatus = torManager.getTorStatus();
     let geoData = {
       country_name: torStatus.active ? 'Tor Network' : '╨Э╨╡╨▓╤Ц╨┤╨╛╨╝╨╛',
@@ -758,7 +644,6 @@ ipcMain.handle('check-ip', async () => {
           });
           
           response.on('end', () => {
-            // ╨Я╨╡╤А╨╡╨▓╤Ц╤А╤П╤Ф╨╝╨╛ ╤З╨╕ ╤Г╤Б╨┐╤Ц╤И╨╜╨░ ╨▓╤Ц╨┤╨┐╨╛╨▓╤Ц╨┤╤М (200 OK)
             if (statusCode === 200) {
               try {
                 const jsonData = JSON.parse(data);
@@ -784,8 +669,6 @@ ipcMain.handle('check-ip', async () => {
         
         geoRequest.end();
       });
-      
-      // ╨п╨║╤Й╨╛ ╨╛╤В╤А╨╕╨╝╨░╨╗╨╕ ╨│╨╡╨╛╨┤╨░╨╜╤Ц, ╨▓╨╕╨║╨╛╤А╨╕╤Б╤В╨╛╨▓╤Г╤Ф╨╝╨╛ ╤Ч╤Е
       if (geoResult && geoResult.country_name) {
         geoData = geoResult;
         console.log('[IP CHECK] тЬУ Got geo data:', geoData.country_name, geoData.city);
@@ -794,7 +677,6 @@ ipcMain.handle('check-ip', async () => {
       }
     } catch (geoErr) {
       console.warn('[IP CHECK] Geo lookup exception:', geoErr.message);
-      // ╨Ы╨╕╤И╨░╤Ф╨╝╨╛ ╨┤╨╡╤Д╨╛╨╗╤В╨╜╤Ц ╨╖╨╜╨░╤З╨╡╨╜╨╜╤П
     }
     
     return {
@@ -811,20 +693,11 @@ ipcMain.handle('check-ip', async () => {
     throw new Error(`╨Э╨╡ ╨▓╨┤╨░╨╗╨╛╤Б╤П ╨┐╨╡╤А╨╡╨▓╤Ц╤А╨╕╤В╨╕ IP: ${error.message}`);
   }
 });
-
-// ==================== REGISTER MODULE HANDLERS ====================
-
-// ╨а╨╡╤Ф╤Б╤В╤А╤Г╤Ф╨╝╨╛ IPC handlers ╨╖ ╨╝╨╛╨┤╤Г╨╗╤Ц╨▓
 ipcHandlers.registerStorageHandlers(storage, tabManager);
 ipcHandlers.registerAISchedulerHandlers(aiScheduler);
 registerNewsHandlers();
-// AI handlers ╤А╨╡╤Ф╤Б╤В╤А╤Г╤О╤В╤М╤Б╤П ╨▓╤Б╨╡╤А╨╡╨┤╨╕╨╜╤Ц createWindow() ╨┐╤Ц╤Б╨╗╤П ╤Ц╨╜╤Ц╤Ж╤Ц╨░╨╗╤Ц╨╖╨░╤Ж╤Ц╤Ч groqClient
-
-// ==================== ╨в╨Х╨б╨в AI TASK SCHEDULER ====================
 setTimeout(() => {
   console.log('\n[TEST] ЁЯзк ╨Ф╨╡╨╝╨╛╨╜╤Б╤В╤А╨░╤Ж╤Ц╤П AI Task Scheduler...\n');
-
-  // ╨Э╨╕╨╖╤М╨║╨╕╨╣ ╨┐╤А╤Ц╨╛╤А╨╕╤В╨╡╤В (╤Д╨╛╨╜)
   aiScheduler.addTask({
     name: '╨б╨░╨╝╨╝╨░╤А╤Ц ╤Д╨╛╨╜╨╛╨▓╨╛╤Ч ╨▓╨║╨╗╨░╨┤╨║╨╕ #1',
     type: 'summary',
@@ -842,8 +715,6 @@ setTimeout(() => {
       console.log('   ЁЯУЭ ╨б╨░╨╝╨╝╨░╤А╤Ц ╨│╨╛╤В╨╛╨▓╨╕╨╣');
     }
   }, 1);
-
-  // ╨б╨╡╤А╨╡╨┤╨╜╤Ц╨╣ ╨┐╤А╤Ц╨╛╤А╨╕╤В╨╡╤В
   aiScheduler.addTask({
     name: '╨Я╨╡╤А╨╡╨║╨╗╨░╨┤ ╤Б╤В╨╛╤А╤Ц╨╜╨║╨╕',
     type: 'translation',
@@ -852,8 +723,6 @@ setTimeout(() => {
       console.log('   ЁЯМР ╨Я╨╡╤А╨╡╨║╨╗╨░╨┤ ╨╖╨░╨▓╨╡╤А╤И╨╡╨╜╨╛');
     }
   }, 5);
-
-  // ╨Э╨Р╨Щ╨Т╨Ш╨й╨Ш╨Щ - ╨║╨╛╤А╨╕╤Б╤В╤Г╨▓╨░╤З ╤З╨╡╨║╨░╤Ф
   aiScheduler.addTask({
     name: 'T9 ╨Р╨▓╤В╨╛╨┤╨╛╨┐╨╛╨▓╨╜╨╡╨╜╨╜╤П ╤В╨╡╨║╤Б╤В╤Г',
     type: 't9',
@@ -876,40 +745,26 @@ setTimeout(() => {
 }, 5000);
 
 console.log('[CONSOLE] BrowserX main process initialized');
-
-// ==================== URL PROTOCOL HANDLING ====================
-
-// ╨Ю╨▒╤А╨╛╨▒╨║╨░ app:// URLs ╨╖ ╨║╨╛╨╝╨░╨╜╨┤╨╜╨╛╨│╨╛ ╤А╤П╨┤╨║╨░ ╨┐╤А╨╕ ╨╖╨░╨┐╤Г╤Б╨║╤Г
 function handleAppUrl(url) {
   console.log('[PROTOCOL] Handling app:// URL:', url);
 
   if (mainWindow) {
     const { pathname } = new URL(url);
     console.log('[PROTOCOL] Loading:', pathname);
-
-    // ╨д╨╛╨║╤Г╤Б╤Г╤Ф╨╝╨╛ ╨│╨╛╨╗╨╛╨▓╨╜╨╡ ╨▓╤Ц╨║╨╜╨╛
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
-
-    // ╨Э╨░╨┤╤Б╨╕╨╗╨░╤Ф╨╝╨╛ URL ╨┤╨╛ renderer ╨┐╤А╨╛╤Ж╨╡╤Б╤Г
     mainWindow.webContents.send('handle-app-url', pathname);
   }
 }
-
-// ╨Я╨╡╤А╨╡╨▓╤Ц╤А╤П╤Ф╨╝╨╛ ╤З╨╕ ╤Ф app:// URL ╨▓ ╨░╤А╨│╤Г╨╝╨╡╨╜╤В╨░╤Е ╨╖╨░╨┐╤Г╤Б╨║╤Г
 if (process.argv.length >= 2) {
   const possibleUrl = process.argv.find(arg => arg.startsWith('app://'));
   if (possibleUrl) {
     console.log('[PROTOCOL] Found app:// URL in startup args:', possibleUrl);
-    // ╨Т╤Ц╨┤╨║╨╗╨░╨┤╨░╤Ф╨╝╨╛ ╨┤╨╛ ╨│╨╛╤В╨╛╨▓╨╜╨╛╤Б╤В╤Ц ╨▓╤Ц╨║╨╜╨░
     app.whenReady().then(() => {
-      // ╨з╨╡╨║╨░╤Ф╨╝╨╛ ╨┐╨╛╨║╨╕ ╨▓╤Ц╨║╨╜╨╛ ╤Б╤В╨▓╨╛╤А╨╡╨╜╨╛
       setTimeout(() => handleAppUrl(possibleUrl), 1000);
     });
   }
 }
-
-// ╨Ю╨▒╤А╨╛╨▒╨║╨░ ╨║╨╛╨╗╨╕ ╨║╨╛╤А╨╕╤Б╤В╤Г╨▓╨░╤З ╨╜╨░╨╝╨░╨│╨░╤Ф╤В╤М╤Б╤П ╨╖╨░╨┐╤Г╤Б╤В╨╕╤В╨╕ ╨┤╤А╤Г╨│╨╕╨╣ ╨╡╨║╨╖╨╡╨╝╨┐╨╗╤П╤А ╨╖ app:// URL
 app.on('second-instance', (event, commandLine, workingDirectory) => {
   console.log('[PROTOCOL] Second instance detected');
 
@@ -917,15 +772,11 @@ app.on('second-instance', (event, commandLine, workingDirectory) => {
   if (url) {
     handleAppUrl(url);
   }
-
-  // ╨Т ╨▒╤Г╨┤╤М-╤П╨║╨╛╨╝╤Г ╨▓╨╕╨┐╨░╨┤╨║╤Г ╤Д╨╛╨║╤Г╤Б╤Г╤Ф╨╝╨╛ ╨│╨╛╨╗╨╛╨▓╨╜╨╡ ╨▓╤Ц╨║╨╜╨╛
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
   }
 });
-
-// macOS ╨┐╤Ц╨┤╤В╤А╨╕╨╝╨║╨░ (╤П╨║╤Й╨╛ ╨╖╨╜╨░╨┤╨╛╨▒╨╕╤В╤М╤Б╤П)
 app.on('open-url', (event, url) => {
   event.preventDefault();
   if (url.startsWith('app://')) {

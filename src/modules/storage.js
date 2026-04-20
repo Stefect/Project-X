@@ -1,16 +1,10 @@
-// Модуль для збереження даних браузера (історія, закладки, сесія, налаштування)
-// Використовуємо вбудований fs для JSON storage (electron-store має проблеми з ESM)
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
-
-// Шлях до файлу даних
 const getDataPath = () => {
   const userDataPath = app.getPath('userData');
   return path.join(userDataPath, 'browserx-data.json');
 };
-
-// Дефолтні дані
 const defaultData = {
   history: [],
   bookmarks: [],
@@ -24,13 +18,11 @@ const defaultData = {
     },
     homepage: 'newtab',
     searchEngine: 'google',
-    restoreSession: false // Вимкнено за замовчуванням, щоб завжди показувати нативну стартову сторінку
+    restoreSession: false
   },
   notes: [],
   downloads: []
 };
-
-// Завантажуємо дані
 function loadData() {
   try {
     const dataPath = getDataPath();
@@ -43,8 +35,6 @@ function loadData() {
   }
   return { ...defaultData };
 }
-
-// Зберігаємо дані
 function saveData(data) {
   try {
     const dataPath = getDataPath();
@@ -53,8 +43,6 @@ function saveData(data) {
     console.error('Data save error:', error);
   }
 }
-
-// Кеш даних в пам'яті
 let dataCache = null;
 
 function getData() {
@@ -70,27 +58,18 @@ function setData(key, value) {
   dataCache = data;
   saveData(data);
 }
-
-// ==================== ІСТОРІЯ ====================
 function addToHistory(url, title, favicon = '') {
-  // Не зберігаємо newtab та порожні URL
   if (!url || url.includes('newtab.html') || url.startsWith('file://') || url.startsWith('app://')) return;
   
   const data = getData();
   let history = data.history || [];
-  
-  // Видаляємо дублікат якщо є
   history = history.filter(h => h.url !== url);
-  
-  // Додаємо на початок
   history.unshift({
     url,
     title: title || url,
     favicon,
     visitedAt: Date.now()
   });
-  
-  // Обмежуємо до 1000 записів
   setData('history', history.slice(0, 1000));
 }
 
@@ -119,15 +98,11 @@ function deleteHistoryItem(url) {
   const history = data.history || [];
   setData('history', history.filter(h => h.url !== url));
 }
-
-// ==================== ЗАКЛАДКИ ====================
 function addBookmark(url, title, favicon = '', folder = 'Загальні') {
   const data = getData();
   const bookmarks = data.bookmarks || [];
-  
-  // Перевіряємо чи вже є така закладка
   if (bookmarks.some(b => b.url === url)) {
-    return false; // Вже існує
+    return false;
   }
   
   bookmarks.push({
@@ -159,8 +134,6 @@ function isBookmarked(url) {
   const bookmarks = data.bookmarks || [];
   return bookmarks.some(b => b.url === url);
 }
-
-// ==================== СЕСІЯ ====================
 function saveSession(tabs, activeTabId = null) {
   const sessionTabs = tabs.map((tab, index) => ({
     url: tab.url || '',
@@ -170,8 +143,6 @@ function saveSession(tabs, activeTabId = null) {
     navigationHistory: tab.navigationHistory || [],
     currentIndex: tab.currentIndex || 0
   })).filter(t => t.url && !t.url.includes('newtab.html'));
-  
-  // Знаходимо індекс активної вкладки
   const activeIndex = sessionTabs.findIndex(t => t.isActive);
   
   setData('session', {
@@ -189,8 +160,6 @@ function getSession() {
 function clearSession() {
   setData('session', { tabs: [], activeTabIndex: 0 });
 }
-
-// ==================== НАЛАШТУВАННЯ ====================
 function getSetting(key) {
   const data = getData();
   const settings = data.settings || {};
@@ -212,8 +181,6 @@ function getAllSettings() {
 function setAllSettings(settings) {
   setData('settings', settings);
 }
-
-// ==================== НОТАТКИ ====================
 function addNote(text, url = '') {
   const data = getData();
   const notes = data.notes || [];
@@ -223,7 +190,7 @@ function addNote(text, url = '') {
     url,
     createdAt: Date.now()
   });
-  setData('notes', notes.slice(0, 500)); // Обмежуємо до 500
+  setData('notes', notes.slice(0, 500));
 }
 
 function getNotes() {
@@ -250,31 +217,20 @@ function updateNote(id, newText) {
 function clearNotes() {
   setData('notes', []);
 }
-
-// ==================== ЕКСПОРТ ====================
 module.exports = {
-  // Історія
   addToHistory,
   getHistory,
   searchHistory,
   clearHistory,
   deleteHistoryItem,
-  
-  // Закладки
   addBookmark,
   removeBookmark,
   getBookmarks,
   isBookmarked,
-  
-  // Сесія
   saveSession,
   getSession,
-  
-  // Налаштування
   getAllSettings,
   setAllSettings,
-  
-  // Нотатки
   addNote,
   getNotes,
   deleteNote,

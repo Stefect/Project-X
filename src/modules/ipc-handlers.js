@@ -1,16 +1,37 @@
-/**
- * IPC Handlers - Центральні обробники IPC повідомлень
- * Історія, Закладки, Сесії, Налаштування, Нотатки
- */
+
 
 const { ipcMain, shell, BrowserWindow } = require('electron');
-const path = require('path');
+const { analyzeHistoryNdjsonFile } = require('../utils/large-data-stream');
 
-/**
- * Реєструє всі IPC handlers для storage та утиліт
- */
+function getMainWindow() {
+  return BrowserWindow.getAllWindows()[0] || null;
+}
+
+function navigateActiveTab(tabManager, url) {
+  const mainWindow = getMainWindow();
+  if (!mainWindow) return false;
+
+  mainWindow.webContents.send('webview-navigate', {
+    tabId: tabManager.getActiveTabId(),
+    url
+  });
+
+  return true;
+}
+
+function toInternalAppUrl(url) {
+  if (!url || !url.startsWith('file://')) return url;
+
+  const lower = url.toLowerCase();
+  if (lower.includes('newtab.html')) return 'app://localhost/newtab.html';
+  if (lower.includes('history.html')) return 'app://localhost/history.html';
+  if (lower.includes('settings.html')) return 'app://localhost/settings.html';
+
+  return url;
+}
+
+
 function registerStorageHandlers(storage, tabManager) {
-  // ==================== ІСТОРІЯ ====================
   
   ipcMain.handle('get-history', (event, limit) => {
     return storage.getHistory(limit || 100);
@@ -36,24 +57,13 @@ function registerStorageHandlers(storage, tabManager) {
 
   ipcMain.on('open-url-from-history', (event, url) => {
     console.log('[HISTORY] Opening:', url);
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    if (mainWindow) {
-      mainWindow.webContents.send('webview-navigate', { tabId: tabManager.getActiveTabId(), url });
-    }
+    navigateActiveTab(tabManager, url);
   });
 
   ipcMain.on('open-history', async (event) => {
     console.log('[HISTORY] Opening history page');
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    if (mainWindow) {
-      mainWindow.webContents.send('webview-navigate', {
-        tabId: tabManager.getActiveTabId(),
-        url: 'app://localhost/history.html'
-      });
-    }
+    navigateActiveTab(tabManager, 'app://localhost/history.html');
   });
-
-  // ==================== ЗАКЛАДКИ ====================
   
   ipcMain.handle('get-bookmarks', () => {
     return storage.getBookmarks();
@@ -73,8 +83,6 @@ function registerStorageHandlers(storage, tabManager) {
   ipcMain.handle('is-bookmarked', (event, url) => {
     return storage.isBookmarked(url);
   });
-
-  // ==================== СЕСІЯ ====================
   
   ipcMain.on('save-session', () => {
     const sessionTabs = tabManager.getSessionData();
@@ -90,8 +98,6 @@ function registerStorageHandlers(storage, tabManager) {
   ipcMain.on('update-tab-url', (event, { tabId, url, title }) => {
     tabManager.updateTabInfo(tabId, url, title);
   });
-
-  // ==================== НАЛАШТУВАННЯ ====================
   
   ipcMain.handle('get-settings', () => {
     return storage.getAllSettings();
@@ -101,8 +107,6 @@ function registerStorageHandlers(storage, tabManager) {
     storage.setAllSettings(settings);
     console.log('[SETTINGS] Saved');
   });
-
-  // ==================== НОТАТКИ ====================
   
   ipcMain.on('save-note', (event, { text, url }) => {
     storage.addNote(text, url);
@@ -127,8 +131,6 @@ function registerStorageHandlers(storage, tabManager) {
     storage.clearNotes();
     console.log('[NOTES] Cleared');
   });
-
-  // ==================== УТИЛІТИ ====================
   
   ipcMain.handle('open-external', async (event, url) => {
     try {
@@ -143,8 +145,7 @@ function registerStorageHandlers(storage, tabManager) {
   ipcMain.handle('open-in-browser', async (event, url) => {
     try {
       console.log('[BROWSER] Opening in new tab:', url);
-      // Відправляємо команду до головного вікна (не до event.sender - sidebar)
-      const mainWindow = BrowserWindow.getAllWindows()[0];
+      const mainWindow = getMainWindow();
       if (mainWindow) {
         mainWindow.webContents.send('open-in-new-tab', url);
       }
@@ -154,26 +155,26 @@ function registerStorageHandlers(storage, tabManager) {
       return { success: false, error: error.message };
     }
   });
-
-  // Навігація активної вкладки до URL
   ipcMain.handle('navigate-url', async (event, url) => {
     try {
-      // Convert file:// URLs for internal pages to app:// so webviews can load them.
-      // Webviews block file:// navigation (especially on paths with non-ASCII chars).
-      let targetUrl = url;
-      if (url && url.startsWith('file://')) {
-        const lower = url.toLowerCase();
-        if (lower.includes('newtab.html')) targetUrl = 'app://localhost/newtab.html';
-        else if (lower.includes('history.html')) targetUrl = 'app://localhost/history.html';
-      }
+      const targetUrl = toInternalAppUrl(url);
       console.log('[NAVIGATE] Navigating to:', targetUrl);
-      const mainWindow = BrowserWindow.getAllWindows()[0];
-      if (mainWindow) {
-        mainWindow.webContents.send('webview-navigate', { tabId: tabManager.getActiveTabId(), url: targetUrl });
-      }
+
+      navigateActiveTab(tabManager, targetUrl);
       return { success: true };
     } catch (error) {
       console.error('[NAVIGATE] Error:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('analyze-history-stream', async (_event, payload = {}) => {
+    try {
+      const { filePath, topN = 10 } = payload;
+      const stats = await analyzeHistoryNdjsonFile(filePath, { topN });
+      return { success: true, stats };
+    } catch (error) {
+      console.error('[STREAM] analyze-history-stream error:', error.message);
       return { success: false, error: error.message };
     }
   });

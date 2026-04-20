@@ -9,3 +9,11 @@ dist/
 config.js
 src/config.js
 .idea/
+
+# Generated assets
+public/css/output.css
+src/modules/*.backup.js
+
+# Tor runtime state/cache
+bin/tor/data/
+bin/tor/pluggable_transports/pt_config.json

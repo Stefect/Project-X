@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="css/output.css">
 </head>
 <body>
-  <!-- Панель вкладок з кнопками вікна -->
+  
   <div class="tabs-bar" id="tabs-bar">
     <div class="menu-section">
       <img src="../build/icon.ico" alt="BrowserX" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;">
@@ -22,7 +22,7 @@
       <button class="new-tab-btn" id="new-tab-btn" title="Нова вкладка (Ctrl+T)">+</button>
     </div>
     
-    <!-- Кнопки керування вікном -->
+    
     <div class="window-controls">
       <button class="window-btn" id="minimize-btn" title="Згорнути">
         <svg width="10" height="1" viewBox="0 0 10 1"><path fill="currentColor" d="M0 0h10v1H0z"/></svg>
@@ -36,7 +36,7 @@
     </div>
   </div>
 
-  <!-- Toolbar з навігацією та пошуком -->
+  
   <div class="toolbar">
     <button id="back" class="nav-button" title="Назад">◀</button>
     <button id="forward" class="nav-button" title="Вперед">▶</button>
@@ -44,24 +44,24 @@
     <input type="text" id="url" class="address-bar" placeholder="Пошук або адреса...">
   </div>
 
-  <!-- Нативна нова вкладка (показується, коли немає активного сайту) -->
+  
   <div id="native-new-tab" class="native-new-tab">
     <div class="greeting" id="greeting">Привіт!</div>
     <div class="time-display" id="clock">00:00</div>
     <div class="date-display" id="date">п'ятниця, 6 березня</div>
     <div class="brand-logo">BrowserX</div>
     
-    <!-- Speed Dial Container -->
+    
     <div class="max-w-6xl mx-auto mt-10">
       <div id="speed-dial" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-        <!-- Speed Dial cards will be dynamically inserted here -->
+        
       </div>
     </div>
   </div>
   
-  <!-- Webview елементи будуть додані сюди динамічно через JavaScript -->
+  
 
-  <!-- Speed Dial Edit Modal -->
+  
   <div id="edit-modal" class="hidden bookmark-modal-overlay fixed inset-0 flex items-center justify-center z-50 transition-opacity">
     <div class="bookmark-modal-panel">
       <div class="bookmark-modal-header">
@@ -99,7 +99,7 @@
         <div class="bookmark-field">
           <label class="bookmark-label">Колір фону</label>
           <div id="color-picker" class="bookmark-color-picker">
-            <!-- Color buttons will be dynamically inserted here -->
+            
           </div>
         </div>
       </div>
@@ -111,7 +111,7 @@
     </div>
   </div>
 
-  <!-- Glassmorphism Sidebar (відкритий за замовчуванням) -->
+  
   <div id="side-toolbar" class="sidebar open">
     <div class="sidebar-content">
       <button id="tor-btn" class="sidebar-btn" title="Перемкнути Tor">Tor: OFF</button>
@@ -127,14 +127,14 @@
       <button id="toggle-news-btn" class="sidebar-btn" title="AI Стрічка новин">📰 Новини</button>
     </div>
     
-    <!-- Стрілка для відкриття/закриття sidebar -->
+    
     <button id="sidebar-toggle" title="Закрити панель">◀</button>
   </div>
 
-  <!-- Overlay для панелі -->
+  
   <div class="panel-overlay" id="panel-overlay"></div>
 
-  <!-- НОВА Панель налаштувань -->
+  
   <div id="theme-panel" class="side-panel">
     <div class="panel-header">
       <h3>Налаштувати вигляд</h3>
@@ -142,7 +142,7 @@
     </div>
 
     <div class="panel-content">
-      <!-- Preview Box -->
+      
       <div class="preview-box" id="preview-box">
         <div class="preview-mini-browser">
           <div class="preview-mini-tabs">
@@ -158,59 +158,59 @@
         </div>
       </div>
 
-      <!-- Mode Switch -->
+      
       <div class="mode-switch">
         <button class="mode-btn" data-mode="light"> Світла</button>
         <button class="mode-btn active" data-mode="dark"> Темна</button>
         <button class="mode-btn" data-mode="system"> Система</button>
       </div>
 
-      <!-- Color Grid - СПЛІТ КРУЖЕЧКИ -->
+      
       <h4 class="section-title">Колірна гама</h4>
       <div class="color-grid" id="color-grid">
-        <!-- Синій + білий -->
+        
         <button class="color-option active" data-bg="#1a1b26" data-accent="#3b82f6" style="background: linear-gradient(135deg, #3b82f6 50%, #1e3a5f 50%);"></button>
-        <!-- Бірюзовий -->
+        
         <button class="color-option" data-bg="#1a2e2e" data-accent="#14b8a6" style="background: linear-gradient(135deg, #14b8a6 50%, #134e4a 50%);"></button>
-        <!-- Зелений -->
+        
         <button class="color-option" data-bg="#1a2e1a" data-accent="#22c55e" style="background: linear-gradient(135deg, #22c55e 50%, #166534 50%);"></button>
-        <!-- Фіолетовий -->
+        
         <button class="color-option" data-bg="#1e1a2e" data-accent="#8b5cf6" style="background: linear-gradient(135deg, #8b5cf6 50%, #4c1d95 50%);"></button>
         
-        <!-- Рожевий -->
+        
         <button class="color-option" data-bg="#2e1a2a" data-accent="#ec4899" style="background: linear-gradient(135deg, #ec4899 50%, #831843 50%);"></button>
-        <!-- Червоний -->
+        
         <button class="color-option" data-bg="#2e1a1a" data-accent="#ef4444" style="background: linear-gradient(135deg, #ef4444 50%, #7f1d1d 50%);"></button>
-        <!-- Оранжевий -->
+        
         <button class="color-option" data-bg="#2e2a1a" data-accent="#f97316" style="background: linear-gradient(135deg, #f97316 50%, #7c2d12 50%);"></button>
-        <!-- Жовтий -->
+        
         <button class="color-option" data-bg="#2e2e1a" data-accent="#eab308" style="background: linear-gradient(135deg, #eab308 50%, #713f12 50%);"></button>
         
-        <!-- Сірий нейтральний -->
+        
         <button class="color-option" data-bg="#1f1f1f" data-accent="#6b7280" style="background: linear-gradient(135deg, #6b7280 50%, #374151 50%);"></button>
-        <!-- Лаймовий -->
+        
         <button class="color-option" data-bg="#1a2e1a" data-accent="#84cc16" style="background: linear-gradient(135deg, #84cc16 50%, #3f6212 50%);"></button>
-        <!-- Блакитний -->
+        
         <button class="color-option" data-bg="#1a2a2e" data-accent="#06b6d4" style="background: linear-gradient(135deg, #06b6d4 50%, #155e75 50%);"></button>
-        <!-- Кастомний -->
+        
         <button class="color-option color-custom" data-bg="custom" data-accent="custom"></button>
       </div>
 
-      <!-- Wallpapers Section -->
+      
       <h4 class="section-title">Шпалери</h4>
       <div class="wallpaper-grid" id="wallpaper-grid">
-        <!-- No wallpaper -->
+        
         <div class="wallpaper-card active" data-wallpaper="none" style="background: linear-gradient(135deg, var(--theme-bg), var(--theme-surface));">
           <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 32px; opacity: 0.3;">∅</div>
         </div>
         
-        <!-- Upload custom -->
+        
         <div class="wallpaper-card upload-card" id="upload-wallpaper">
           <div class="upload-icon"></div>
           <div class="upload-text">Завантажити</div>
         </div>
 
-        <!-- Preset wallpapers -->
+        
         <div class="wallpaper-card" data-wallpaper="abstract1" style="background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
         <div class="wallpaper-card" data-wallpaper="abstract2" style="background-image: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
         <div class="wallpaper-card" data-wallpaper="abstract3" style="background-image: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
@@ -223,2833 +223,29 @@
         <button class="wallpaper-btn" id="clear-wallpaper">Очистити шпалери</button>
         <button class="wallpaper-btn primary" id="upload-wallpaper-btn">Завантажити нову</button>
       </div>
-      <input type="file" id="wallpaper-file-input" accept="image/*" style="display: none;">
-
-      <!-- Settings Group -->
-      <div class="settings-group">
-        <h4 class="section-title">Налаштування</h4>
-        <div class="settings-item">
-          <span>Показувати кнопку "Головна"</span>
-          <div class="toggle-switch active" id="home-btn-toggle"></div>
-        </div>
-        <div class="settings-item">
-          <span>Показувати панель закладок</span>
-          <div class="toggle-switch" id="bookmarks-toggle"></div>
-        </div>
-        <div class="settings-item">
-          <span>Показувати ярлики на новій вкладці</span>
-          <div class="toggle-switch active" id="shortcuts-toggle"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="main-content"></div>
-  </div>
-  
-  <!-- Sidebar винесено поза container щоб був поверх BrowserView -->
-  <div id="notes-sidebar" class="collapsed">
-    <h3>
-      <span>Мій Конспект</span>
-      <button id="toggle-sidebar" title="Показати панель">▶</button>
-    </h3>
-
-    <div id="reactive-dashboard" class="reactive-dashboard">
-      <div class="reactive-header">
-        <span>Живий Центр Подій</span>
-        <button id="reactive-clear-btn" title="Очистити">Очистити</button>
-      </div>
-      <div id="reactive-list" class="reactive-list">
-        <div id="reactive-empty" class="reactive-empty">Немає подій</div>
-      </div>
-    </div>
-    
-    <div id="notes-list">
-      <div class="empty-state">Натисніть кнопку "+" нижче<br>або використайте <kbd>Ctrl+Shift+N</kbd><br><br>Також можна виділити текст<br>та натиснути праву кнопку миші</div>
-    </div>
-
-    <!-- Inline редактор нотатки -->
-    <div id="note-editor" class="note-editor" style="display: none;">
-      <textarea id="note-input" placeholder="Введіть текст нотатки..." rows="3"></textarea>
-      <div class="note-editor-buttons">
-        <button id="save-note-btn" title="Зберегти нотатку">✓ Зберегти</button>
-        <button id="cancel-note-btn" title="Скасувати">x Скасувати</button>
-      </div>
-    </div>
-
-    <button id="add-note-btn" title="Додати нотатку (Ctrl+Shift+N)">+ Нова нотатка</button>
-    <button id="summarize-btn">Узагальнити через AI</button>
-    <button id="clear-btn">Очистити все</button>
-  </div>
-
-  <!-- AI News Sidebar -->
-  <div id="news-sidebar" class="collapsed">
-    <div class="news-sidebar-header">
-      <h3>
-        <span>AI Стрічка</span>
-        <span class="article-count">Статей: <span id="feed-count">0</span></span>
-      </h3>
-      <button id="close-news-btn" title="Закрити">✕</button>
-    </div>
-
-    <div id="news-categories" class="news-categories"></div>
-
-    <div id="articles-container" class="articles-container">
-      <div class="news-empty-state">
-        <p>Виберіть категорії та натисніть кнопку нижче</p>
-      </div>
-    </div>
-
-    <div class="news-footer">
-      <button id="generate-news-btn" class="generate-btn">✨ Згенерувати стрічку</button>
-    </div>
-  </div>
-
-  <script>
-    console.log('[JS] JavaScript execution starts');
-    
-    try {
-      const { ipcRenderer } = require('electron');
-      console.log('[OK] IPC Renderer loaded in main window');
-      
-      // ========== Кнопки керування вікном ==========
-      const minimizeBtn = document.getElementById('minimize-btn');
-      const maximizeBtn = document.getElementById('maximize-btn');
-      const closeBtn = document.getElementById('close-btn');
-      
-      if (minimizeBtn) {
-        minimizeBtn.addEventListener('click', () => {
-          console.log(' Minimizing window');
-          ipcRenderer.send('window-minimize');
-        });
-      }
-      
-      if (maximizeBtn) {
-        maximizeBtn.addEventListener('click', () => {
-          console.log(' Maximizing window');
-          ipcRenderer.send('window-maximize');
-        });
-      }
-      
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          console.log('[ERR] Closing window');
-          ipcRenderer.send('window-close');
-        });
-      }
-
-      // ========== Glassmorphism Sidebar Toggle ==========
-      const sideToolbar = document.getElementById('side-toolbar');
-      const sidebarToggle = document.getElementById('sidebar-toggle');
-
-      console.log('[DEBUG] Sidebar elements:', { 
-        sideToolbar: !!sideToolbar, 
-        sidebarToggle: !!sidebarToggle 
-      });
-
-      if (sidebarToggle && sideToolbar) {
-        sidebarToggle.addEventListener('click', () => {
-          console.log('[SIDEBAR] Toggle clicked!');
-          sideToolbar.classList.toggle('open');
-          
-          const isCollapsed = !sideToolbar.classList.contains('open');
-          
-          // Міняємо іконку стрілки залежно від стану
-          if (sideToolbar.classList.contains('open')) {
-            sidebarToggle.innerText = '◀';
-            sidebarToggle.title = 'Закрити панель';
-          } else {
-            sidebarToggle.innerText = '▶';
-            sidebarToggle.title = 'Відкрити панель';
-          }
-          
-          // Повідомляємо main process про зміну розміру
-          ipcRenderer.send('sidebar-toggled', isCollapsed);
-          console.log('[UI] Sidebar toggled, collapsed:', isCollapsed);
-        });
-        console.log('[OK] Sidebar toggle initialized');
-      } else {
-        console.error('[ERROR] Sidebar elements not found:', { 
-          sideToolbar, 
-          sidebarToggle 
-        });
-      }
-      // ========== END Sidebar Toggle ==========
-      
-      const backBtn = document.getElementById('back');
-      const forwardBtn = document.getElementById('forward');
-      const reloadBtn = document.getElementById('reload');
-      const urlInput = document.getElementById('url');
-
-      const notesList = document.getElementById('notes-list');
-      const addNoteBtn = document.getElementById('add-note-btn');
-      const summarizeBtn = document.getElementById('summarize-btn');
-      const clearBtn = document.getElementById('clear-btn');
-      const noteEditor = document.getElementById('note-editor');
-      const noteInput = document.getElementById('note-input');
-      const saveNoteBtn = document.getElementById('save-note-btn');
-      const cancelNoteBtn = document.getElementById('cancel-note-btn');
-      const reactiveList = document.getElementById('reactive-list');
-      const reactiveEmpty = document.getElementById('reactive-empty');
-      const reactiveClearBtn = document.getElementById('reactive-clear-btn');
-
-      const reactiveMaxItems = 6;
-
-      function formatReactiveTime(timestamp) {
-        const date = new Date(timestamp || Date.now());
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
-      }
-
-      function getReactiveIcon(type) {
-        switch (type) {
-          case 'tracker-blocked':
-            return '[SHIELD]';
-          case 'ai-start':
-            return '🧠';
-          case 'ai-complete':
-            return '[OK]';
-          case 'ai-failed':
-            return '[WARN]';
-          case 'download-start':
-            return '[DOWN]';
-          case 'download-complete':
-            return '📥';
-          case 'download-failed':
-            return '[ERR]';
-          case 'page-load':
-            return '[WEB]';
-          default:
-            return '📍';
-        }
-      }
-
-      function toggleReactiveEmptyState() {
-        if (!reactiveList || !reactiveEmpty) return;
-        const hasItems = reactiveList.querySelectorAll('.reactive-item').length > 0;
-        reactiveEmpty.style.display = hasItems ? 'none' : 'block';
-      }
-
-      function addReactiveEvent(event, options = {}) {
-        if (!reactiveList || !event) return;
-        const { prepend = true } = options;
-
-        const item = document.createElement('div');
-        item.className = `reactive-item type-${event.type || 'generic'}`;
-
-        const icon = document.createElement('div');
-        icon.className = 'reactive-icon';
-        icon.textContent = getReactiveIcon(event.type);
-
-        const content = document.createElement('div');
-        content.className = 'reactive-content';
-
-        const title = document.createElement('div');
-        title.className = 'reactive-title';
-        title.textContent = event.title || 'Подія';
-
-        const detailText = (event.detail || '').trim();
-        if (detailText) {
-          const detail = document.createElement('div');
-          detail.className = 'reactive-detail';
-          detail.textContent = detailText;
-          content.appendChild(detail);
-        }
-
-        const time = document.createElement('div');
-        time.className = 'reactive-time';
-        time.textContent = formatReactiveTime(event.time);
-
-        content.prepend(title);
-        content.appendChild(time);
-
-        item.appendChild(icon);
-        item.appendChild(content);
-
-        if (prepend) {
-          reactiveList.prepend(item);
-        } else {
-          reactiveList.appendChild(item);
-        }
-
-        const items = reactiveList.querySelectorAll('.reactive-item');
-        if (items.length > reactiveMaxItems) {
-          for (let i = reactiveMaxItems; i < items.length; i += 1) {
-            items[i].remove();
-          }
-        }
-
-        toggleReactiveEmptyState();
-      }
-
-      if (reactiveClearBtn) {
-        reactiveClearBtn.addEventListener('click', () => {
-          if (!reactiveList) return;
-          reactiveList.querySelectorAll('.reactive-item').forEach(item => item.remove());
-          toggleReactiveEmptyState();
-        });
-      }
-
-      if (reactiveList) {
-        ipcRenderer.invoke('get-reactive-events')
-          .then(events => {
-            if (Array.isArray(events)) {
-              events.slice().reverse().forEach(event => addReactiveEvent(event, { prepend: false }));
-            }
-          })
-          .catch(error => console.error('[ERR] Error loading events:', error));
-
-        ipcRenderer.on('reactive-event', (_event, payload) => {
-          addReactiveEvent(payload, { prepend: true });
-        });
-      }
-      
-      // Toggle бокової панелі
-      const notesSidebar = document.getElementById('notes-sidebar');
-      const toggleSidebarBtn = document.getElementById('toggle-sidebar');
-      const toggleSidebarToolbar = document.getElementById('toggle-sidebar-toolbar');
-      
-      // Вкладки
-      const tabsBar = document.getElementById('tabs-bar');
-      const tabsContainer = tabsBar.querySelector('.tabs-container');
-      const newTabBtn = document.getElementById('new-tab-btn');
-      
-      // Прокручування вкладок колесиком миші (плавне)
-      if (tabsContainer) {
-        tabsContainer.addEventListener('wheel', (e) => {
-          e.preventDefault();
-          // Плавне прокручування
-          const scrollAmount = e.deltaY;
-          tabsContainer.scrollBy({
-            left: scrollAmount,
-            behavior: 'smooth'
-          });
-        }, { passive: false });
-      }
-
-      // Drag and Drop для вкладок
-      let draggedTab = null;
-      let dragStartX = 0;
-      let dragStartY = 0;
-      let isDraggingOut = false;
-
-      // Ініціалізація drag and drop для вкладок
-      function initTabDragAndDrop() {
-        const tabs = tabsContainer.querySelectorAll('.tab');
-        tabs.forEach(tab => {
-          if (!tab.hasAttribute('data-drag-initialized')) {
-            tab.setAttribute('draggable', 'true');
-            tab.setAttribute('data-drag-initialized', 'true');
-            
-            tab.addEventListener('dragstart', handleTabDragStart);
-            tab.addEventListener('dragend', handleTabDragEnd);
-            tab.addEventListener('dragover', handleTabDragOver);
-            tab.addEventListener('drop', handleTabDrop);
-            tab.addEventListener('dragleave', handleTabDragLeave);
-          }
-        });
-      }
-
-      function handleTabDragStart(e) {
-        draggedTab = e.target.closest('.tab');
-        if (!draggedTab) return;
-        
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-        isDraggingOut = false;
-        
-        draggedTab.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', draggedTab.innerHTML);
-        e.dataTransfer.setData('tabId', draggedTab.dataset.tabId);
-      }
-
-      function handleTabDragEnd(e) {
-        if (!draggedTab) return;
-        
-        draggedTab.classList.remove('dragging');
-        draggedTab = null;
-        
-        // Видаляємо всі класи drag-over
-        document.querySelectorAll('.tab.drag-over').forEach(tab => {
-          tab.classList.remove('drag-over');
-        });
-      }
-
-      function handleTabDragOver(e) {
-        if (e.preventDefault) {
-          e.preventDefault();
-        }
-        e.dataTransfer.dropEffect = 'move';
-        
-        const targetTab = e.target.closest('.tab');
-        if (targetTab && targetTab !== draggedTab) {
-          targetTab.classList.add('drag-over');
-        }
-        
-        return false;
-      }
-
-      function handleTabDrop(e) {
-        if (e.stopPropagation) {
-          e.stopPropagation();
-        }
-        
-        const targetTab = e.target.closest('.tab');
-        if (!targetTab || !draggedTab || targetTab === draggedTab) return;
-        
-        // Визначаємо позицію для вставки
-        const allTabs = Array.from(tabsContainer.querySelectorAll('.tab'));
-        const draggedIndex = allTabs.indexOf(draggedTab);
-        const targetIndex = allTabs.indexOf(targetTab);
-        
-        if (draggedIndex < targetIndex) {
-          // Вставляємо після target
-          targetTab.parentNode.insertBefore(draggedTab, targetTab.nextSibling);
-        } else {
-          // Вставляємо перед target
-          targetTab.parentNode.insertBefore(draggedTab, targetTab);
-        }
-        
-        targetTab.classList.remove('drag-over');
-        
-        // Відправляємо повідомлення про зміну порядку вкладок
-        const newOrder = Array.from(tabsContainer.querySelectorAll('.tab')).map(tab => parseInt(tab.dataset.tabId));
-        ipcRenderer.send('reorder-tabs', newOrder);
-        
-        return false;
-      }
-
-      function handleTabDragLeave(e) {
-        const targetTab = e.target.closest('.tab');
-        if (targetTab) {
-          targetTab.classList.remove('drag-over');
-        }
-      }
-
-      // Ініціалізуємо drag and drop для існуючих вкладок
-      initTabDragAndDrop();
-      
-      console.log('[DBG] Initializing tabs:', {
-        tabsBar: !!tabsBar,
-        tabsContainer: !!tabsContainer,
-        newTabBtn: !!newTabBtn
-      });
-      
-      let collectedNotes = [];
-      let editingNoteId = null; // ID нотатки що редагується
-      
-      // ВИДАЛЯЄМО старе значення з localStorage, щоб панель завжди була згорнута при запуску
-      localStorage.removeItem('sidebarCollapsed');
-      
-      let isSidebarCollapsed = true; // Завжди згорнута за замовчуванням
-      let currentTabId = 1; // Поточна активна вкладка
-      
-      // Завантаження нотаток з storage при запуску
-      (async () => {
-        try {
-          const savedNotes = await ipcRenderer.invoke('get-notes');
-          if (savedNotes && savedNotes.length > 0) {
-            collectedNotes = savedNotes;
-            
-            // Очищуємо empty state
-            notesList.innerHTML = '';
-            
-            // Відображаємо збережені нотатки
-            savedNotes.forEach(note => {
-              const noteItem = document.createElement('div');
-              noteItem.className = 'note-item';
-              noteItem.dataset.noteId = note.id;
-              noteItem.innerHTML = `
-                <span>• ${note.text}</span>
-                <div class="note-actions">
-                  <button class="edit-btn" onclick="editNote('${note.id}', this)" title="Редагувати">✎</button>
-                  <button class="delete-btn" onclick="deleteNote('${note.id}')" title="Видалити">×</button>
-                </div>
-              `;
-              notesList.appendChild(noteItem);
-            });
-            
-            console.log('[NOTES] Notes loaded:', savedNotes.length);
-          }
-        } catch (error) {
-          console.error('[ERROR] Error loading notes:', error);
-        }
-      })();
-
-      // ========== Система вкладок ==========
-      
-      // Створити нову вкладку
-      async function createTab(url = null) {
-        try {
-          const result = await ipcRenderer.invoke('create-tab', url);
-          
-          if (!result || !result.id) {
-            console.error('[ERR] Tab creation error: no result');
-            return null;
-          }
-          
-          // Створюємо візуальний елемент вкладки
-          const tabElement = document.createElement('div');
-          tabElement.className = 'tab';
-          tabElement.dataset.tabId = result.id;
-          
-          const newTabFavicon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E`;
-          tabElement.innerHTML = `
-            <img class="tab-favicon" src="${newTabFavicon}" onerror="this.src='${newTabFavicon}'">
-            <span class="tab-title">${result.title || 'Нова вкладка'}</span>
-            <span class="tab-close">×</span>
-          `;
-          
-          // Додаємо перед кнопкою "+" в контейнер вкладок
-          tabsContainer.insertBefore(tabElement, newTabBtn);
-          
-          // Ініціалізуємо drag and drop для нової вкладки
-          initTabDragAndDrop();
-          
-          // Перемикаємось на нову вкладку
-          switchTab(result.id);
-          
-          console.log('[OK] Tab created:', result.id);
-          return result.id;
-        } catch (error) {
-          console.error('[ERR] Tab creation error:', error);
-          return null;
-        }
-      }
-      
-      // Перемкнутися на вкладку
-      function switchTab(tabId) {
-        // Отримуємо поточні кольори теми
-        const currentBg = localStorage.getItem('themeBg') || '#1a1b26';
-        const currentAccent = localStorage.getItem('themeAccent') || '#3b82f6';
-        
-        // Знімаємо клас active з усіх вкладок
-        document.querySelectorAll('.tab').forEach(tab => {
-          tab.classList.remove('active');
-          // Застосовуємо колір неактивної вкладки
-          tab.style.background = lightenColorSimple(currentBg, 15);
-          tab.style.borderColor = lightenColorSimple(currentBg, 25);
-        });
-        
-        // Додаємо active до вибраної
-        const targetTab = document.querySelector(`[data-tab-id="${tabId}"]`);
-        if (targetTab) {
-          targetTab.classList.add('active');
-          // Застосовуємо колір акценту для активної вкладки
-          targetTab.style.background = currentAccent;
-          targetTab.style.borderColor = currentAccent;
-          
-          currentTabId = tabId;
-          ipcRenderer.send('switch-tab', tabId);
-        }
-      }
-      
-      // Проста функція освітлення кольору для switchTab
-      function lightenColorSimple(color, percent) {
-        const num = parseInt(color.replace('#', ''), 16);
-        const amt = Math.round(2.55 * percent);
-        const R = Math.min(255, Math.max(0, (num >> 16) + amt));
-        const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
-        const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
-        return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
-      }
-      
-      // Закрити вкладку
-      function closeTab(tabId) {
-        try {
-          console.log('[DEL] 🗑️ Closing tab:', tabId);
-          console.log('[DEL] Total tabs before close:', document.querySelectorAll('.tab').length);
-          
-          const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-          if (tabElement) {
-            tabElement.remove();
-            console.log('[OK] ✅ Tab element removed from DOM');
-            console.log('[DEL] Total tabs after close:', document.querySelectorAll('.tab').length);
-          } else {
-            console.warn('[WARN] ⚠️ Tab element not found in DOM');
-          }
-          
-          console.log('[IPC] 📤 Sending close-tab to main process...');
-          ipcRenderer.send('close-tab', tabId);
-          console.log('[IPC] ✅ close-tab message sent');
-        } catch (error) {
-          console.error('[ERR] ❌ Tab closing error:', error);
-        }
-      }
-      
-      // Оновити інформацію вкладки (заголовок, favicon)
-      ipcRenderer.on('update-tab-info', (event, tabId, title, url) => {
-        const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-        if (tabElement) {
-          const titleElement = tabElement.querySelector('.tab-title');
-          const faviconElement = tabElement.querySelector('.tab-favicon');
-          
-          if (titleElement) titleElement.textContent = title || 'Нова вкладка';
-          
-          // Зберігаємо URL в dataset для організації
-          if (url) {
-            tabElement.dataset.url = url;
-          }
-          
-          if (faviconElement && url) {
-            // Show a globe icon for internal pages (app://) and local file:// pages
-            if (url.startsWith('file://') || url.startsWith('app://') || url.includes('newtab.html')) {
-              faviconElement.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E`;
-            } else {
-              try {
-                const faviconUrl = new URL(url).origin + '/favicon.ico';
-                faviconElement.src = faviconUrl;
-              } catch(e) {}
-            }
-          }
-        }
-      });
-      
-      // Оновити URL bar
-      ipcRenderer.on('update-url-bar', (event, url) => {
-        // Не показуємо локальні файли (newtab) та внутрішні app:// сторінки
-        if (url && (url.includes('newtab.html') || url.startsWith('file://') || url.startsWith('app://'))) {
-          urlInput.value = '';
-        } else {
-          urlInput.value = url;
-        }
-      });
-
-      // Оновити назву вкладки
-      ipcRenderer.on('update-tab-title', (event, data) => {
-        const tabElement = document.querySelector(`[data-tab-id="${data.tabId}"]`);
-        if (tabElement) {
-          const titleElement = tabElement.querySelector('.tab-title');
-          if (titleElement) {
-            titleElement.textContent = data.title || 'Нова вкладка';
-          }
-        }
-      });
-      
-      // Якщо всі вкладки закрито, створити нову
-      ipcRenderer.on('create-default-tab', () => {
-        createTab();
-      });
-      
-      // Коли закривається остання вкладка, створюємо нову замість закриття браузера
-      ipcRenderer.on('create-new-tab-requested', () => {
-        createTab();
-      });
-      
-      // Обробка відновлених вкладок з сесії
-      ipcRenderer.on('tab-restored', (event, data) => {
-        console.log('[SESSION] Tab restored:', data.tabId, data.title);
-        
-        // При відновленні першої вкладки видаляємо початкову newtab
-        const initialTab = document.querySelector('.tab[data-tab-id="1"]');
-        if (initialTab && initialTab.querySelector('.tab-title')?.textContent === 'Нова вкладка') {
-          console.log('[SESSION] Removing initial newtab');
-          initialTab.remove();
-        }
-        
-        // Створюємо візуальний елемент вкладки (BrowserView вже створено в main.js)
-        const tabElement = document.createElement('div');
-        tabElement.className = 'tab';
-        tabElement.dataset.tabId = data.tabId;
-        
-        // Отримуємо favicon з URL
-        const globeIcon = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E`;
-        let faviconUrl = globeIcon;
-        try {
-          const urlObj = new URL(data.url);
-          if (urlObj.protocol !== 'file:' && urlObj.protocol !== 'app:') {
-            faviconUrl = urlObj.origin + '/favicon.ico';
-          }
-        } catch (e) {}
-        
-        tabElement.innerHTML = `
-          <img class="tab-favicon" src="${faviconUrl}" onerror="this.src='${globeIcon}'">
-          <span class="tab-title">${data.title || 'Завантаження...'}</span>
-          <span class="tab-close">x</span>
-        `;
-        
-        // Додаємо перед кнопкою "+"
-        tabsContainer.insertBefore(tabElement, newTabBtn);
-        
-        // Ініціалізуємо drag and drop для відновленої вкладки
-        initTabDragAndDrop();
-      });
-
-      // Відкрити URL в новій вкладці (з main процесу)
-      ipcRenderer.on('open-in-new-tab', (event, url) => {
-        if (url) {
-          createTab(url);
-        }
-      });
-      
-      // Активація вкладки з main процесу
-      ipcRenderer.on('tab-activated', (event, tabId) => {
-        console.log('[SESSION] Activating tab:', tabId);
-        const currentBg = localStorage.getItem('themeBg') || '#1a1b26';
-        const currentAccent = localStorage.getItem('themeAccent') || '#3b82f6';
-        document.querySelectorAll('.tab').forEach(tab => {
-          const isActive = parseInt(tab.dataset.tabId) === tabId;
-          tab.classList.toggle('active', isActive);
-          tab.style.background   = isActive ? currentAccent : lightenColorSimple(currentBg, 15);
-          tab.style.borderColor  = isActive ? currentAccent : lightenColorSimple(currentBg, 25);
-        });
-        currentTabId = tabId;
-      });
-    
-    // Обробники подій для вкладок
-    if (tabsBar) {
-      console.log('[OK] Attaching event delegation to tabsBar');
-      tabsBar.addEventListener('click', (e) => {
-        const tab = e.target.closest('.tab');
-        if (!tab) return;
-        
-        const tabId = parseInt(tab.dataset.tabId);
-        console.log('[CLICK] 👆 Click on tab:', tabId);
-        
-        // Якщо клікнули на кнопку закриття
-        if (e.target.classList.contains('tab-close')) {
-          console.log('[CLICK] 🗑️ Click on tab close button (×)');
-          console.log('[CLICK] Target element:', e.target);
-          e.stopPropagation();
-          closeTab(tabId);
-          return;
-        } else {
-          // Перемкнутись на вкладку
-          console.log('[CLICK] 🔄 Switching to tab');
-          switchTab(tabId);
-        }
-      });
-    } else {
-      console.error('[ERR] tabsBar not found!');
-    }
-    
-    // Кнопка створення нової вкладки
-    if (newTabBtn) {
-      console.log('[OK] Attaching handler to new tab button');
-      newTabBtn.addEventListener('click', () => {
-        console.log('🆕 Click on new tab button');
-        createTab();
-      });
-    } else {
-      console.error('[ERR] New tab button not found!');
-    }
-    
-    // Гаряча клавіша Ctrl+T для нової вкладки
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 't') {
-        e.preventDefault();
-        createTab();
-      }
-    });
-
-    // ========== Організація вкладок за доменами ==========
-    
-    // Функція для відображення організованих груп (над вкладками)
-    function displayOrganizedGroups(groups, tabsData) {
-      console.log(' Показую', groups.length, 'груп');
-      
-      // Видаляємо старий блок груп якщо є
-      const oldGroups = document.getElementById('tab-groups-display');
-      if (oldGroups) oldGroups.remove();
-      
-      // Створюємо контейнер для груп - компактний banner
-      const groupsContainer = document.createElement('div');
-      groupsContainer.id = 'tab-groups-display';
-      groupsContainer.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 0 10px;
-        background: #1f2335;
-        font-size: 12px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        white-space: nowrap;
-        height: 32px;
-        -webkit-app-region: no-drag;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      `;
-      
-      let html = `<span style="color: #565f89; font-weight: 500; flex-shrink: 0; font-size: 11px; margin-right: 4px;"></span>`;
-      
-      // Кнопка "Показати всі"
-      html += `
-        <button class="group-badge" data-group-filter="all" style="
-          display: inline-flex;
-          align-items: center;
-          padding: 6px 12px;
-          background: rgba(122, 162, 247, 0.15);
-          border: 1px solid rgba(122, 162, 247, 0.3);
-          border-radius: 6px;
-          color: #c0caf5;
-          font-weight: 500;
-          cursor: pointer;
-          font-size: 11px;
-          flex-shrink: 0;
-          -webkit-app-region: no-drag;
-          transition: all 0.15s;
-        " onmouseover="this.style.background='rgba(122, 162, 247, 0.25)'" onmouseout="this.style.background='rgba(122, 162, 247, 0.15)'">Всі (${tabsData.length})</button>
-      `;
-      
-      groups.forEach((group, idx) => {
-        html += `
-          <button class="group-badge" data-group-filter="${group.name}" style="
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background: transparent;
-            border: 1px solid rgba(65, 72, 104, 0.6);
-            border-radius: 6px;
-            color: #c0caf5;
-            font-weight: 500;
-            flex-shrink: 0;
-            cursor: pointer;
-            transition: all 0.15s;
-            font-size: 11px;
-            -webkit-app-region: no-drag;
-          " onmouseover="this.style.background='rgba(192, 202, 245, 0.1)'" onmouseout="this.style.background='transparent'">
-            ${group.name} <span style="opacity: 0.5; font-size: 10px;">(${group.tabIds.length})</span>
-          </button>
-        `;
-      });
-      
-      html += `<button id="close-groups-display" style="
-        width: 28px;
-        height: 28px;
-        padding: 0;
-        margin-left: auto;
-        background: transparent;
-        color: #c0caf5;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        -webkit-app-region: no-drag;
-        transition: all 0.15s;
-      " onmouseover="this.style.background='rgba(192, 202, 245, 0.1)'" onmouseout="this.style.background='transparent'">x</button>`;
-      
-      groupsContainer.innerHTML = html;
-      
-      // Додаємо стиль для приховування scrollbar
-      const style = document.createElement('style');
-      style.textContent = `
-        #tab-groups-display::-webkit-scrollbar {
-          display: none;
-        }
-      `;
-      document.head.appendChild(style);
-      
-      // Вставляємо перед tabs-bar
-      const tabsBar = document.getElementById('tabs-bar');
-      if (tabsBar && tabsBar.parentNode) {
-        tabsBar.parentNode.insertBefore(groupsContainer, tabsBar);
-        console.log('[OK] Groups displayed above tabs-bar');
-        
-        // Оновлюємо висоту топбара (100 + 32px для groups display)
-        ipcRenderer.send('topbar-height-changed', 132);
-        
-        // Додаємо обробники після вставки
-        setTimeout(() => {
-          // Закриття
-          const closeBtn = document.getElementById('close-groups-display');
-          if (closeBtn) {
-            closeBtn.onclick = () => {
-              groupsContainer.remove();
-              // Показуємо всі вкладки
-              document.querySelectorAll('.tab').forEach(tab => {
-                tab.style.display = '';
-              });
-              // Повертаємо стандартну висоту топбара
-              ipcRenderer.send('topbar-height-changed', 100);
-            };
-          }
-          
-          // Фільтрація по групам
-          const groupBadges = document.querySelectorAll('.group-badge');
-          groupBadges.forEach(badge => {
-            badge.onclick = () => {
-              const filterGroup = badge.dataset.groupFilter;
-              console.log('[DBG] Filtering by:', filterGroup);
-              
-              // Скидаємо стилі для всіх badges
-              groupBadges.forEach(b => {
-                if (b.dataset.groupFilter === 'all') {
-                  b.style.background = 'rgba(122, 162, 247, 0.15)';
-                  b.style.border = '1px solid rgba(122, 162, 247, 0.3)';
-                } else {
-                  b.style.background = 'transparent';
-                  b.style.border = '1px solid rgba(65, 72, 104, 0.6)';
-                }
-              });
-              
-              // Виділяємо активний
-              if (badge.dataset.groupFilter === 'all') {
-                badge.style.background = 'rgba(122, 162, 247, 0.25)';
-                badge.style.border = '1px solid rgba(122, 162, 247, 0.5)';
-              } else {
-                badge.style.background = 'rgba(122, 162, 247, 0.15)';
-                badge.style.border = '1px solid rgba(122, 162, 247, 0.4)';
-              }
-              
-              // Фільтруємо вкладки
-              const allTabs = document.querySelectorAll('.tab');
-              
-              if (filterGroup === 'all') {
-                // Показуємо всі
-                allTabs.forEach(tab => {
-                  tab.style.display = '';
-                });
-              } else {
-                // Показуємо тільки вибрану групу
-                allTabs.forEach(tab => {
-                  const url = tab.dataset.url || '';
-                  let tabDomain = 'Інші';
-                  
-                  if (url) {
-                    try {
-                      const urlObj = new URL(url);
-                      tabDomain = urlObj.hostname.replace('www.', '');
-                    } catch (e) {
-                      tabDomain = 'Локальні файли';
-                    }
-                  }
-                  
-                  // Показуємо або ховаємо в залежності від групи
-                  if (tabDomain === filterGroup) {
-                    tab.style.display = '';
-                  } else {
-                    tab.style.display = 'none';
-                  }
-                });
-              }
-            };
-          });
-        }, 100);
-      }
-    }
-    
-    // Функція організації вкладок за доменом
-    function organizeTabsByDomain() {
-      const allTabs = document.querySelectorAll('.tab');
-      
-      if (allTabs.length < 2) {
-        alert('Потрібно хоча б 2 вкладки для організації!');
-        return null;
-      }
-
-      const domainGroups = new Map();
-      const tabsData = [];
-
-      console.log('[DBG] Аналізую', allTabs.length, 'вкладок...');
-
-      allTabs.forEach((tab, index) => {
-        const tabId = tab.dataset.tabId;
-        const titleSpan = tab.querySelector('.tab-title');
-        const title = titleSpan ? titleSpan.textContent : 'Без назви';
-        const url = tab.dataset.url || '';
-        
-        console.log(`Tab ${index + 1}: "${title}" -> URL: "${url}"`);
-
-        // Витягуємо домен
-        let domain = 'Інші';
-        if (url) {
-          try {
-            const urlObj = new URL(url);
-            domain = urlObj.hostname.replace('www.', '');
-            console.log(`  → Домен: ${domain}`);
-          } catch (e) {
-            console.log('  → Помилка парсингу URL:', e.message);
-            domain = 'Локальні файли';
-          }
-        } else {
-          console.log('  → URL відсутній, група: Інші');
-        }
-
-        if (!domainGroups.has(domain)) {
-          domainGroups.set(domain, []);
-        }
-        domainGroups.get(domain).push(tabId);
-        tabsData.push({ id: tabId, title, url });
-      });
-
-      const groups = Array.from(domainGroups.entries()).map(([domain, tabIds]) => ({
-        name: domain,
-        tabIds: tabIds
-      }));
-
-      console.log('[OK] Організовано в', groups.length, 'груп:', groups.map(g => `${g.name} (${g.tabIds.length})`).join(', '));
-      return { success: true, groups, tabsData };
-    }
-
-    // Обробник кнопки організації
-    const organizeTabsBtn = document.getElementById('organize-tabs-btn');
-    
-    if (organizeTabsBtn) {
-      organizeTabsBtn.addEventListener('click', () => {
-        console.log('[TARGET] Organize clicked!');
-        
-        organizeTabsBtn.innerHTML = '[PROC] Організую...';
-        organizeTabsBtn.disabled = true;
-
-        try {
-          const result = organizeTabsByDomain();
-          
-          if (result && result.success) {
-            displayOrganizedGroups(result.groups, result.tabsData);
-            organizeTabsBtn.innerHTML = '[OK] Готово!';
-            setTimeout(() => {
-              organizeTabsBtn.innerHTML = ' Групи';
-              organizeTabsBtn.disabled = false;
-            }, 1500);
-          } else {
-            organizeTabsBtn.innerHTML = '[ERR] Помилка';
-            setTimeout(() => {
-              organizeTabsBtn.innerHTML = ' Групи';
-              organizeTabsBtn.disabled = false;
-            }, 2000);
-          }
-          
-          setTimeout(() => {
-            organizeTabsBtn.innerHTML = ' Навести лад';
-            organizeTabsBtn.disabled = false;
-          }, 2000);
-
-        } catch (error) {
-          console.error('[ERR] Error:', error);
-          alert('Помилка: ' + error.message);
-          organizeTabsBtn.innerHTML = ' Навести лад';
-          organizeTabsBtn.disabled = false;
-        }
-      });
-    }
-
-    // ========== Система тем ==========
-    const settingsBtn = document.getElementById('settings-btn');
-    
-    if (!settingsBtn) {
-      console.error('[WARN] Settings button not found!');
-    } else {
-      console.log('[OK] Settings button found');
-    }
-    
-    // Готові теми
-    const themes = {
-      light: {
-        name: ' Світла',
-        colors: {
-          '--primary-color': '#3b82f6',
-          '--primary-dark': '#1e40af',
-          '--primary-light': '#dbeafe',
-          '--secondary-color': '#10b981',
-          '--background': '#ffffff',
-          '--toolbar-bg': '#ffffff',
-          '--sidebar-bg': 'linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%)',
-          '--text-color': '#1e293b',
-          '--border-color': '#e3e8f0',
-          '--tab-bg': '#bfdbfe',
-          '--tab-active-bg': '#ffffff',
-          '--button-hover': '#dbeafe'
-        }
-      },
-      dark: {
-        name: ' Темна',
-        colors: {
-          '--primary-color': '#60a5fa',
-          '--primary-dark': '#3b82f6',
-          '--primary-light': '#1e3a8a',
-          '--secondary-color': '#34d399',
-          '--background': '#1e293b',
-          '--toolbar-bg': '#0f172a',
-          '--sidebar-bg': 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
-          '--text-color': '#f1f5f9',
-          '--border-color': '#334155',
-          '--tab-bg': '#334155',
-          '--tab-active-bg': '#475569',
-          '--button-hover': '#334155'
-        }
-      },
-      ocean: {
-        name: ' Океан',
-        colors: {
-          '--primary-color': '#06b6d4',
-          '--primary-dark': '#0891b2',
-          '--primary-light': '#cffafe',
-          '--secondary-color': '#14b8a6',
-          '--background': '#ecfeff',
-          '--toolbar-bg': '#cffafe',
-          '--sidebar-bg': 'linear-gradient(180deg, #cffafe 0%, #ecfeff 100%)',
-          '--text-color': '#164e63',
-          '--border-color': '#a5f3fc',
-          '--tab-bg': '#a5f3fc',
-          '--tab-active-bg': '#ffffff',
-          '--button-hover': '#a5f3fc'
-        }
-      },
-      forest: {
-        name: ' Ліс',
-        colors: {
-          '--primary-color': '#10b981',
-          '--primary-dark': '#059669',
-          '--primary-light': '#d1fae5',
-          '--secondary-color': '#22c55e',
-          '--background': '#f0fdf4',
-          '--toolbar-bg': '#d1fae5',
-          '--sidebar-bg': 'linear-gradient(180deg, #d1fae5 0%, #f0fdf4 100%)',
-          '--text-color': '#065f46',
-          '--border-color': '#bbf7d0',
-          '--tab-bg': '#bbf7d0',
-          '--tab-active-bg': '#ffffff',
-          '--button-hover': '#bbf7d0'
-        }
-      },
-      sunset: {
-        name: ' Захід',
-        colors: {
-          '--primary-color': '#f59e0b',
-          '--primary-dark': '#d97706',
-          '--primary-light': '#fef3c7',
-          '--secondary-color': '#fb923c',
-          '--background': '#fffbeb',
-          '--toolbar-bg': '#fef3c7',
-          '--sidebar-bg': 'linear-gradient(180deg, #fef3c7 0%, #fffbeb 100%)',
-          '--text-color': '#78350f',
-          '--border-color': '#fde68a',
-          '--tab-bg': '#fde68a',
-          '--tab-active-bg': '#ffffff',
-          '--button-hover': '#fde68a'
-        }
-      },
-      purple: {
-        name: ' Фіолетова',
-        colors: {
-          '--primary-color': '#a855f7',
-          '--primary-dark': '#7e22ce',
-          '--primary-light': '#f3e8ff',
-          '--secondary-color': '#c084fc',
-          '--background': '#faf5ff',
-          '--toolbar-bg': '#f3e8ff',
-          '--sidebar-bg': 'linear-gradient(180deg, #f3e8ff 0%, #faf5ff 100%)',
-          '--text-color': '#581c87',
-          '--border-color': '#e9d5ff',
-          '--tab-bg': '#e9d5ff',
-          '--tab-active-bg': '#ffffff',
-          '--button-hover': '#e9d5ff'
-        }
-      }
-    };
-
-    // Застосувати тему
-    function applyTheme(themeName) {
-      const theme = themes[themeName];
-      if (!theme) return;
-
-      const root = document.documentElement;
-      Object.keys(theme.colors).forEach(key => {
-        root.style.setProperty(key, theme.colors[key]);
-      });
-
-      // Зберігаємо вибір
-      localStorage.setItem('selectedTheme', themeName);
-      showNotification(` Тему "${theme.name}" застосовано!`);
-    }
-
-    // Показати панель налаштувань
-    if (settingsBtn) {
-      settingsBtn.addEventListener('click', () => {
-        console.log('[THEME] Opening theme settings');
-        showSettingsPopup();
-      });
-    } else {
-      console.error('[WARN] Cannot add handler - button not found');
-    }
-
-    function showSettingsPopup() {
-      const currentTheme = localStorage.getItem('selectedTheme') || 'light';
-      
-      const popup = document.createElement('div');
-      popup.id = 'settings-popup';
-      popup.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: var(--background);
-        border: 3px solid var(--primary-color);
-        border-radius: 20px;
-        padding: 30px;
-        max-width: 500px;
-        width: 90%;
-        max-height: 80vh;
-        overflow-y: auto;
-        z-index: 1000001;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        font-family: 'Segoe UI', sans-serif;
-      `;
-
-      let themesHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-          <h2 style="margin: 0; color: var(--primary-color); font-size: 24px;">Налаштування теми</h2>
-          <button id="close-settings-popup" style="
-            background: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 10px 16px;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-          "></button>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-          <h3 style="color: var(--text-color); margin-bottom: 15px; font-size: 16px;">Виберіть тему:</h3>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-      `;
-
-      Object.keys(themes).forEach(themeKey => {
-        const theme = themes[themeKey];
-        const isActive = themeKey === currentTheme;
-        
-        themesHTML += `
-          <button class="theme-option" data-theme="${themeKey}" style="
-            padding: 16px;
-            border: 3px solid ${isActive ? 'var(--primary-color)' : 'var(--border-color)'};
-            background: ${isActive ? 'var(--primary-light)' : 'var(--background)'};
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: ${isActive ? 'bold' : 'normal'};
-            color: var(--text-color);
-            transition: all 0.2s;
-            text-align: center;
-          ">
-            ${theme.name}
-          </button>
-        `;
-      });
-
-      themesHTML += `
-          </div>
-        </div>
-
-        <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid var(--border-color); text-align: center; color: var(--text-color); font-size: 14px;">
-          Тема автоматично зберігається
-        </div>
-      `;
-
-      popup.innerHTML = themesHTML;
-      document.body.appendChild(popup);
-
-      // Обробка вибору теми
-      popup.querySelectorAll('.theme-option').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const themeName = btn.dataset.theme;
-          applyTheme(themeName);
-          
-          // Оновлюємо активний стан кнопок
-          popup.querySelectorAll('.theme-option').forEach(b => {
-            b.style.border = '3px solid var(--border-color)';
-            b.style.background = 'var(--background)';
-            b.style.fontWeight = 'normal';
-          });
-          btn.style.border = '3px solid var(--primary-color)';
-          btn.style.background = 'var(--primary-light)';
-          btn.style.fontWeight = 'bold';
-        });
-
-        // Hover ефект
-        btn.addEventListener('mouseenter', () => {
-          if (btn.dataset.theme !== currentTheme) {
-            btn.style.transform = 'scale(1.05)';
-            btn.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-          }
-        });
-        btn.addEventListener('mouseleave', () => {
-          btn.style.transform = 'scale(1)';
-          btn.style.boxShadow = 'none';
-        });
-      });
-
-      // Закриття popup
-      document.getElementById('close-settings-popup').addEventListener('click', () => {
-        popup.remove();
-      });
-
-      // Закриття по Escape
-      const escHandler = (e) => {
-        if (e.key === 'Escape') {
-          popup.remove();
-          document.removeEventListener('keydown', escHandler);
-        }
-      };
-      document.addEventListener('keydown', escHandler);
-    }
-
-    // Завантажуємо збережену тему при старті
-    let savedThemeNotes = localStorage.getItem('selectedTheme');
-    if (savedThemeNotes && themes[savedThemeNotes]) {
-      applyTheme(savedThemeNotes);
-    }
-
-    // Застосовуємо збережений стан (за замовчуванням згорнута)
-    if (isSidebarCollapsed) {
-      notesSidebar.classList.add('collapsed');
-      toggleSidebarBtn.textContent = '';
-      toggleSidebarBtn.title = 'Показати панель';
-    } else {
-      notesSidebar.classList.add('expanded');
-      toggleSidebarBtn.textContent = '';
-      toggleSidebarBtn.title = 'Згорнути панель';
-    }
-
-    // Функція toggle для використання всюди (стара система notes-sidebar)
-    function toggleSidebar() {
-      isSidebarCollapsed = !isSidebarCollapsed;
-      
-      // Очищаємо inline стилі, щоб CSS класи працювали
-      notesSidebar.style.width = '';
-      notesSidebar.style.padding = '';
-      notesSidebar.style.overflow = '';
-      notesSidebar.style.borderLeft = '';
-      notesSidebar.style.right = '';
-      
-      if (isSidebarCollapsed) {
-        notesSidebar.classList.remove('expanded');
-        notesSidebar.classList.add('collapsed');
-      } else {
-        notesSidebar.classList.remove('collapsed');
-        notesSidebar.classList.add('expanded');
-      }
-      
-      toggleSidebarBtn.textContent = isSidebarCollapsed ? '' : '';
-      toggleSidebarBtn.title = isSidebarCollapsed ? 'Показати панель' : 'Згорнути панель';
-      localStorage.setItem('sidebarCollapsed', isSidebarCollapsed);
-      // ipcRenderer.send('sidebar-toggled', isSidebarCollapsed); // Закоментовано - використовується нова система
-    }
-
-    // Кнопка в toolbar - тепер відкриває праву панель нотаток
-    if (toggleSidebarToolbar) {
-      toggleSidebarToolbar.addEventListener('click', toggleSidebar);
-    }
-
-    // Обробник toggle панелі (кнопка X в заголовку) - використовуємо вже оголошену змінну
-    if (toggleSidebarBtn) {
-      toggleSidebarBtn.addEventListener('click', toggleSidebar);
-    }
-
-    // Гаряча клавіша Ctrl+B для toggle панелі
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 'b') {
-        e.preventDefault();
-        toggleSidebar();
-      }
-    });
-
-    // ===== AI News Sidebar =====
-    const newsSidebar = document.getElementById('news-sidebar');
-    const toggleNewsBtn = document.getElementById('toggle-news-btn');
-    const closeNewsBtn = document.getElementById('close-news-btn');
-    const generateNewsBtn = document.getElementById('generate-news-btn');
-    const articlesContainer = document.getElementById('articles-container');
-    const feedCount = document.getElementById('feed-count');
-    const newsCategoriesEl = document.getElementById('news-categories');
-
-    let isNewsSidebarOpen = false;
-
-    // Завантажуємо категорії і будуємо пілюлі-фільтри
-    (async () => {
-      try {
-        const cats = await ipcRenderer.invoke('get-news-categories');
-        Object.entries(cats).forEach(([id, label]) => {
-          const pill = document.createElement('button');
-          pill.className = 'cat-pill active';
-          pill.dataset.cat = id;
-          pill.textContent = label;
-          pill.addEventListener('click', () => {
-            const allPills = Array.from(newsCategoriesEl.querySelectorAll('.cat-pill'));
-            const activePills = allPills.filter(p => p.classList.contains('active'));
-            if (pill.classList.contains('active') && activePills.length === 1) {
-              // Остання активна → скидаємо: активуємо всі
-              allPills.forEach(p => p.classList.add('active'));
-            } else {
-              // Solo mode: активуємо тільки цю
-              allPills.forEach(p => p.classList.remove('active'));
-              pill.classList.add('active');
-            }
-          });
-          newsCategoriesEl.appendChild(pill);
-        });
-      } catch (e) {
-        console.warn('[NEWS] Could not load categories:', e.message);
-      }
-    })();
-
-    function getSelectedCategories() {
-      return Array.from(newsCategoriesEl.querySelectorAll('.cat-pill.active')).map(p => p.dataset.cat);
-    }
-
-    function openNewsSidebar() {
-      if (!isSidebarCollapsed) toggleSidebar(); // закриваємо нотатки
-      newsSidebar.classList.remove('collapsed');
-      newsSidebar.classList.add('expanded');
-      isNewsSidebarOpen = true;
-    }
-
-    function closeNewsSidebar() {
-      newsSidebar.classList.remove('expanded');
-      newsSidebar.classList.add('collapsed');
-      isNewsSidebarOpen = false;
-    }
-
-    function toggleNewsSidebar() {
-      isNewsSidebarOpen ? closeNewsSidebar() : openNewsSidebar();
-    }
-
-    if (toggleNewsBtn) toggleNewsBtn.addEventListener('click', toggleNewsSidebar);
-    if (closeNewsBtn) closeNewsBtn.addEventListener('click', closeNewsSidebar);
-
-    // Закриваємо новини, коли відкривають нотатки
-    if (toggleSidebarToolbar) {
-      toggleSidebarToolbar.addEventListener('click', () => {
-        if (isNewsSidebarOpen) closeNewsSidebar();
-      });
-    }
-
-    // Реальна генерація стрічки через IPC
-    if (generateNewsBtn) {
-      generateNewsBtn.addEventListener('click', async () => {
-        const selected = getSelectedCategories();
-        if (!selected.length) {
-          articlesContainer.innerHTML = '<div class="news-empty-state"><p>Виберіть хоча б одну категорію</p></div>';
-          return;
-        }
-
-        generateNewsBtn.disabled = true;
-        generateNewsBtn.textContent = '⏳ Збираємо новини...';
-        articlesContainer.innerHTML = '<div class="news-empty-state"><p>Запит до джерел...</p></div>';
-
-        try {
-          const articles = await ipcRenderer.invoke('fetch-news', { categories: selected, count: 15 });
-          if (!articles.length) {
-            articlesContainer.innerHTML = '<div class="news-empty-state"><p>Нічого не знайдено.<br>Перевірте з\'єднання.</p></div>';
-          } else {
-            articlesContainer.innerHTML = '';
-            articles.forEach(item => {
-              const card = document.createElement('div');
-              card.className = 'news-card';
-              card.style.cursor = 'pointer';
-              card.innerHTML = `<h4>${item.title}</h4><div class="news-meta"><span class="news-source">${item.source}</span><span class="news-time">${item.time}</span></div>`;
-              card.addEventListener('click', () => ipcRenderer.invoke('open-in-browser', item.url));
-              articlesContainer.appendChild(card);
-            });
-            if (feedCount) feedCount.textContent = articles.length;
-          }
-        } catch (e) {
-          console.error('[NEWS] Fetch error:', e);
-          articlesContainer.innerHTML = '<div class="news-empty-state"><p>Помилка завантаження.<br>Перевірте підключення.</p></div>';
-        } finally {
-          generateNewsBtn.disabled = false;
-          generateNewsBtn.textContent = '✨ Оновити стрічку';
-        }
-      });
-    }
-
-    // Навігація
-    if (backBtn) {
-      backBtn.addEventListener('click', () => {
-        console.log('[BACK] Back button clicked');
-        ipcRenderer.send('go-back');
-      });
-    }
-
-    if (forwardBtn) {
-      forwardBtn.addEventListener('click', () => {
-        console.log('[FWD] Forward button clicked');
-        ipcRenderer.send('go-forward');
-      });
-    }
-
-    if (reloadBtn) {
-      reloadBtn.addEventListener('click', () => {
-        console.log('[RELOAD] Reload button clicked');
-        ipcRenderer.send('reload');
-      });
-    }
-
-    if (urlInput) {
-      let isNavigating = false; // Захист від спаму Enter
-
-      // ВАЖЛИВО: Використовуємо keydown (не keypress) щоб спрацювати раніше за speed-dial
-      urlInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault(); // Блокуємо стандартну поведінку
-          e.stopPropagation(); // Зупиняємо поширення до speed-dial обробника
-
-          // Захист від повторних натискань
-          if (isNavigating) return;
-
-          isNavigating = true;
-          ipcRenderer.send('navigate', urlInput.value);
-
-          // Знімаємо блокування через 500ms
-          setTimeout(() => {
-            isNavigating = false;
-          }, 500);
-        }
-      });
-    }
-
-    // Отримуємо текст з контекстного меню (СПІЛЬНІ для всіх вкладок)
-    ipcRenderer.on('add-to-notes', (event, text) => {
-      addNote(text);
-    });
-
-    // Додаємо нотатку (спільну для всіх вкладок)
-    function addNote(text) {
-      // Видаляємо empty state при першій нотатці
-      const emptyState = notesList.querySelector('.empty-state');
-      if (emptyState) {
-        emptyState.remove();
-      }
-
-      const noteId = Date.now().toString(); // Унікальний ID як рядок
-      const newNote = { id: noteId, text: text, url: '', createdAt: Date.now() };
-      collectedNotes.push(newNote);
-      
-      const noteItem = document.createElement('div');
-      noteItem.className = 'note-item';
-      noteItem.dataset.noteId = noteId;
-      noteItem.innerHTML = `
-        <span>• ${text}</span>
-        <div class="note-actions">
-          <button class="edit-btn" onclick="editNote('${noteId}', this)" title="Редагувати">✎</button>
-          <button class="delete-btn" onclick="deleteNote('${noteId}')" title="Видалити">×</button>
-        </div>
-      `;
-      
-      notesList.appendChild(noteItem);
-      
-      // Зберігаємо в storage через IPC
-      ipcRenderer.send('save-note', { text, url: '' });
-    }
-
-    // Видалення нотатки
-    window.deleteNote = function(noteId) {
-      const index = collectedNotes.findIndex(note => note.id === noteId);
-      if (index !== -1) {
-        collectedNotes.splice(index, 1);
-        
-        // Видаляємо елемент з DOM
-        const noteElement = document.querySelector(`[data-note-id="${noteId}"]`);
-        if (noteElement) {
-          noteElement.remove();
-        }
-        
-        // Показуємо empty state якщо немає нотаток
-        if (collectedNotes.length === 0) {
-          notesList.innerHTML = '<div class="empty-state">Виділіть текст на сторінці та<br>натисніть праву кнопку миші</div>';
-        }
-        
-        // Видаляємо з storage через IPC
-        ipcRenderer.send('delete-note', noteId);
-      }
-    };
-
-    // Узагальнення через ШІ (використовуємо СПІЛЬНІ нотатки)
-    if (summarizeBtn) {
-      summarizeBtn.addEventListener('click', async () => {
-        if (collectedNotes.length === 0) {
-          alert('Конспект порожній! Виділіть текст на сторінці та натисніть праву кнопку миші.');
-          return;
-        }
-
-        // Витягуємо тільки текст з об'єктів нотаток
-        const notesText = collectedNotes.map(note => note.text || note).join('\n---\n');
-        const prompt = `Я зібрав наступні нотатки з інтернету. Будь ласка, проаналізуй їх, структуруй, видали дублікати та створи короткий навчальний конспект українською мовою:\n\n${notesText}`;
-
-        summarizeBtn.textContent = ' Думаю...';
-        summarizeBtn.disabled = true;
-
-        try {
-          const result = await ipcRenderer.invoke('ask-ai', prompt);
-          
-          // Замінюємо список на узагальнення
-          notesList.innerHTML = `<div style="padding: 10px; line-height: 1.6; white-space: pre-wrap;">${result}</div>`;
-          collectedNotes = [];
-        } catch (error) {
-          alert('Помилка при узагальненні: ' + error.message);
-        } finally {
-          summarizeBtn.textContent = ' Узагальнити через ШІ';
-          summarizeBtn.disabled = false;
-        }
-      });
-    }
-
-    // Очистити все (СПІЛЬНІ нотатки для всіх вкладок)
-    if (clearBtn) {
-      clearBtn.addEventListener('click', () => {
-        if (collectedNotes.length === 0 && !notesList.querySelector('.empty-state')) {
-          return;
-        }
-        
-        if (confirm('Очистити всі нотатки?')) {
-          collectedNotes = [];
-          notesList.innerHTML = '<div class="empty-state">[NOTE] Натисніть кнопку "+" нижче<br>або використайте <kbd>Ctrl+Shift+N</kbd><br><br>Також можна виділити текст<br>та натиснути праву кнопку миші</div>';
-          ipcRenderer.send('clear-notes');
-        }
-      });
-    }
-
-    // Додати нотатку вручну через кнопку
-    if (addNoteBtn) {
-      console.log('[OK] Add note button found');
-      addNoteBtn.addEventListener('click', () => {
-        console.log('[CLICK] Click on add note button');
-        openNoteEditor();
-      });
-    } else {
-      console.error('[ERR] Add note button NOT found!');
-    }
-
-    // Кнопка збереження нотатки
-    if (saveNoteBtn) {
-      saveNoteBtn.addEventListener('click', () => {
-        console.log('[SAVE] Click on save button');
-        saveNewNote();
-      });
-    }
-
-    // Кнопка скасування
-    if (cancelNoteBtn) {
-      cancelNoteBtn.addEventListener('click', () => {
-        console.log('x Click on cancel button');
-        closeNoteEditor();
-      });
-    }
-
-    // Enter для збереження, Escape для скасування
-    if (noteInput) {
-      noteInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.ctrlKey) {
-          e.preventDefault();
-          saveNewNote();
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          closeNoteEditor();
-        }
-      });
-    }
-
-    // Глобальна гаряча клавіша Ctrl+Shift+N для додавання нотатки
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'N') {
-        e.preventDefault();
-        console.log('[KEY] Hotkey Ctrl+Shift+N pressed');
-        openNoteEditor();
-      }
-    });
-
-    // Відкрити inline редактор
-    function openNoteEditor(noteId = null, noteText = '') {
-      console.log('[NOTE] Opening inline editor', noteId ? 'for editing' : 'for new note');
-      
-      editingNoteId = noteId;
-      
-      // Якщо sidebar згорнутий, відкриваємо його
-      if (isSidebarCollapsed) {
-        console.log(' Opening sidebar');
-        toggleSidebar();
-      }
-      
-      // Показуємо редактор, ховаємо кнопку
-      noteEditor.style.display = 'block';
-      addNoteBtn.style.display = 'none';
-      noteInput.value = noteText;
-      noteInput.focus();
-      
-      // Переміщуємо курсор в кінець тексту
-      noteInput.setSelectionRange(noteText.length, noteText.length);
-    }
-
-    // Закрити редактор
-    function closeNoteEditor() {
-      console.log('x Closing editor');
-      editingNoteId = null;
-      noteEditor.style.display = 'none';
-      addNoteBtn.style.display = 'block';
-      noteInput.value = '';
-    }
-
-    // Зберегти нову нотатку або оновити існуючу
-    function saveNewNote() {
-      const text = noteInput.value.trim();
-      console.log('[SAVE] Saving note:', text);
-      
-      if (text) {
-        if (editingNoteId) {
-          // Оновлюємо існуючу нотатку
-          updateNote(editingNoteId, text);
-        } else {
-          // Додаємо нову нотатку
-          addNote(text);
-        }
-        closeNoteEditor();
-      } else {
-        console.warn('[WARN] Empty text');
-        noteInput.focus();
-      }
-    }
-
-    // Редагувати нотатку
-    window.editNote = function(noteId, button) {
-      console.log('[EDIT] Editing note:', noteId);
-      
-      // Знаходимо нотатку в масиві
-      const note = collectedNotes.find(n => n.id === noteId);
-      if (note) {
-        openNoteEditor(noteId, note.text);
-      } else {
-        console.error('[ERR] Note not found:', noteId);
-      }
-    };
-
-    // Оновити існуючу нотатку
-    function updateNote(noteId, newText) {
-      console.log('[RELOAD] Updating note:', noteId, newText);
-      
-      // Оновлюємо в масиві
-      const noteIndex = collectedNotes.findIndex(n => n.id === noteId);
-      if (noteIndex !== -1) {
-        collectedNotes[noteIndex].text = newText;
-        
-        // Оновлюємо в DOM
-        const noteElement = document.querySelector(`[data-note-id="${noteId}"]`);
-        if (noteElement) {
-          const span = noteElement.querySelector('span');
-          if (span) {
-            span.textContent = `• ${newText}`;
-          }
-        }
-        
-        // Оновлюємо в storage
-        ipcRenderer.send('update-note', { id: noteId, text: newText });
-        console.log('[OK] Note updated');
-      }
-    }
-
-    // Simple settings removed — open-settings button deprecated
-
-    // Застосування теми
-    ipcRenderer.on('theme-changed', (event, theme) => {
-      console.log('[THEME] New theme received:', theme.name);
-      applyTheme(theme);
-    });
-
-    function applyTheme(theme) {
-      const colors = theme.colors;
-      
-      // Застосовуємо CSS змінні
-      const root = document.documentElement;
-      root.style.setProperty('--primary', colors.primary);
-      root.style.setProperty('--background', colors.background);
-      root.style.setProperty('--surface', colors.surface);
-      root.style.setProperty('--toolbar', colors.toolbar);
-      root.style.setProperty('--tab', colors.tab);
-      root.style.setProperty('--tab-active', colors.tabActive);
-      root.style.setProperty('--text', colors.text);
-      root.style.setProperty('--border', colors.border);
-
-      // Застосовуємо стилі безпосередньо
-      document.body.style.background = colors.background;
-      
-      const tabsBar = document.querySelector('.tabs-bar');
-      if (tabsBar) tabsBar.style.background = colors.surface;
-      
-      const toolbar = document.querySelector('.toolbar');
-      if (toolbar) toolbar.style.background = colors.toolbar;
-      
-      // Активна вкладка
-      const activeTabs = document.querySelectorAll('.tab.active');
-      activeTabs.forEach(tab => {
-        tab.style.background = colors.tabActive;
-      });
-
-      // Неактивні вкладки
-      const inactiveTabs = document.querySelectorAll('.tab:not(.active)');
-      inactiveTabs.forEach(tab => {
-        tab.style.background = colors.tab;
-      });
-
-      // Sidebar
-      const sidebar = document.getElementById('notes-sidebar');
-      if (sidebar) {
-        sidebar.style.background = `linear-gradient(to bottom, ${colors.toolbar} 0%, ${colors.background} 100%)`;
-        sidebar.style.borderLeft = `1px solid ${colors.border}`;
-      }
-
-      // Organize button
-      const organizeBtn = document.getElementById('organize-tabs-btn');
-      if (organizeBtn) {
-        organizeBtn.style.background = `rgba(16, 185, 129, 0.15)`;
-        organizeBtn.style.color = colors.primary;
-      }
-
-      console.log('[OK] Theme applied successfully');
-    }
-
-    // Завантаження збереженої теми при старті
-    let savedThemeMain = localStorage.getItem('browserTheme');
-    if (savedThemeMain) {
-      const themes = {
-        frutti: {
-          name: 'Frutti Di Mare',
-          colors: {
-            primary: '#f7768e',
-            secondary: '#ff9e64',
-            tertiary: '#e0af68',
-            background: '#1a1b26',
-            surface: '#1f2335',
-            toolbar: '#24283b',
-            tab: '#2f3549',
-            tabActive: '#f7768e',
-            text: '#c0caf5',
-            border: '#414868'
-          }
-        },
-        purple: {
-          name: 'Purple Haze',
-          colors: {
-            primary: '#bb9af7',
-            secondary: '#9d7cd8',
-            tertiary: '#7aa2f7',
-            background: '#1a1b26',
-            surface: '#1f2335',
-            toolbar: '#24283b',
-            tab: '#2f3549',
-            tabActive: '#bb9af7',
-            text: '#c0caf5',
-            border: '#414868'
-          }
-        },
-        vaporwave: {
-          name: 'Vaporwave',
-          colors: {
-            primary: '#2ac3de',
-            secondary: '#7dcfff',
-            tertiary: '#b4f9f8',
-            background: '#1a1b26',
-            surface: '#1f2335',
-            toolbar: '#24283b',
-            tab: '#2f3549',
-            tabActive: '#2ac3de',
-            text: '#c0caf5',
-            border: '#414868'
-          }
-        }
-      };
-      
-      if (themes[savedThemeMain]) {
-        applyTheme(themes[savedThemeMain]);
-      }
-    }
-
-    // Завантажуємо збережені нотатки при старті (СПІЛЬНІ для всіх вкладок)
-    const savedNotes = localStorage.getItem('sharedNotes');
-    if (savedNotes) {
-      try {
-        const parsed = JSON.parse(savedNotes);
-        parsed.forEach(note => {
-          const text = note.text || note; // Підтримка старого формату
-          const noteId = note.id || Date.now() + Math.random();
-          
-          if (collectedNotes.length === 0) {
-            const emptyState = notesList.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-          }
-          
-          collectedNotes.push({ id: noteId, text: text });
-          
-          const noteItem = document.createElement('div');
-          noteItem.className = 'note-item';
-          noteItem.dataset.noteId = noteId;
-          noteItem.innerHTML = `
-            <span>• ${text}</span>
-            <button class="delete-btn" onclick="deleteNote(${noteId})"></button>
-          `;
-          notesList.appendChild(noteItem);
-        });
-      } catch (e) {
-        console.error('[ERR] Error loading notes:', e);
-      }
-    }
-    
-    console.log('[OK] All index.html handlers configured');
-
-    // ===================== НОВА ПАНЕЛЬ НАЛАШТУВАНЬ =====================
-    const themePanel = document.getElementById('theme-panel');
-    const themePanelOverlay = document.getElementById('panel-overlay');
-    const themeOpenBtn = document.getElementById('theme-settings-btn');
-    const themePanelCloseBtn = document.getElementById('close-panel-btn');
-    const themeColorButtons = document.querySelectorAll('.color-option');
-    const themeModeButtons = document.querySelectorAll('.mode-btn');
-
-    // Завантажуємо збережені налаштування
-    let currentThemeBg = localStorage.getItem('themeBg') || '#1a1b26';
-    let currentThemeAccent = localStorage.getItem('themeAccent') || '#3b82f6';
-    let currentThemeMode = localStorage.getItem('themeMode') || 'dark';
-
-    // 1. Відкриття панелі
-    function openThemePanel() {
-      if (themePanel && themePanelOverlay) {
-        themePanel.classList.add('open');
-        themePanelOverlay.classList.add('active');
-        ipcRenderer.send('settings-panel-toggled', true);
-      }
-    }
-
-    // 2. Закриття панелі
-    function closeThemePanel() {
-      if (themePanel && themePanelOverlay) {
-        themePanel.classList.remove('open');
-        themePanelOverlay.classList.remove('active');
-        ipcRenderer.send('settings-panel-toggled', false);
-      }
-    }
-
-    // Обробники відкриття/закриття
-    if (themeOpenBtn) themeOpenBtn.addEventListener('click', openThemePanel);
-    if (themePanelCloseBtn) themePanelCloseBtn.addEventListener('click', closeThemePanel);
-    if (themePanelOverlay) themePanelOverlay.addEventListener('click', closeThemePanel);
-
-    // Закриття по Escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && themePanel && themePanel.classList.contains('open')) {
-        closeThemePanel();
-      }
-    });
-
-    // 3. Застосування теми (CSS змінні - магія!)
-    function applyBrowserTheme(bg, accent) {
-      console.log('[THEME] Applying theme:', { bg, accent });
-      
-      // CSS змінні
-      document.documentElement.style.setProperty('--theme-bg', bg);
-      document.documentElement.style.setProperty('--theme-accent', accent);
-      
-      // Оновлюємо body (backgroundColor щоб не конфліктувати з backgroundImage шпалерів)
-      document.body.style.backgroundColor = bg;
-      
-      // Toolbar
-      const toolbarEl = document.querySelector('.toolbar');
-      if (toolbarEl) {
-        toolbarEl.style.background = lightenColor(bg, 10);
-        toolbarEl.style.borderBottomColor = lightenColor(bg, 20);
-      }
-      
-      // Tabs bar
-      const tabsBarEl = document.querySelector('.tabs-bar');
-      if (tabsBarEl) {
-        tabsBarEl.style.background = lightenColor(bg, 5);
-      }
-
-      // Активні вкладки - колір акценту
-      document.querySelectorAll('.tab.active').forEach(tab => {
-        tab.style.background = accent;
-        tab.style.borderColor = accent;
-      });
-      
-      // Неактивні вкладки
-      document.querySelectorAll('.tab:not(.active)').forEach(tab => {
-        tab.style.background = lightenColor(bg, 15);
-        tab.style.borderColor = lightenColor(bg, 25);
-      });
-
-      // Address bar
-      const addressBar = document.querySelector('.address-bar');
-      if (addressBar) {
-        addressBar.style.background = bg;
-        addressBar.style.borderColor = lightenColor(bg, 30);
-      }
-
-      // Dropdown menu
-      const dropdownMenu = document.getElementById('dropdown-menu');
-      if (dropdownMenu) {
-        dropdownMenu.style.background = lightenColor(bg, 5);
-        dropdownMenu.style.borderColor = lightenColor(bg, 20);
-      }
-
-      // Sidebar
-      const sidebar = document.getElementById('notes-sidebar');
-      if (sidebar) {
-        sidebar.style.background = `linear-gradient(to bottom, ${lightenColor(bg, 10)} 0%, ${bg} 100%)`;
-        sidebar.style.borderLeftColor = lightenColor(bg, 20);
-      }
-
-      // Organize button - використовуємо accent колір
-      const organizeBtn = document.getElementById('organize-tabs-btn');
-      if (organizeBtn) {
-        organizeBtn.style.background = `rgba(${hexToRgb(accent)}, 0.15)`;
-        organizeBtn.style.color = accent;
-      }
-
-      // Оновлюємо Preview
-      updateThemePreviewBox(bg, accent);
-
-      // Зберігаємо
-      localStorage.setItem('themeBg', bg);
-      localStorage.setItem('themeAccent', accent);
-      currentThemeBg = bg;
-      currentThemeAccent = accent;
-      
-      console.log('[OK] Theme applied successfully');
-    }
-    
-    // Конвертація HEX в RGB
-    function hexToRgb(hex) {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? 
-        `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
-        '59, 130, 246';
-    }
-
-    // Допоміжна функція для освітлення кольору
-    function lightenColor(color, percent) {
-      const num = parseInt(color.replace('#', ''), 16);
-      const amt = Math.round(2.55 * percent);
-      const R = (num >> 16) + amt;
-      const G = (num >> 8 & 0x00FF) + amt;
-      const B = (num & 0x0000FF) + amt;
-      return '#' + (0x1000000 + 
-        (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + 
-        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + 
-        (B < 255 ? B < 1 ? 0 : B : 255)
-      ).toString(16).slice(1);
-    }
-
-    // Оновлення Preview Box
-    function updateThemePreviewBox(bg, accent) {
-      const previewBox = document.getElementById('preview-box');
-      if (previewBox) {
-        previewBox.style.borderColor = accent;
-        const previewTab = previewBox.querySelector('.preview-mini-tab');
-        const previewContent = previewBox.querySelector('.preview-mini-content');
-        const previewToolbar = previewBox.querySelector('.preview-mini-toolbar');
-        
-        if (previewTab) previewTab.style.background = accent;
-        if (previewContent) previewContent.style.background = bg;
-        if (previewToolbar) previewToolbar.style.background = lightenColor(bg, 10);
-      }
-    }
-
-    // 4. Обробка кліку на кольорові кружечки
-    themeColorButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const newBg = btn.dataset.bg;
-        const newAccent = btn.dataset.accent;
-        
-        console.log('[THEME] Click on color:', { newBg, newAccent });
-
-        if (newBg === 'custom' || newAccent === 'custom') {
-          // Кастомний колір
-          const colorInput = document.createElement('input');
-          colorInput.type = 'color';
-          colorInput.value = currentThemeAccent;
-          colorInput.addEventListener('input', () => {
-            applyBrowserTheme(currentThemeBg, colorInput.value);
-          });
-          colorInput.addEventListener('change', () => {
-            applyBrowserTheme(currentThemeBg, colorInput.value);
-            updateThemeColorActive(btn);
-            // Надсилаємо в main process
-            setTimeout(() => {
-              if (typeof sendThemeSettings === 'function') sendThemeSettings();
-            }, 100);
-          });
-          colorInput.click();
-        } else if (newBg && newAccent) {
-          applyBrowserTheme(newBg, newAccent);
-          updateThemeColorActive(btn);
-          // Надсилаємо в main process
-          setTimeout(() => {
-            if (typeof sendThemeSettings === 'function') sendThemeSettings();
-          }, 100);
-        }
-      });
-    });
-
-    function updateThemeColorActive(activeBtn) {
-      document.querySelectorAll('.color-option').forEach(b => b.classList.remove('active'));
-      activeBtn.classList.add('active');
-    }
-
-    // 5. Світла/Темна тема
-    themeModeButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        themeModeButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        const mode = btn.getAttribute('data-mode');
-        currentThemeMode = mode;
-        localStorage.setItem('themeMode', mode);
-        
-        if (mode === 'light') {
-          applyBrowserTheme('#f5f5f5', currentThemeAccent);
-          document.documentElement.style.setProperty('--theme-text', '#1f2937');
-          document.documentElement.style.setProperty('--theme-surface', '#ffffff');
-        } else if (mode === 'dark') {
-          applyBrowserTheme('#1a1b26', currentThemeAccent);
-          document.documentElement.style.setProperty('--theme-text', '#c0caf5');
-          document.documentElement.style.setProperty('--theme-surface', '#24283b');
-        } else {
-          // System
-          const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (isDark) {
-            applyBrowserTheme('#1a1b26', currentThemeAccent);
-          } else {
-            applyBrowserTheme('#f5f5f5', currentThemeAccent);
-          }
-        }
-        
-        // Надсилаємо в main process
-        setTimeout(() => {
-          if (typeof sendThemeSettings === 'function') sendThemeSettings();
-        }, 100);
-      });
-    });
-
-    // 6. Toggle switches
-    document.querySelectorAll('.toggle-switch').forEach(toggle => {
-      toggle.addEventListener('click', () => {
-        toggle.classList.toggle('active');
-      });
-    });
-
-    // 7. Відкриття з меню
-    // Історія
-    const historyMenuItem = document.getElementById('history-menu');
-    if (historyMenuItem) {
-      historyMenuItem.addEventListener('click', () => {
-        const dropdownMenu = document.getElementById('dropdown-menu');
-        if (dropdownMenu) dropdownMenu.classList.remove('active');
-        ipcRenderer.send('menu-toggled', false);
-        // Відкриваємо історію в активній вкладці
-        ipcRenderer.send('open-history');
-      });
-    }
-    
-    // Налаштування вигляду
-    const customizeMenuItem = document.getElementById('customize-menu');
-    if (customizeMenuItem) {
-      customizeMenuItem.addEventListener('click', () => {
-        const dropdownMenu = document.getElementById('dropdown-menu');
-        if (dropdownMenu) dropdownMenu.classList.remove('active');
-        ipcRenderer.send('menu-toggled', false);
-        openThemePanel();
-      });
-    }
-
-    // 8. Завантажуємо збережену тему при старті
-    applyBrowserTheme(currentThemeBg, currentThemeAccent);
-    
-    // Встановлюємо активний режим
-    themeModeButtons.forEach(btn => {
-      btn.classList.remove('active');
-      if (btn.dataset.mode === currentThemeMode) {
-        btn.classList.add('active');
-      }
-    });
-
-    // Встановлюємо активний колір
-    themeColorButtons.forEach(btn => {
-      if (btn.dataset.accent === currentThemeAccent) {
-        btn.classList.add('active');
-      }
-    });
-
-    // ========== WALLPAPERS SECTION ==========
-    const wallpaperCards = document.querySelectorAll('.wallpaper-card[data-wallpaper]');
-    const uploadWallpaperCard = document.getElementById('upload-wallpaper');
-    const uploadWallpaperBtn = document.getElementById('upload-wallpaper-btn');
-    const clearWallpaperBtn = document.getElementById('clear-wallpaper');
-    const wallpaperFileInput = document.getElementById('wallpaper-file-input');
-
-    let currentWallpaper = localStorage.getItem('wallpaper') || 'none';
-    
-    // Застосовуємо збережені шпалери при завантаженні
-    if (currentWallpaper && currentWallpaper !== 'none') {
-      applyWallpaper(currentWallpaper);
-    }
-
-    // Функція для надсилання налаштувань теми в main process
-    function sendThemeSettings() {
-      ipcRenderer.send('update-theme-settings', {
-        mode: currentThemeMode,
-        bg: currentThemeBg,
-        accent: currentThemeAccent,
-        wallpaper: currentWallpaper
-      });
-    }
-
-    // Застосування шпалерів
-    function applyWallpaper(wallpaperData) {
-      if (!wallpaperData || wallpaperData === 'none') {
-        localStorage.removeItem('wallpaper');
-        currentWallpaper = 'none';
-        // Очищуємо шпалери з body
-        document.body.style.backgroundImage = 'none';
-        document.body.style.backgroundColor = '#1a1b26';
-      } else {
-        localStorage.setItem('wallpaper', wallpaperData);
-        currentWallpaper = wallpaperData;
-        
-        // Застосовуємо шпалери до body
-        const wallpaperGradients = {
-          'abstract1': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          'abstract2': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-          'abstract3': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-          'abstract4': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-          'abstract5': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-          'abstract6': 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
-        };
-        
-        if (wallpaperData.startsWith('data:') || wallpaperData.startsWith('http')) {
-          document.body.style.backgroundImage = `url(${wallpaperData})`;
-        } else if (wallpaperGradients[wallpaperData]) {
-          document.body.style.backgroundImage = wallpaperGradients[wallpaperData];
-        }
-        
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center';
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.backgroundAttachment = 'fixed';
-      }
-
-      // Оновлюємо активний стан карток в панелі
-      updateWallpaperActive(wallpaperData);
-      
-      // Надсилаємо налаштування в main process для newtab
-      sendThemeSettings();
-      
-      console.log('[IMG] Wallpaper changed:', wallpaperData);
-    }
-
-    // Оновлення активної картки
-    function updateWallpaperActive(wallpaperData) {
-      wallpaperCards.forEach(card => card.classList.remove('active'));
-      
-      if (!wallpaperData || wallpaperData === 'none') {
-        const noneCard = document.querySelector('[data-wallpaper="none"]');
-        if (noneCard) noneCard.classList.add('active');
-      } else if (wallpaperData.startsWith('data:') || wallpaperData.startsWith('http')) {
-        uploadWallpaperCard.classList.add('active');
-      } else {
-        const activeCard = document.querySelector(`[data-wallpaper="${wallpaperData}"]`);
-        if (activeCard) activeCard.classList.add('active');
-      }
-    }
-
-    // Клік на картки шпалерів
-    wallpaperCards.forEach(card => {
-      card.addEventListener('click', () => {
-        const wallpaper = card.dataset.wallpaper;
-        applyWallpaper(wallpaper);
-      });
-    });
-
-    // Завантаження кастомних шпалерів
-    if (uploadWallpaperCard) {
-      uploadWallpaperCard.addEventListener('click', () => {
-        wallpaperFileInput.click();
-      });
-    }
-
-    if (uploadWallpaperBtn) {
-      uploadWallpaperBtn.addEventListener('click', () => {
-        wallpaperFileInput.click();
-      });
-    }
-
-    if (wallpaperFileInput) {
-      wallpaperFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // Перевірка розміру (макс 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Файл занадто великий! Максимум 5 МБ.');
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const imageData = event.target.result;
-          applyWallpaper(imageData);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    // Очистити шпалери
-    if (clearWallpaperBtn) {
-      clearWallpaperBtn.addEventListener('click', () => {
-        applyWallpaper('none');
-      });
-    }
-
-    // Завантажити збережені шпалери при старті (тільки оновлюємо UI карток)
-    updateWallpaperActive(currentWallpaper);
-    
-    // Надсилаємо початкові налаштування теми в main process
-    sendThemeSettings();
-    
-    console.log('[OK] Settings panel ready');
-
-    // ===================== END ПАНЕЛЬ НАЛАШТУВАНЬ =====================
-
-    // ===================== TOR INTEGRATION =====================
-    const torBtn = document.getElementById('tor-btn');
-    
-    // Функція для показу повідомлень
-    function showTorNotification(message, isError = false) {
-      console.log('[TOR]', message);
-      
-      // Створюємо toast повідомлення
-      const toast = document.createElement('div');
-      toast.style.cssText = `
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        background: ${isError ? '#dc2626' : '#8b5cf6'};
-        color: white;
-        padding: 15px 25px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        z-index: 999999;
-        font-size: 14px;
-        animation: slideIn 0.3s ease;
-      `;
-      toast.textContent = message;
-      document.body.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-    
-    // Слухаємо події bootstrap прогресу від Tor
-    let lastBootstrapNotification = null;
-    let bootstrapToast = null;
-    
-    ipcRenderer.on('tor-bootstrap-progress', (event, data) => {
-      console.log(`[TOR] Bootstrap: ${data.progress}% - ${data.status}`);
-      
-      if (torBtn && data.progress < 100) {
-        torBtn.textContent = `Tor: ${data.progress}%`;
-        torBtn.style.color = '#f59e0b'; // Orange під час завантаження
-        torBtn.disabled = true;
-        
-        // Показуємо toast з прогресом (оновлюємо існуючий)
-        if (!bootstrapToast || !document.body.contains(bootstrapToast)) {
-          bootstrapToast = document.createElement('div');
-          bootstrapToast.style.cssText = `
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, #f59e0b, #ea580c);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            z-index: 999999;
-            font-size: 14px;
-            min-width: 250px;
-          `;
-          document.body.appendChild(bootstrapToast);
-        }
-        
-        // Оновлюємо текст
-        bootstrapToast.innerHTML = `
-          <div style="font-weight: 600; margin-bottom: 5px;">⏳ Підключення до Tor...</div>
-          <div style="font-size: 12px; opacity: 0.9;">${data.progress}% - ${data.status}</div>
-          <div style="margin-top: 8px; background: rgba(255,255,255,0.2); height: 4px; border-radius: 2px; overflow: hidden;">
-            <div style="background: white; height: 100%; width: ${data.progress}%; transition: width 0.3s ease;"></div>
-          </div>
-        `;
-        
-      } else if (torBtn && data.ready) {
-        torBtn.textContent = 'Tor: OFF';
-        torBtn.style.color = '#9ca3af';
-        torBtn.disabled = false;
-        
-        // Видаляємо toast завантаження
-        if (bootstrapToast) {
-          bootstrapToast.style.animation = 'slideOut 0.3s ease';
-          setTimeout(() => {
-            if (bootstrapToast) bootstrapToast.remove();
-            bootstrapToast = null;
-          }, 300);
-        }
-        
-        showTorNotification('✓ Tor готовий! Натисніть "Tor: OFF" щоб увімкнути.');
-      }
-    });
-    
-    // Слухаємо подію коли Tor готовий
-    ipcRenderer.on('tor-ready', (event, ready) => {
-      console.log('[TOR] Tor is ready:', ready);
-      if (ready && torBtn) {
-        torBtn.disabled = false;
-      }
-    });
-    
-    // Слухаємо подію коли Tor активний (після toggle)
-    ipcRenderer.on('tor-active', (event, active) => {
-      console.log('[TOR] Tor active state changed:', active);
-      // Тема інтерфейсу не змінюється - тільки індикатор "Tor: ON/OFF"
-    });
-    
-    if (torBtn) {
-      // Завантажуємо початковий статус
-      ipcRenderer.invoke('get-tor-status').then(status => {
-        const urlInput = document.getElementById('url');
-        
-        if (status.active) {
-          torBtn.textContent = 'Tor: ON';
-          torBtn.style.color = '#8b5cf6';
-          if (urlInput) {
-            urlInput.placeholder = 'DuckDuckGo пошук або введіть адресу';
-          }
-        } else {
-          torBtn.textContent = 'Tor: OFF';
-          torBtn.style.color = '#9ca3af';
-          if (urlInput) {
-            urlInput.placeholder = 'Google пошук або введіть адресу';
-          }
-        }
-      }).catch(err => {
-        console.error('[ERR] Error getting Tor status:', err);
-        torBtn.textContent = 'Tor: OFF';
-        torBtn.style.color = '#9ca3af';
-      });
-      
-      // Обробник кліку
-      torBtn.addEventListener('click', async () => {
-        const originalText = torBtn.textContent;
-        torBtn.textContent = 'Перевірка...';
-        torBtn.disabled = true;
-        
-        try {
-          const result = await ipcRenderer.invoke('toggle-tor');
-          
-          if (result.status) {
-            torBtn.textContent = 'Tor: ON';
-            torBtn.style.color = '#8b5cf6';
-            showTorNotification('✓ Tor увімкнено! Перегляд анонімний.');
-          } else {
-            // Перевіряємо чи це помилка "ще не готовий"
-            if (result.bootstrapProgress !== undefined && result.bootstrapProgress < 100) {
-              torBtn.textContent = `Tor: ${result.bootstrapProgress}%`;
-              torBtn.style.color = '#f59e0b'; // Orange
-              showTorNotification(
-                `⏳ Tor підключається... ${result.bootstrapProgress}% - ${result.bootstrapStatus}`,
-                false
-              );
-            } else {
-              torBtn.textContent = 'Tor: OFF';
-              torBtn.style.color = '#9ca3af';
-              showTorNotification(result.message || 'Tor вимкнено', false);
-            }
-          }
-        } catch (error) {
-          console.error('[ERR] Error toggling Tor:', error);
-          torBtn.textContent = originalText;
-          torBtn.style.color = '#dc2626';
-          showTorNotification('⚠ Помилка: Tor не запущений або не готовий', true);
-        } finally {
-          // Розблоковуємо кнопку тільки якщо Tor готовий
-          if (torBtn.textContent.includes('ON') || torBtn.textContent.includes('OFF')) {
-            torBtn.disabled = false;
-          }
-          // Якщо показуємо відсоток - залишаємо disabled
-        }
-      });
-    }
-    
-    // ===================== IP CHECK BUTTON =====================
-    const checkIpBtn = document.getElementById('check-ip-btn');
-    console.log('[DEBUG] IP button found:', !!checkIpBtn);
-    
-    if (checkIpBtn) {
-      console.log('[IP] Attaching event listener to IP button');
-      checkIpBtn.addEventListener('click', async () => {
-        console.log('[IP] Check IP button clicked!');
-        const originalText = checkIpBtn.textContent;
-        checkIpBtn.textContent = '⏳';
-        checkIpBtn.disabled = true;
-        
-        try {
-          console.log('[IP] Creating result window...');
-          // Створюємо інформаційне вікно для результатів
-          const resultWindow = document.createElement('div');
-          resultWindow.id = 'ip-result-window';
-          resultWindow.style.cssText = `
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            background: rgba(17, 24, 39, 0.98) !important;
-            backdrop-filter: blur(10px) !important;
-            border: 1px solid rgba(139, 92, 246, 0.3) !important;
-            padding: 25px !important;
-            border-radius: 12px !important;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
-            z-index: 999999 !important;
-            min-width: 350px !important;
-            color: white !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-          `;
-          
-          resultWindow.innerHTML = `
-            <div style="text-align: center; margin-bottom: 20px;">
-              <div style="font-size: 24px; margin-bottom: 10px;">⏳</div>
-              <div style="font-weight: 600; font-size: 16px;">Перевірка IP адреси...</div>
-            </div>
-          `;
-          
-          console.log('[IP] Appending result window to body');
-          document.body.appendChild(resultWindow);
-          console.log('[IP] Result window appended, element:', resultWindow);
-          
-          // Виконуємо перевірку через IPC
-          console.log('[IP] Invoking check-ip...');
-          const ipInfo = await ipcRenderer.invoke('check-ip');
-          console.log('[IP] Received IP info:', ipInfo);
-          
-          const { ip, responseTime, country, city, region, org, asn } = ipInfo;
-          
-          // Перевіряємо чи це Tor вузол
-          const isTorExit = org.toLowerCase().includes('tor') || 
-                           org.toLowerCase().includes('exit') ||
-                           (asn && (asn.includes('tor') || asn.includes('Tor')));
-          
-          const torStatus = await ipcRenderer.invoke('get-tor-status');
-          
-          // Оновлюємо вікно результатів
-          resultWindow.innerHTML = `
-            <div style="text-align: center;">
-              <div style="font-size: 32px; margin-bottom: 15px;">${isTorExit ? '🔐' : '🌐'}</div>
-              <div style="font-weight: 600; font-size: 18px; margin-bottom: 20px; color: ${isTorExit ? '#8b5cf6' : '#3b82f6'};">
-                ${isTorExit ? 'Tor активний!' : torStatus.active ? 'Увага: Не Tor вузол!' : 'Звичайне підключення'}
-              </div>
-              
-              <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left;">
-                <div style="font-size: 12px; color: #9ca3af; margin-bottom: 5px;">IP адреса:</div>
-                <div style="font-size: 16px; font-weight: 600; font-family: 'Courier New', monospace; color: #60a5fa;">${ip}</div>
-              </div>
-              
-              <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left;">
-                <div style="font-size: 12px; color: #9ca3af; margin-bottom: 5px;">Локація:</div>
-                <div style="font-size: 14px;">${city}${region ? ', ' + region : ''}</div>
-                <div style="font-size: 14px; font-weight: 600;">${country}</div>
-              </div>
-              
-              <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left;">
-                <div style="font-size: 12px; color: #9ca3af; margin-bottom: 5px;">Провайдер:</div>
-                <div style="font-size: 13px;">${org}</div>
-              </div>
-              
-              <div style="display: flex; gap: 10px; justify-content: center; font-size: 11px; color: #6b7280;">
-                <div>⏱ ${responseTime} мс</div>
-                <div>•</div>
-                <div>Статус: ${torStatus.active ? 'Tor ON' : 'Tor OFF'}</div>
-              </div>
-            </div>
-            
-            <button id="close-ip-result" style="
-              margin-top: 20px;
-              width: 100%;
-              padding: 10px;
-              background: linear-gradient(135deg, #8b5cf6, #3b82f6);
-              color: white;
-              border: none;
-              border-radius: 6px;
-              cursor: pointer;
-              font-weight: 600;
-              font-size: 14px;
-            ">Закрити</button>
-          `;
-          
-          // Додаємо overlay для темного фону
-          console.log('[IP] Creating overlay...');
-          const overlay = document.createElement('div');
-          overlay.id = 'ip-overlay';
-          overlay.style.cssText = `
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            background: rgba(0,0,0,0.6) !important;
-            z-index: 999998 !important;
-          `;
-          document.body.appendChild(overlay);
-          console.log('[IP] Overlay appended');
-          
-          // Обробник закриття
-          const closeBtn = resultWindow.querySelector('#close-ip-result');
-          const closeWindow = () => {
-            console.log('[IP] Closing result window');
-            resultWindow.remove();
-            overlay.remove();
-          };
-          
-          closeBtn.addEventListener('click', closeWindow);
-          overlay.addEventListener('click', closeWindow);
-          
-          // Закриття по Escape
-          const escapeHandler = (e) => {
-            if (e.key === 'Escape') {
-              closeWindow();
-              document.removeEventListener('keydown', escapeHandler);
-            }
-          };
-          document.addEventListener('keydown', escapeHandler);
-          
-        } catch (error) {
-          console.error('[IP CHECK] Error:', error);
-          showTorNotification('⚠ Помилка перевірки IP: ' + error.message, true);
-        } finally {
-          checkIpBtn.textContent = originalText;
-          checkIpBtn.disabled = false;
-        }
-      });
-    }
-    // ===================== END IP CHECK =====================
-    
-    // Слухаємо готовність Tor
-    ipcRenderer.on('tor-ready', (event, ready) => {
-      if (ready && torBtn) {
-        console.log('[OK] Tor ready to use');
-      }
-    });
-    
-    // Слухаємо зміну пошукової системи при перемиканні Tor
-    ipcRenderer.on('update-search-engine', (event, searchEngine) => {
-      const urlInput = document.getElementById('url');
-      if (urlInput) {
-        urlInput.placeholder = `${searchEngine} пошук або введіть адресу`;
-        console.log('[SEARCH] Search engine changed to:', searchEngine);
-      }
-    });
-    
-    // ===================== END TOR INTEGRATION =====================
-    
-    // ==================== WEBVIEW MANAGEMENT ====================
-    
-    // IPC: Створення webview елемента
-    ipcRenderer.on('create-webview', (event, { tabId, html, url }) => {
-      console.log(`[WEBVIEW] Creating webview for tab ${tabId}, url: ${url}`);
-      
-      // Додаємо webview прямо в body (перед sidebar)
-      const sidebar = document.getElementById('side-toolbar');
-      if (sidebar) {
-        sidebar.insertAdjacentHTML('beforebegin', html);
-      } else {
-        document.body.insertAdjacentHTML('beforeend', html);
-      }
-      
-      // Отримуємо створений елемент
-      const webview = document.getElementById(`webview-${tabId}`);
-      if (!webview) {
-        console.error(`[WEBVIEW] Failed to create webview-${tabId}`);
-        return;
-      }
-      
-      // Налаштовуємо обробники подій webview
-      setupWebviewHandlers(webview, tabId);
-      
-      console.log(`[WEBVIEW] Created and configured webview-${tabId}`);
-    });
-    
-    // IPC: Перемикання webview
-    ipcRenderer.on('switch-webview', (event, { tabId }) => {
-      console.log(`[WEBVIEW] Switching to webview-${tabId}`);
-      
-      // Ховаємо всі webview
-      const allWebviews = document.querySelectorAll('webview');
-      allWebviews.forEach(wv => {
-        wv.style.display = 'none';
-        wv.classList.remove('active');
-      });
-      
-      // Показуємо активний з flex-display
-      const activeWebview = document.getElementById(`webview-${tabId}`);
-
-      if (activeWebview) {
-        // Перевіряємо чи це нова порожня вкладка
-        const src = activeWebview.getAttribute('src');
-        const isNewTab = !src || src === 'about:blank' || src === '' || src === 'data:text/html,' || src.startsWith('data:');
-        const nativeNewTab = document.getElementById('native-new-tab');
-
-        if (!isNewTab) {
-          // Для реальних сайтів показуємо webview поверх native new tab
-          activeWebview.style.display = 'flex';
-          activeWebview.classList.add('active');
-          if (nativeNewTab) nativeNewTab.style.display = 'none';
-        } else {
-          // Для about:blank показуємо native new tab
-          if (nativeNewTab) nativeNewTab.style.display = '';
-        }
-        // Для about:blank не показуємо webview, залишається видимим native new tab знизу
-      }
-    });
-    
-    // IPC: Видалення webview
-    ipcRenderer.on('remove-webview', (event, { tabId }) => {
-      console.log(`[WEBVIEW] Removing webview-${tabId}`);
-      const webview = document.getElementById(`webview-${tabId}`);
-      if (webview) {
-        webview.remove();
-      }
-    });
-
-    // IPC: Навігація webview
-    ipcRenderer.on('webview-navigate', (event, { tabId, url }) => {
-      console.log(`[WEBVIEW] Navigate webview-${tabId} to: ${url}`);
-
-      const webview = document.getElementById(`webview-${tabId}`);
-      
-      if (webview) {
-        // Встановлюємо src — це працює навіть для неініціалізованих webview
-        // (loadURL вимагає dom-ready, а src атрибут запускає ініціалізацію)
-        webview.src = url;
-        webview.setAttribute('src', url);
-
-        // Робимо webview видимим
-        webview.style.display = 'flex';
-        webview.classList.add('active');
-
-        // Ховаємо native new tab
-        const nativeNewTab = document.getElementById('native-new-tab');
-        if (nativeNewTab) {
-          nativeNewTab.style.display = 'none';
-        }
-      } else {
-        console.error(`[WEBVIEW] Webview not found: webview-${tabId}`);
-      }
-    });
-    
-    // IPC: Назад
-    ipcRenderer.on('webview-go-back', (event, { tabId }) => {
-      const webview = document.getElementById(`webview-${tabId}`);
-      if (webview && webview.canGoBack()) {
-        webview.goBack();
-      }
-    });
-    
-    // IPC: Вперед
-    ipcRenderer.on('webview-go-forward', (event, { tabId }) => {
-      const webview = document.getElementById(`webview-${tabId}`);
-      if (webview && webview.canGoForward()) {
-        webview.goForward();
-      }
-    });
-    
-    // IPC: Перезавантаження
-    ipcRenderer.on('webview-reload', (event, { tabId }) => {
-      const webview = document.getElementById(`webview-${tabId}`);
-      if (webview) {
-        webview.reload();
-      }
-    });
-    
-    // IPC: Toggle DevTools
-    ipcRenderer.on('toggle-webview-devtools', () => {
-      const activeWebview = document.querySelector('webview.active');
-      if (activeWebview) {
-        if (activeWebview.isDevToolsOpened()) {
-          activeWebview.closeDevTools();
-        } else {
-          activeWebview.openDevTools();
-        }
-      }
-    });
-
-    // Дії з контекстного меню
-    ipcRenderer.on('context-menu-action', (event, { action, tabId, text, url }) => {
-      const webview = document.getElementById(`webview-${tabId}`);
-      if (!webview) return;
-
-      switch (action) {
-        case 'copy':         webview.copy(); break;
-        case 'cut':          webview.cut();  break;
-        case 'paste':        webview.paste(); break;
-        case 'select-all':   webview.selectAll(); break;
-        case 'search':
-          createTab('https://www.google.com/search?q=' + encodeURIComponent(text));
-          break;
-        case 'translate':
-          createTab('https://translate.google.com/?sl=auto&tl=uk&op=translate&text=' + encodeURIComponent(text));
-          break;
-        case 'open-link-new-tab':
-          createTab(url);
-          break;
-        case 'view-source':
-          createTab('view-source:' + url);
-          break;
-        case 'save-image':
-          webview.downloadURL(url);
-          break;
-      }
-    });
-
-    /**
-     * Налаштовує обробники подій для webview елемента
-     */
+      <input type="file" id="wallpaper-file-input" accept="image
     function setupWebviewHandlers(webview, tabId) {
-      // Завантаження почалося
       webview.addEventListener('did-start-loading', () => {
         console.log(`[WEBVIEW-${tabId}] Loading started`);
       });
-      
-      // Завантаження завершено
       webview.addEventListener('did-finish-load', () => {
         const url = webview.getURL();
         const title = webview.getTitle();
         console.log(`[WEBVIEW-${tabId}] Loaded: ${url}`);
-
-        // Зберігаємо в історію
         if (url && !url.startsWith('file://') && url !== 'about:blank' && url !== '') {
           ipcRenderer.send('add-to-history', { url, title });
         }
-
-        // Оновлюємо інформацію про вкладку в UI
         const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
         if (tab) {
           const titleSpan = tab.querySelector('.tab-title');
           if (titleSpan && !url.startsWith('data:')) titleSpan.textContent = title || 'Нова вкладка';
         }
-
-        // Синхронізуємо URL і заголовок у main process для коректного збереження сесії
         if (url && !url.startsWith('file://') && url !== 'about:blank' && !url.startsWith('data:')) {
           ipcRenderer.send('update-tab-url', { tabId, url, title });
         }
-
-        // Оновлюємо URL bar якщо це активна вкладка
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
           if (urlInput) {
-            // Ховаємо file:/// URL і data: URIs для локальних сторінок
             if (url.startsWith('data:') || url.includes('newtab.html') || url.includes('history.html')) {
               urlInput.value = '';
             } else {
@@ -3058,56 +254,40 @@
           }
         }
       });
-      
-      // Навігація
       webview.addEventListener('did-navigate', (e) => {
         const url = e.url;
         console.log(`[WEBVIEW-${tabId}] Navigate to: ${url}`);
-
-        // Перевіряємо чи повернулись на about:blank (закриття feed)
         const nativeNewTab = document.getElementById('native-new-tab');
 
         if (url === 'about:blank' || url === '') {
           console.log(`[WEBVIEW-${tabId}] Returning to about:blank, showing native new tab`);
-          // Оновлюємо src атрибут
           webview.setAttribute('src', 'data:text/html,');
-          // Ховаємо webview та показуємо native new tab
           if (webview.classList.contains('active')) {
             webview.style.display = 'none';
             webview.classList.remove('active');
             if (nativeNewTab) nativeNewTab.style.display = '';
           }
         }
-
-        // Оновлюємо URL bar якщо це активна вкладка
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
           if (urlInput) {
-            // Ховаємо file:/// URL для локальних сторінок (newtab, history, тощо)
             if (url.includes('newtab.html') || url.includes('history.html') || url === 'about:blank' || url === '') {
-              urlInput.value = ''; // Очищаємо рядок для локальних сторінок
+              urlInput.value = '';
             } else {
               urlInput.value = url;
             }
           }
         }
       });
-      
-      // Навігація всередині сторінки
       webview.addEventListener('did-navigate-in-page', (e) => {
         const url = e.url;
-
-        // Зберігаємо в історію (SPA навігація: React Router, Vue Router тощо)
         if (url && !url.startsWith('file://') && url !== 'about:blank' && url !== '') {
           const title = webview.getTitle();
           ipcRenderer.send('add-to-history', { url, title });
         }
-        
-        // Перевіряємо чи повернулись на about:blank
         const nativeNewTab = document.getElementById('native-new-tab');
 
         if (url === 'about:blank' || url === '') {
-          // Показуємо native new tab
           webview.setAttribute('src', 'data:text/html,');
           if (webview.classList.contains('active')) {
             webview.style.display = 'none';
@@ -3119,7 +299,6 @@
         if (webview.classList.contains('active')) {
           const urlInput = document.getElementById('url');
           if (urlInput) {
-            // Також ховаємо file:/// для локальних сторінок
             if (url.includes('newtab.html') || url.includes('history.html') || url === 'about:blank') {
               urlInput.value = '';
             } else {
@@ -3127,14 +306,10 @@
             }
           }
         }
-
-        // Оновлюємо URL у main process (SPA-навігація: YouTube, GitHub тощо)
         if (url && !url.startsWith('file://') && url !== 'about:blank' && !url.startsWith('data:')) {
           ipcRenderer.send('update-tab-url', { tabId, url });
         }
       });
-      
-      // Оновлення заголовку
       webview.addEventListener('page-title-updated', (e) => {
         if (webview.getURL().startsWith('data:')) return;
         const title = e.title;
@@ -3144,8 +319,6 @@
           if (titleSpan) titleSpan.textContent = title;
         }
       });
-      
-      // Favicon оновлено
       webview.addEventListener('page-favicon-updated', (e) => {
         if (e.favicons && e.favicons.length > 0) {
           const favicon = e.favicons[0];
@@ -3156,23 +329,16 @@
           }
         }
       });
-      
-      // Помилка завантаження
       webview.addEventListener('did-fail-load', (e) => {
-        if (e.errorCode !== -3) { // -3 = ERR_ABORTED
+        if (e.errorCode !== -3) {
           console.error(`[WEBVIEW-${tabId}] Load failed:`, e.errorDescription);
         }
       });
-      
-      // Нове вікно (контролюємо відкриття нових вкладок)
       webview.addEventListener('new-window', (e) => {
         e.preventDefault();
         console.log(`[WEBVIEW-${tabId}] New window requested:`, e.url);
-        // Відкриваємо в новій вкладці
         createTab(e.url);
       });
-      
-      // Діалоги з webview (alert/confirm) — без цього вони мовчки ігноруються
       webview.addEventListener('dialog', (e) => {
         if (e.type === 'alert') {
           window.alert(e.message);
@@ -3182,15 +348,11 @@
           e.dialog.close(result);
         }
       });
-
-      // Console messages з webview
       webview.addEventListener('console-message', (e) => {
-        if (e.level >= 1) { // Warnings and errors
+        if (e.level >= 1) {
           console.log(`[WEBVIEW-${tabId}] [${e.level === 1 ? 'WARN' : 'ERROR'}] ${e.message}`);
         }
       });
-
-      // Контекстне меню (ПКМ)
       webview.addEventListener('context-menu', (e) => {
         e.preventDefault();
         ipcRenderer.send('show-context-menu', {
@@ -3205,8 +367,6 @@
         });
       });
     }
-    
-    // IPC: Оновлення тем для всіх newtab webview
     ipcRenderer.on('update-newtab-themes', (event, settings) => {
       console.log('[WEBVIEW] Updating themes for all newtab pages');
       
@@ -3215,7 +375,6 @@
         try {
           const url = webview.getURL();
           if (url && url.includes('newtab.html')) {
-            // Надсилаємо тему в webview через executeJavaScript
             webview.executeJavaScript(`
               if (window.applyTheme && window.currentTheme) {
                 window.applyTheme(window.currentTheme);
@@ -3227,16 +386,10 @@
         }
       });
     });
-    
-    // ==================== END WEBVIEW MANAGEMENT ====================
-    
-    // ==================== NATIVE NEW TAB LOGIC ====================
     const nativeNewTab = document.getElementById('native-new-tab');
     const clockElement = document.getElementById('clock');
     const greetingElement = document.getElementById('greeting');
     const dateElement = document.getElementById('date');
-    
-    // Функція оновлення часу
     function updateClock() {
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
@@ -3245,8 +398,6 @@
       if (clockElement) {
         clockElement.textContent = `${hours}:${minutes}`;
       }
-      
-      // Оновлення дати
       if (dateElement) {
         const days = ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п\'ятниця', 'субота'];
         const months = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
@@ -3255,8 +406,6 @@
         const month = months[now.getMonth()];
         dateElement.textContent = `${dayName}, ${day} ${month}`;
       }
-      
-      // Оновлення привітання
       if (greetingElement) {
         const hour = now.getHours();
         let greeting = 'Привіт!';
@@ -3267,21 +416,13 @@
         greetingElement.textContent = greeting;
       }
     }
-    
-    // Запускаємо годинник
     updateClock();
     setInterval(updateClock, 1000);
-    
-    // Обробник кнопки "Закладки" - відкриває повний newtab.html
     const openBookmarksBtn = document.getElementById('open-bookmarks-btn');
     if (openBookmarksBtn) {
       openBookmarksBtn.addEventListener('click', () => {
         console.log('[NATIVE NEW TAB] Opening bookmarks page');
-        // Use the app:// protocol so webviews can load internal pages
-        // regardless of the installation path (avoids ERR_ABORTED on file:// URLs)
         const newtabPath = 'app://localhost/newtab.html';
-        
-        // Отримуємо активний webview або шукаємо будь-який
         let activeWebview = document.querySelector('webview.active');
         if (!activeWebview) {
           activeWebview = document.querySelector('webview');
@@ -3295,15 +436,13 @@
       });
     }
     
-    // ==================== END NATIVE NEW TAB LOGIC ====================
-    
   } catch (error) {
     console.error('🚨 CRITICAL ERROR in index.html:', error);
     alert('Помилка завантаження браузера: ' + error.message);
   }
   </script>
   
-  <!-- Speed Dial Module -->
+  
   <script src="js/speed-dial.js"></script>
 </body>
 </html>

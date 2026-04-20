@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
@@ -6,19 +6,19 @@
   <title>Нова вкладка</title>
   <link rel="stylesheet" href="css/output.css">
   <style>
-    /* ЯДЕРНЕ СКИДАННЯ ФОНІВ: Вбиваємо темно-синій колір всюди */
+    
     html, body, div#root, div#app, main, .wrapper, .container {
         background: transparent !important;
         background-color: transparent !important;
         background-image: none !important;
         
-        /* Розтягуємо невидиме полотно на 100% екрану */
+        
         min-height: 100vh !important;
         height: 100vh !important;
         margin: 0 !important;
         padding: 0 !important;
         
-        /* Тримаємо годинник і закладки по центру */
+        
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -37,15 +37,15 @@
 
     <div class="logo">BrowserX</div>
 
-    <!-- Speed Dial Section -->
+    
     <div class="max-w-6xl mx-auto mt-10">
       <div id="speed-dial" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-        <!-- Speed Dial cards will be dynamically inserted here -->
+        
       </div>
     </div>
   </div>
 
-  <!-- Speed Dial Edit Modal -->
+  
   <div id="edit-modal" class="hidden bookmark-modal-overlay fixed inset-0 flex items-center justify-center z-50 transition-opacity">
     <div class="bookmark-modal-panel">
       <div class="bookmark-modal-header">
@@ -83,7 +83,7 @@
         <div class="bookmark-field">
           <label class="bookmark-label">Колір фону</label>
           <div id="color-picker" class="bookmark-color-picker">
-            <!-- Color buttons will be dynamically inserted here -->
+            
           </div>
         </div>
       </div>
@@ -96,7 +96,6 @@
   </div>
 
   <script>
-    // Оновлення часу
     function updateTime() {
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, '0');
@@ -109,8 +108,6 @@
     
     updateTime();
     setInterval(updateTime, 1000);
-
-    // Привітання залежно від часу доби
     function updateGreeting() {
       const hour = new Date().getHours();
       let greeting;
@@ -129,8 +126,6 @@
     }
     
     updateGreeting();
-
-    // Завантаження налаштувань теми
     function loadTheme() {
       const mode = localStorage.getItem('themeMode') || 'dark';
       const themeBg = localStorage.getItem('themeBg');
@@ -152,19 +147,13 @@
       }
       
       document.documentElement.style.setProperty('--accent-color', themeAccent);
-      
-      // Застосовуємо фон з налаштувань браузера (якщо є)
       if (themeBg) {
         document.body.style.backgroundColor = themeBg;
       }
-      
-      // Застосовуємо шпалери
       if (wallpaper && wallpaper !== 'none') {
         if (wallpaper.startsWith('data:') || wallpaper.startsWith('http')) {
-          // Кастомна картинка
           document.body.style.backgroundImage = `url(${wallpaper})`;
         } else {
-          // Градієнтні пресети - потрібно знайти відповідний градієнт
           const wallpaperGradients = {
             'abstract1': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             'abstract2': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -189,18 +178,14 @@
     }
     
     loadTheme();
-
-    // Слухаємо зміни теми
     window.addEventListener('storage', (e) => {
       if (e.key === 'themeMode' || e.key === 'themeBg' || e.key === 'themeAccent' || e.key === 'wallpaper') {
         loadTheme();
       }
     });
-    
-    // Tor тема відключена - інтерфейс залишається без змін
   </script>
 
-  <!-- Speed Dial Module -->
+  
   <script src="js/speed-dial.js"></script>
 </body>
 </html>

@@ -1,20 +1,12 @@
-/**
- * Тест блокування геолокації
- * Вставте цей код у DevTools Console вкладки (F12)
- * щоб перевірити чи працює блокування геолокації
- */
+
 
 console.log('=== 🔒 GEOLOCATION BLOCK TEST ===\n');
-
-// Тест 1: Перевірка доступності API
 console.log('📋 Test 1: Geolocation API availability');
 if (navigator.geolocation) {
   console.log('  ✓ navigator.geolocation exists');
 } else {
   console.log('  ✗ navigator.geolocation is undefined');
 }
-
-// Тест 2: Спроба отримати поточну позицію
 console.log('\n📋 Test 2: Attempt getCurrentPosition');
 navigator.geolocation.getCurrentPosition(
   (position) => {
@@ -40,16 +32,12 @@ navigator.geolocation.getCurrentPosition(
     }
   }
 );
-
-// Тест 3: Перевірка патчу
 console.log('\n📋 Test 3: Check for privacy patch');
 if (window.__geoLocationBlocked) {
   console.log('  ✅ Privacy Guard patch detected!');
 } else {
   console.log('  ⚠️ No privacy patch marker found');
 }
-
-// Тест 4: Перевірка типу навігатора
 console.log('\n📋 Test 4: Navigator geolocation type');
 console.log('  Type:', typeof navigator.geolocation);
 console.log('  Methods:', Object.keys(navigator.geolocation));

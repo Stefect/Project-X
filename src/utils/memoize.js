@@ -1,73 +1,241 @@
-function memoize(fn, options = {}) {
-    const cache = new Map();
-    const maxSize = options.maxSize || Infinity;
-    const policy = options.policy || 'lru';
-    const ttl = options.ttl || 60000;
-    const customEvict = options.customEvict || null;
+const POLICY = Object.freeze({
+    LRU: 'lru',
+    LFU: 'lfu',
+    TIME: 'time',
+    CUSTOM: 'custom'
+});
 
-    const generateKey = (args) => JSON.stringify(args);
+function normalizeMaxSize(rawMaxSize) {
+    if (rawMaxSize === undefined || rawMaxSize === null) return Infinity;
+    if (!Number.isFinite(rawMaxSize)) return Infinity;
+    return Math.max(0, Math.floor(rawMaxSize));
+}
 
-    const evict = () => {
-        if (cache.size <= maxSize) return;
+function normalizePolicy(rawPolicy) {
+    const policy = String(rawPolicy || POLICY.LRU).toLowerCase();
+    return Object.values(POLICY).includes(policy) ? policy : POLICY.LRU;
+}
 
-        let keyToRemove = null;
+function createDefaultKeyResolver() {
+    const objectIds = new WeakMap();
+    let sequence = 0;
 
-        if (policy === 'custom' && typeof customEvict === 'function') {
-            keyToRemove = customEvict(cache);
-        } else if (policy === 'lru') {
-            keyToRemove = cache.keys().next().value;
-        } else if (policy === 'lfu') {
-            let minAccess = Infinity;
-            for (const [key, meta] of cache.entries()) {
-                if (meta.accessCount < minAccess) {
-                    minAccess = meta.accessCount;
-                    keyToRemove = key;
-                }
-            }
-        } else if (policy === 'time') {
-            keyToRemove = cache.keys().next().value;
+    const getObjectId = (value) => {
+        if (!objectIds.has(value)) {
+            sequence += 1;
+            objectIds.set(value, sequence);
         }
-
-        if (keyToRemove) cache.delete(keyToRemove);
+        return objectIds.get(value);
     };
 
-    return function (...args) {
-        const key = generateKey(args);
-        const now = Date.now();
+    const encode = (value) => {
+        if (value === null) return 'null';
 
-        if (cache.has(key)) {
-            const meta = cache.get(key);
+        const type = typeof value;
+        if (type === 'undefined') return 'u';
+        if (type === 'number') return Number.isNaN(value) ? 'n:NaN' : `n:${value}`;
+        if (type === 'bigint') return `bi:${value.toString()}`;
+        if (type === 'string') return `s:${value}`;
+        if (type === 'boolean') return `b:${value}`;
+        if (type === 'symbol') return `sym:${String(value.description || '')}`;
+        if (type === 'function') return `fn#${getObjectId(value)}`;
 
-            if (policy === 'time' && (now - meta.timestamp > ttl)) {
-                cache.delete(key);
-            } else {
-                meta.accessCount += 1;
-                meta.timestamp = now;
-
-                if (policy === 'lru') {
-                    cache.delete(key);
-                    cache.set(key, meta);
-                }
-
-                return meta.value;
-            }
+        if (Array.isArray(value)) {
+            return `arr:[${value.map(encode).join(',')}]`;
         }
 
-        const value = fn.apply(this, args);
+        if (value instanceof Date) {
+            return `date:${value.getTime()}`;
+        }
 
-        cache.set(key, {
-            value: value,
-            accessCount: 1,
-            timestamp: now
-        });
+        return `obj#${getObjectId(value)}`;
+    };
 
-        evict();
+    return (args) => Array.from(args, encode).join('|');
+}
 
-        return value;
+function createEntry(value, now) {
+    return {
+        value,
+        createdAt: now,
+        lastAccessAt: now,
+        accessCount: 1
     };
 }
 
-memoize.clearCache = function(memoizedFn) {
+function isExpired(entry, now, ttlMs) {
+    if (!Number.isFinite(ttlMs)) return false;
+    return now - entry.createdAt >= ttlMs;
+}
+
+function isPromiseLike(value) {
+    return Boolean(value && typeof value.then === 'function');
+}
+
+function pickEvictionKey(cache, policy, customEvict) {
+    if (cache.size === 0) return undefined;
+
+    if (policy === POLICY.CUSTOM && typeof customEvict === 'function') {
+        const chosen = customEvict(cache);
+        if (cache.has(chosen)) {
+            return chosen;
+        }
+    }
+
+    let selectedKey;
+    let selectedEntry;
+
+    for (const [key, entry] of cache.entries()) {
+        if (!selectedEntry) {
+            selectedKey = key;
+            selectedEntry = entry;
+            continue;
+        }
+
+        if (policy === POLICY.LFU) {
+            const fewerHits = entry.accessCount < selectedEntry.accessCount;
+            const sameHitsOlder = entry.accessCount === selectedEntry.accessCount
+                && entry.lastAccessAt < selectedEntry.lastAccessAt;
+            if (fewerHits || sameHitsOlder) {
+                selectedKey = key;
+                selectedEntry = entry;
+            }
+            continue;
+        }
+
+        if (policy === POLICY.TIME) {
+            if (entry.createdAt < selectedEntry.createdAt) {
+                selectedKey = key;
+                selectedEntry = entry;
+            }
+            continue;
+        }
+
+        if (entry.lastAccessAt < selectedEntry.lastAccessAt) {
+            selectedKey = key;
+            selectedEntry = entry;
+        }
+    }
+
+    return selectedKey;
+}
+
+function memoize(fn, options = {}) {
+    if (typeof fn !== 'function') {
+        throw new TypeError('memoize очікує функцію як перший аргумент');
+    }
+
+    const cache = new Map();
+    const maxSize = normalizeMaxSize(options.maxSize);
+    const policy = normalizePolicy(options.policy);
+    const customEvict = options.customEvict;
+    const keyResolver = typeof options.keyResolver === 'function'
+        ? options.keyResolver
+        : createDefaultKeyResolver();
+    const ttlMs = Number.isFinite(options.ttl)
+        ? Math.max(0, Number(options.ttl))
+        : (policy === POLICY.TIME ? 60000 : Infinity);
+
+    const stats = {
+        hits: 0,
+        misses: 0,
+        evictions: 0,
+        expirations: 0
+    };
+
+    const removeExpiredEntries = (now) => {
+        if (!Number.isFinite(ttlMs)) return;
+
+        for (const [key, entry] of cache.entries()) {
+            if (isExpired(entry, now, ttlMs)) {
+                cache.delete(key);
+                stats.expirations += 1;
+            }
+        }
+    };
+
+    const enforceMaxSize = () => {
+        if (!Number.isFinite(maxSize)) return;
+
+        while (cache.size > maxSize) {
+            const keyToDelete = pickEvictionKey(cache, policy, customEvict);
+            if (keyToDelete === undefined) break;
+            cache.delete(keyToDelete);
+            stats.evictions += 1;
+        }
+    };
+
+    const memoizedFn = function (...args) {
+        if (maxSize === 0) {
+            stats.misses += 1;
+            return fn.apply(this, args);
+        }
+
+        const now = Date.now();
+        const key = keyResolver(args);
+
+        removeExpiredEntries(now);
+
+        const cached = cache.get(key);
+        if (cached) {
+            cached.accessCount += 1;
+            cached.lastAccessAt = now;
+            stats.hits += 1;
+            return cached.value;
+        }
+
+        stats.misses += 1;
+        const produced = fn.apply(this, args);
+
+        if (isPromiseLike(produced)) {
+            const guardedPromise = Promise.resolve(produced).catch((error) => {
+                cache.delete(key);
+                throw error;
+            });
+
+            cache.set(key, createEntry(guardedPromise, now));
+            enforceMaxSize();
+            return guardedPromise;
+        }
+
+        cache.set(key, createEntry(produced, now));
+        enforceMaxSize();
+        return produced;
+    };
+
+    memoizedFn._cache = cache;
+
+    memoizedFn.clear = () => {
+        cache.clear();
+    };
+
+    memoizedFn.delete = (...args) => {
+        const key = keyResolver(args);
+        return cache.delete(key);
+    };
+
+    memoizedFn.has = (...args) => {
+        const key = keyResolver(args);
+        return cache.has(key);
+    };
+
+    memoizedFn.peek = (...args) => {
+        const key = keyResolver(args);
+        return cache.get(key)?.value;
+    };
+
+    memoizedFn.stats = () => ({
+        ...stats,
+        size: cache.size,
+        maxSize,
+        policy,
+        ttlMs: Number.isFinite(ttlMs) ? ttlMs : null
+    });
+
+    return memoizedFn;
+}
+
+memoize.clearCache = function (memoizedFn) {
     if (memoizedFn && memoizedFn._cache) {
         memoizedFn._cache.clear();
     }

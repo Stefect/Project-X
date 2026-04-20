@@ -1,19 +1,13 @@
-// Unified T9 Autocomplete - Inspired by VS Code IntelliSense
-// Гібридна система: локальний словник (швидко) + AI (розумно)
 
 (function() {
   'use strict';
-
-  // ============= КОНФІГУРАЦІЯ =============
   const CONFIG = {
-    minCharsForLocal: 2,    // Мін. символів для локальних підказок
-    minCharsForAI: 5,       // Мін. символів для AI підказок
-    debounceDelay: 400,     // Затримка перед запитом (мс)
-    maxSuggestions: 5,      // Макс. к-сть підказок
-    aiTimeout: 3000,        // Таймаут AI запиту (мс)
+    minCharsForLocal: 2,
+    minCharsForAI: 5,
+    debounceDelay: 400,
+    maxSuggestions: 5,
+    aiTimeout: 3000,
   };
-
-  // ============= СЛОВНИК =============
   const DICTIONARY = {
     uk: ['привіт', 'дякую', 'будь ласка', 'вітаю', 'добрий', 'день', 'ранок', 'вечір', 
          'як', 'справи', 'що', 'де', 'коли', 'чому', 'хто', 'який', 'скільки',
@@ -36,12 +30,8 @@
          'сейчас', 'потом', 'завтра', 'вчера', 'сегодня', 'всегда', 'никогда', 'иногда',
          'делать', 'говорить', 'думать', 'знать', 'видеть', 'понимать', 'хотеть', 'мочь']
   };
-
-  // Історія введених слів користувачем
   let userHistory = [];
   const MAX_HISTORY = 50;
-
-  // ============= СТАН =============
   let state = {
     activeInput: null,
     suggestionBox: null,
@@ -51,8 +41,6 @@
     isAIProcessing: false,
     lastAIQuery: ''
   };
-
-  // ============= ВИЗНАЧЕННЯ МОВИ =============
   function detectLanguage(text) {
     const cyrillicUkPattern = /[ґєіїҐЄІЇ]/;
     const cyrillicPattern = /[а-яёА-ЯЁ]/;
@@ -61,8 +49,6 @@
     if (cyrillicPattern.test(text)) return 'ru';
     return 'en';
   }
-
-  // ============= СТВОРЕННЯ UI =============
   function createSuggestionBox() {
     if (state.suggestionBox) return;
 
@@ -87,8 +73,6 @@
     document.body.appendChild(box);
     state.suggestionBox = box;
   }
-
-  // ============= ПОЗИЦІОНУВАННЯ =============
   function positionBox(input) {
     if (!state.suggestionBox) return;
 
@@ -97,8 +81,6 @@
     
     let top = rect.bottom + window.scrollY + 4;
     let left = rect.left + window.scrollX;
-
-    // Перевірка меж екрану
     const boxHeight = box.offsetHeight || 200;
     const boxWidth = box.offsetWidth || 300;
 
@@ -113,8 +95,6 @@
     box.style.top = `${top}px`;
     box.style.left = `${left}px`;
   }
-
-  // ============= ВІДОБРАЖЕННЯ ПІДКАЗОК =============
   function showSuggestions(suggestions, source = 'local') {
     if (!suggestions || suggestions.length === 0) {
       hideSuggestions();
@@ -165,8 +145,6 @@
     positionBox(state.activeInput);
     box.style.display = 'block';
   }
-
-  // ============= ОНОВЛЕННЯ ВИДІЛЕННЯ =============
   function updateSelection() {
     const items = state.suggestionBox?.querySelectorAll('.unified-t9-item');
     if (!items) return;
@@ -181,8 +159,6 @@
       }
     });
   }
-
-  // ============= ПРИХОВАТИ ПІДКАЗКИ =============
   function hideSuggestions() {
     if (state.suggestionBox) {
       state.suggestionBox.style.display = 'none';
@@ -190,8 +166,6 @@
       state.selectedIndex = 0;
     }
   }
-
-  // ============= ОТРИМАТИ ПОТОЧНЕ СЛОВО =============
   function getCurrentWord(input) {
     const value = input.value;
     const cursorPos = input.selectionStart;
@@ -207,24 +181,18 @@
       end: cursorPos
     };
   }
-
-  // ============= ЛОКАЛЬНИЙ ПОШУК =============
   function getLocalSuggestions(word) {
     if (word.length < CONFIG.minCharsForLocal) return [];
 
     const wordLower = word.toLowerCase();
     const lang = detectLanguage(word);
     const allWords = [...DICTIONARY[lang], ...userHistory];
-    
-    // Точні збіги (починається з)
     const exactMatches = allWords.filter(w => 
       w.toLowerCase().startsWith(wordLower) && w.toLowerCase() !== wordLower
     );
 
     return [...new Set(exactMatches)];
   }
-
-  // ============= AI ПОШУК =============
   async function getAISuggestions(text) {
     if (!window.api?.invoke || text.length < CONFIG.minCharsForAI) return [];
     if (state.isAIProcessing || state.lastAIQuery === text) return [];
@@ -252,35 +220,23 @@
 
     return [];
   }
-
-  // ============= ВСТАВКА ПІДКАЗКИ =============
   function insertSuggestion(suggestion) {
     if (!state.activeInput) return;
 
     const input = state.activeInput;
     const value = input.value;
     const { start, end } = getCurrentWord(input);
-
-    // Замінюємо поточне слово
     const newValue = value.substring(0, start) + suggestion + value.substring(end);
     input.value = newValue;
-
-    // Курсор після вставленого тексту
     const newPos = start + suggestion.length;
     input.setSelectionRange(newPos, newPos);
-
-    // Запам'ятовуємо слово
     learnWord(suggestion);
-
-    // Тригеримо події для React/Vue
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
 
     hideSuggestions();
     input.focus();
   }
-
-  // ============= НАВЧАННЯ =============
   function learnWord(word) {
     if (word.length < 2) return;
     
@@ -291,8 +247,6 @@
       userHistory = userHistory.slice(0, MAX_HISTORY);
     }
   }
-
-  // ============= ОБРОБКА ВВЕДЕННЯ =============
   async function handleInput(e) {
     const input = e.target;
     state.activeInput = input;
@@ -305,29 +259,22 @@
       hideSuggestions();
       return;
     }
-
-    // Спочатку локальні підказки (миттєво)
     const localSuggestions = getLocalSuggestions(word);
     if (localSuggestions.length > 0) {
       showSuggestions(localSuggestions, 'local');
     }
-
-    // Потім AI (з затримкою)
     if (word.length >= CONFIG.minCharsForAI) {
       state.debounceTimer = setTimeout(async () => {
         const fullText = input.value;
         const aiSuggestions = await getAISuggestions(fullText);
         
         if (aiSuggestions.length > 0) {
-          // Комбінуємо локальні + AI (AI в кінці)
           const combined = [...new Set([...localSuggestions, ...aiSuggestions])];
           showSuggestions(combined, 'ai');
         }
       }, CONFIG.debounceDelay);
     }
   }
-
-  // ============= НАВІГАЦІЯ КЛАВІАТУРОЮ =============
   function handleKeyDown(e) {
     if (!state.suggestionBox || state.suggestionBox.style.display === 'none') return;
 
@@ -358,19 +305,15 @@
         break;
     }
   }
-
-  // ============= ЗАПАМ'ЯТОВУВАННЯ СЛІВ =============
   function handleWordComplete(input) {
     const value = input.value;
     const words = value.split(/\s+/);
-    const lastWord = words[words.length - 2]; // Передостаннє слово (останнє закінчене)
+    const lastWord = words[words.length - 2];
     
     if (lastWord && lastWord.length >= 2) {
       learnWord(lastWord);
     }
   }
-
-  // ============= ІНІЦІАЛІЗАЦІЯ =============
   function attachToInput(input) {
     if (input.hasAttribute('data-unified-t9')) return;
     
@@ -388,13 +331,10 @@
   }
 
   function initT9() {
-    // Існуючі поля
     const inputs = document.querySelectorAll(
       'input[type="text"], input[type="search"], input:not([type]), textarea'
     );
     inputs.forEach(attachToInput);
-
-    // Динамічно додані поля
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
@@ -414,8 +354,6 @@
       subtree: true
     });
   }
-
-  // ============= ЗАПУСК =============
   createSuggestionBox();
 
   if (document.readyState === 'loading') {
@@ -423,11 +361,7 @@
   } else {
     initT9();
   }
-
-  // Періодична активація для SPA
   setInterval(initT9, 3000);
-
-  // Глобальний API
   window.UnifiedT9 = {
     show: showSuggestions,
     hide: hideSuggestions,
@@ -436,23 +370,17 @@
   };
 
   console.log('[UNIFIED-T9] Autocomplete system ready (VS Code style)');
-
-  // ============================================================
-  // X-RAY: Опис посилань при наведенні мишки
-  // ============================================================
   (function initXRay() {
     if (window.__xrayInitialized) return;
     window.__xrayInitialized = true;
 
-    const XRAY_DELAY = 400;        // Затримка перед запитом (мс)
-    const XRAY_FADE_IN = 150;      // Анімація появи
-    const XRAY_CACHE = new Map();  // Локальний кеш в контексті сторінки
+    const XRAY_DELAY = 400;
+    const XRAY_FADE_IN = 150;
+    const XRAY_CACHE = new Map();
 
     let xrayTimer = null;
     let xrayBox = null;
     let currentLink = null;
-
-    // Створюємо тултіп
     function createXRayBox() {
       if (xrayBox) return;
       const box = document.createElement('div');
@@ -492,18 +420,13 @@
         <div style="font-size:12px;color:#a9b1d6;line-height:1.4;">${escapeHtml(desc)}</div>
         <div style="font-size:10px;color:#565f89;margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(truncateUrl(link.href))}</div>
       `;
-
-      // Позиціонуємо біля курсора / посилання
       const rect = link.getBoundingClientRect();
       let top = rect.bottom + 6;
       let left = rect.left;
-
-      // Якщо виходить за нижній край — показуємо зверху
       xrayBox.style.display = 'block';
       if (top + xrayBox.offsetHeight > window.innerHeight) {
         top = rect.top - xrayBox.offsetHeight - 6;
       }
-      // Якщо виходить за правий край
       if (left + xrayBox.offsetWidth > window.innerWidth - 10) {
         left = window.innerWidth - xrayBox.offsetWidth - 10;
       }
@@ -512,8 +435,6 @@
 
       xrayBox.style.top = top + 'px';
       xrayBox.style.left = left + 'px';
-
-      // Fade in
       requestAnimationFrame(() => {
         if (xrayBox) xrayBox.style.opacity = '1';
       });
@@ -557,18 +478,12 @@
 
     async function requestDescription(link) {
       const url = link.href;
-
-      // Кеш?
       if (XRAY_CACHE.has(url)) {
         showXRay(link, XRAY_CACHE.get(url));
         return;
       }
-
-      // Збираємо контекст зі сторінки
       const linkText = (link.textContent || link.innerText || '').trim().substring(0, 120);
       const linkTitle = (link.title || link.getAttribute('aria-label') || '').trim();
-      
-      // Оточуючий текст (батьківський елемент)
       let surroundingText = '';
       try {
         const parent = link.closest('p, li, td, div, article, section, h1, h2, h3, h4, h5, h6');
@@ -576,16 +491,12 @@
           surroundingText = (parent.textContent || '').trim().substring(0, 200);
         }
       } catch (e) {}
-
-      // Збираємо контекст
       let context = '';
       if (linkTitle) context += linkTitle;
       if (surroundingText && surroundingText !== linkText) {
         context += (context ? '. ' : '') + surroundingText;
       }
       context = context.substring(0, 250);
-
-      // Показуємо "завантаження"
       showXRay(link, { title: '⏳ Аналіз...', description: 'X-Ray сканує посилання...' });
 
       try {
@@ -609,7 +520,6 @@
           hideXRay();
         }
       } catch (err) {
-        // Таймаут або помилка — просто показуємо домен
         try {
           const domain = new URL(url).hostname;
           const fallback = { title: domain, description: `Перейти на ${domain}` };
@@ -620,14 +530,12 @@
         }
       }
     }
-
-    // Делегування подій на document (працює з динамічно створеними посиланнями)
     document.addEventListener('mouseover', (e) => {
       const link = e.target.closest('a[href]');
       if (!link || !isExternalLink(link)) return;
-      if (link === currentLink) return; // Вже обробляємо
+      if (link === currentLink) return;
 
-      hideXRay(); // Ховаємо попередній
+      hideXRay();
       currentLink = link;
       createXRayBox();
 
@@ -644,8 +552,6 @@
         hideXRay();
       }
     });
-
-    // Ховаємо при скролі
     window.addEventListener('scroll', hideXRay, { passive: true });
 
     console.log('[X-RAY] Link preview system ready');

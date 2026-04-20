@@ -1,158 +1,119 @@
-# BrowserX - лабораторні роботи
+BrowserX - лабораторний проєкт Task 1-6
 
-тут 5 задач які треба було зробити для курсу
+Ці таски підключені до реального потоку BrowserX: модулі використовуються у runtime, а демо-скрипти показують поведінку на практичних сценаріях.
 
-## Task 1: Генератори
+Оновлення по Task 6:
+- Task 6 інтегровано в проєкт і доступно для локального запуску.
+- Основа: потокова обробка NDJSON через async iterators.
+- Інтеграція: IPC метод window.api.analyzeHistoryStream(...).
+- Демо запуск: npm run demo:task6.
 
-файл: `src/modules/ai-feed.js`
+Статус виконання:
+- [x] Task 1: Генератори - завершено
+- [x] Task 2: Налаштування проекту - завершено
+- [x] Task 3: Мемоізація - завершено
+- [x] Task 4: Таб-менеджер - завершено
+- [x] Task 5: Асинхронні функції для масивів - завершено
+- [x] Task 6: Потокова обробка великих даних - завершено
 
-зробив генератори для новин:
-- roundRobinSourceGenerator - перебирає джерела по колу
-- infiniteArticleGenerator - нескінченна стрічка статей
-- є таймаути щоб не зависало
+Task 1: Generators and Iterators
 
-```javascript
-function* roundRobinSourceGenerator(sources) {
-  let index = 0;
-  while (true) {
-    yield sources[index % sources.length];
-    index++;
-  }
-}
-```
+Основний файл: src/modules/ai-feed.js
 
-генератори працюють з reddit, dev.to, hackernews
+Що реалізовано:
+- infiniteArticleGenerator(categories) для безперервного потоку новин.
+- Ротація джерел новин у round-robin режимі без дублювання статей.
+- Фільтрація по категоріях для AI feed у BrowserX.
+- Локальна оптимізація пам'яті через обмежений буфер already-seen елементів.
 
-## Task 2: Налаштування проекту
+Демо:
+- node examples/generator-timeout-demo.js
 
-зробив:
-- git репозиторій
-- package.json з залежностями
-- .gitignore щоб не комітити зайве
-- підключив до github
+Task 2: Project Setup
 
-запуск:
-```
-npm install
-npm start
-```
+Базовий запуск:
+- npm install
+- npm start
 
-треба config.js з API ключем для groq
+Структура проєкту:
+- src для модулів і утиліт.
+- public для renderer-частини.
+- examples для запуску локальних демо.
 
-## Task 3: Мемоізація
+Task 3: Memoization Function
 
-файл: `src/utils/memoize.js`
+Основний файл: src/utils/memoize.js
 
-зробив функцію мемоізації з різними політиками:
+Що вміє memoize:
+- Робота з sync та async функціями.
+- Кешування in-flight Promise, щоб паралельні однакові виклики не дублювали обчислення.
+- Політики витіснення: lru, lfu, time, custom.
+- TTL для time-based сценаріїв.
+- Метрики hits, misses, evictions, expirations.
+- API керування кешем: clear, has, delete, peek, stats.
 
-```javascript
-function memoize(fn, options) {
-    const cache = new Map();
-    // тут логіка кешування
-}
-```
+Демо:
+- node examples/memoize-test.js
 
-політики витіснення:
-- LRU - найстарший видаляється
-- LFU - найрідше використовуваний видаляється
-- TIME - по часу видаляється
-- CUSTOM - можна свою функцію передати
+Task 4: BrowserX Task Queue
 
-використав мемоізацію в AI модулі:
-```javascript
-const cachedSummarizeArticle = memoize(summarizeArticle, { maxSize: 100, policy: 'lru' });
-const cachedDescribeURL = memoize(describeURL, { maxSize: 200, policy: 'lru' });
-```
+Основний файл: src/utils/priority-queue.js
 
-тест: `node examples/memoize-test.js`
+Що реалізовано:
+- enqueue(item, priority)
+- peek(mode) і dequeue(mode), де mode: highest, lowest, oldest, newest
+- size, isEmpty, clear, toArray для керування життєвим циклом черги
+- Стабільна поведінка для однакового priority через порядок вставки
 
-## Task 4: Таб-менеджер
+Інтеграція:
+- src/modules/ai-task-scheduler.js
 
-файл: `src/modules/tab-manager.js`
+Демо:
+- node examples/priority-queue-demo.js
 
-зробив менеджер для управління вкладками браузера:
+Task 5: Async Array Variants
 
-```javascript
-class TabManager {
-  constructor() {
-    this.tabs = new Map();
-    this.activeTab = null;
-  }
-  
-  createTab(id, url)
-  switchTab(id)
-  closeTab(id)
-  getTabs()
-}
-```
+Основний файл: src/utils/async-array.js
 
-можливості:
-- створення й закриття вкладок
-- переключення між вкладками
-- отримання списку активних вкладок
-- управління історією вкладок
+Promise API:
+- asyncMap
+- asyncFilterMap
+- asyncFind
 
-## Task 5: Асинхронні функції для масивів
+Callback API:
+- asyncMapCallback
 
-файл: `src/utils/async-array.js`
+Додатково:
+- createAsyncController(timeoutMs) для abortable-процесів.
+- Паралелізм через опцію concurrency.
+- Вузький публічний API тільки для активних BrowserX-сценаріїв.
 
-реалізував утилітні функції для роботи з асинхронними операціями над масивами:
+Демо:
+- node src/utils/async-array-examples.js
 
-```javascript
-async function asyncMap(arr, asyncFn, options = {})
-async function asyncFilter(arr, asyncFn, options = {})
-async function asyncFind(arr, asyncFn, options = {})
-async function asyncSome(arr, asyncFn, options = {})
-async function asyncReduce(arr, asyncFn, initial, options = {})
-```
+Task 6: Large Data Processing with Streams / Async Iterators
 
-особливості:
-- контроль паралельності (concurrency control)
-- підтримка AbortController для скасування
-- як Promise так і Callback варіанти
-- використовуються в модулях: news-fetcher, privacy-guard, tab-manager, storage, ipc-handlers
+Основний файл:
+- src/utils/large-data-stream.js
 
-приклади: `src/utils/async-array-examples.js`
-документація: `ASYNC_ARRAY_INTEGRATION.md`
+Що реалізовано:
+- Потокове читання NDJSON через async iterator без завантаження всього файлу у пам'ять.
+- Інкрементальна агрегація великих журналів історії (top domains, валідні/невалідні рядки).
+- Пакетна обробка через batchAsyncIterator.
+- IPC інтеграція для виклику з renderer: window.api.analyzeHistoryStream(...).
 
-## Структура
+Демо:
+- node examples/task6-large-history-stream-demo.js
 
-```
-Project-X/
-├── src/
-│   ├── modules/
-│   │   ├── ai-feed.js             # Task 1 генератори
-│   │   ├── tab-manager.js         # Task 4 таб-менеджер
-│   │   └── ai-handlers.js         # Task 3 мемоізація
-│   └── utils/
-│       ├── memoize.js             # Task 3 основна функція
-│       ├── async-array.js         # Task 5 асинхронні функції
-│       └── async-array-examples.js # Task 5 приклади
-├── examples/
-│   └── memoize-test.js            # Task 3 тести
-├── ASYNC_ARRAY_INTEGRATION.md     # Task 5 документація
-└── package.json                   # Task 2 налаштування
-```
+Корисні команди
 
-## Статус
+- npm run demo:task1
+- npm run demo:task3
+- npm run demo:task4
+- npm run demo:task5
+- npm run demo:task6
+- npm run test:edge
 
-✅ Task 1: Генератори - завершено
-✅ Task 2: Налаштування проекту - завершено  
-✅ Task 3: Мемоізація - завершено
-✅ Task 4: Таб-менеджер - завершено
-✅ Task 5: Асинхронні функції для масивів - завершено
+Примітка
 
-## Як запустити
-
-```
-git clone https://github.com/Stefect/Project-X.git
-cd Project-X
-npm install
-npm start
-```
-
-для AI потрібен GROQ_API_KEY в config.js
-
----
-
-автор: Stefect | ІМ-55
+Для AI-функцій потрібен валідний ключ у .env.
