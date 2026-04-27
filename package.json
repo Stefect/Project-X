@@ -8,13 +8,6 @@
     "build:css": "postcss ./public/css/styles.css -o ./public/css/output.css --verbose",
     "build:css:watch": "postcss ./public/css/styles.css -o ./public/css/output.css --watch --verbose",
     "dev": "npm run build:css:watch & electron .",
-    "check:encoding": "node scripts/check-encoding.js",
-    "demo:task1": "node examples/generator-timeout-demo.js",
-    "demo:task3": "node examples/memoize-test.js",
-    "demo:task4": "node examples/priority-queue-demo.js",
-    "demo:task5": "node src/utils/async-array-examples.js",
-    "demo:task6": "node examples/task6-large-history-stream-demo.js",
-    "test:edge": "node --test tests/browserx-edge-flows.test.js",
     "build": "npm run build:css && electron-builder --win",
     "build:portable": "npm run build:css && electron-builder --win portable",
     "build:all": "npm run build:css && electron-builder --win --publish never"
@@ -33,6 +26,7 @@
     "autoprefixer": "^10.4.24",
     "electron": "^40.1.0",
     "electron-builder": "^25.1.8",
+    "playwright": "^1.59.1",
     "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
     "tailwindcss": "^4.1.18"
@@ -100,7 +94,9 @@
     "protocols": [
       {
         "name": "BrowserX App Protocol",
-        "schemes": ["app"]
+        "schemes": [
+          "app"
+        ]
       }
     ]
   }
