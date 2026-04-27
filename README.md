@@ -172,7 +172,6 @@ function createTab(mainWindow, url = null) {
 Sync iterator для ротації джерел і async generator для нескінченної новинної стрічки. Генератор ітерує по джерелах по колу, отримує статті, фільтрує вже бачені через `Set` і `yield`-ить по одній без завантаження всіх одразу.
 
 ```javascript
-// Sync iterator — ротує джерела по колу
 function createFeedSourceRotationIterator(sources) {
   let index = 0;
   return {
@@ -184,7 +183,6 @@ function createFeedSourceRotationIterator(sources) {
   };
 }
 
-// Async generator — нескінченна стрічка, yield по одній статті
 async function* infiniteArticleGenerator(categories = ['all']) {
   const sourceIterator = createFeedSourceRotationIterator(NEWS_SOURCES);
   const seenKeys = new Set();
@@ -326,7 +324,6 @@ async function asyncMap(arr, asyncFn, options = {}) {
 Два сценарії: нескінченний async generator новинної стрічки обробляє статті інкрементально через `for await` без буферизації всього масиву. `large-data-stream.js` стрімить великі NDJSON-файли шматками через `readline` — для аналізу historії без завантаження в пам'ять.
 
 ```javascript
-// Стрімінг historії через readline
 async function* readNdjsonLines(filePath) {
   const rl = readline.createInterface({ input: fs.createReadStream(filePath) });
   for await (const line of rl) {
@@ -334,7 +331,6 @@ async function* readNdjsonLines(filePath) {
   }
 }
 
-// Споживання нескінченного feed
 for await (const article of currentFeedGenerator) {
   if (!isFeedRunning) break;
   const { translatedTitle, summary } = await cachedSummarizeArticle(article.title);
@@ -355,10 +351,9 @@ for await (const article of currentFeedGenerator) {
 ```javascript
 function subscribeReactiveEvents(listener) {
   reactiveEventBus.on(REACTIVE_BUS_EVENT, listener);
-  return () => reactiveEventBus.off(REACTIVE_BUS_EVENT, listener);  // unsubscribe
+  return () => reactiveEventBus.off(REACTIVE_BUS_EVENT, listener);
 }
 
-// В main.js — підписка з автоматичним forwarding у renderer
 const unsubscribe = subscribeReactiveEvents((event) => {
   mainWindow.webContents.send('reactive-event', event);
 });
@@ -375,12 +370,11 @@ const unsubscribe = subscribeReactiveEvents((event) => {
 Три незалежні шари де жоден не знає про конкретну реалізацію іншого. `BaseHttpClient` — обгортка `fetch`, нічого не знає про auth. Кожен проксі приймає `client` параметром і реалізує той самий інтерфейс `{ request(req) }`. `GitHubService` отримує клієнт через конструктор.
 
 ```javascript
-// Складання ззовні — сервіс не знає що всередині
 const github = new GitHubService(
   new RateLimitProxy(
     new LoggingProxy(
       new AuthProxy(new BaseHttpClient(), {
-        strategy: 'oauth',           // або 'jwt', 'apiKey'
+        strategy: 'oauth',
         credentials: { accessToken: process.env.GITHUB_TOKEN },
         refreshCredentials: async () => { /* refresh logic */ }
       })
@@ -409,10 +403,7 @@ const log = createLogDecorator({
     (entry.error ? ` — ${entry.error.message}` : '')
 });
 
-// Обгортає і sync і async прозоро
 const loggedFn = log(asyncFn, { label: 'summarize' });
-// → [AI] return summarize 847ms
-// → [AI] error summarize 3001ms — Request timeout
 ```
 
 **Де використовується реально:** `src/modules/ai-handlers.js` — обгортає `summarizeArticle` перед передачею в `memoize`, щоб кожен реальний Groq-виклик логувався з точним часом.
