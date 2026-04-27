@@ -88,6 +88,25 @@ function emitReactiveEvent(payload, mainWindow) {
   return event;
 }
 
+function subscribeReactiveEvents(listener) {
+  if (typeof listener !== 'function') {
+    throw new TypeError('listener must be a function');
+  }
+
+  reactiveEventBus.on('event', listener);
+
+  return () => unsubscribeReactiveEvents(listener);
+}
+
+function unsubscribeReactiveEvents(listener) {
+  if (typeof listener !== 'function') {
+    return false;
+  }
+
+  reactiveEventBus.off('event', listener);
+  return true;
+}
+
 
 function setupReactiveNetworkEvents(mainWindow) {
   if (!session || !session.defaultSession) return;
@@ -146,6 +165,8 @@ function getReactiveEventBuffer() {
 module.exports = {
   setupReactiveNetworkEvents,
   emitReactiveEvent,
+  subscribeReactiveEvents,
+  unsubscribeReactiveEvents,
   getReactiveEventBuffer,
   formatUrlLabel
 };
