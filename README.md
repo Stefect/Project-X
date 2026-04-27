@@ -163,48 +163,80 @@ function createTab(mainWindow, url = null) {
 - Події мережі/завантажень буферизуються і транслюються в UI.
 - Є механізми `subscribe`, `unsubscribe`, лічильник підписників та cleanup.
 
-## Таски 1-7 І Куски Коду З Проєкту
+## Реалізація всіх 9 тасок
 
-### Task 1. Generators and Iterators
+### Task 1 — Generators and Iterators
 
-Де: `src/modules/ai-feed.js`
+**Файл:** `src/modules/ai-feed.js`
+
+Sync iterator для ротації джерел і async generator для нескінченної новинної стрічки. Генератор ітерує по джерелах по колу, отримує статті, фільтрує вже бачені через `Set` і `yield`-ить по одній без завантаження всіх одразу.
 
 ```javascript
-function* roundRobinSourceGenerator(sources) {
+// Sync iterator — ротує джерела по колу
+function createFeedSourceRotationIterator(sources) {
   let index = 0;
-  while (true) {
-    yield sources[index];
-    index = (index + 1) % sources.length;
-  }
+  return {
+    next() {
+      const current = sources[index];
+      index = (index + 1) % sources.length;
+      return { value: current, done: false };
+    }
+  };
 }
 
-async function* infiniteArticleGenerator(categories = ['all'], customSources = []) {
-  // ... безперервне отримання і yield статей
+// Async generator — нескінченна стрічка, yield по одній статті
+async function* infiniteArticleGenerator(categories = ['all']) {
+  const sourceIterator = createFeedSourceRotationIterator(NEWS_SOURCES);
+  const seenKeys = new Set();
+  while (true) {
+    const source = sourceIterator.next().value;
+    const articles = await SOURCE_FETCHERS[source.name]();
+    for (const article of articles) {
+      const key = article.url || `${source.name}-${article.title}`;
+      if (!seenKeys.has(key) && matchesCategory(article)) {
+        seenKeys.add(key);
+        yield article;
+      }
+    }
+    await sleep(1800);
+  }
 }
 ```
 
-### Task 2. Project Setup
+**Де використовується:** `main.js` передає генератор у `registerAIHandlers`, де він споживається через `for await` в IPC-хендлері `start-feed` і поштучно відправляє статті в renderer.
 
-Де: `.gitignore`, `package.json`, `LICENSE`, `src/utils/*`, `examples/*`
+---
+
+### Task 2 — Project Setup
+
+**Файли:** `package.json`, `.gitignore`, `LICENSE`, `src/utils/`, `examples/`
+
+Інфраструктура проекту: скрипти збірки, electron-builder конфіг, ліцензія MIT, `.env` для `GROQ_API_KEY`. Модульна структура `src/modules/` + `src/utils/` + `src/http/` закладена тут.
 
 ```json
 {
   "name": "browserx",
   "scripts": {
     "start": "npm run build:css && electron .",
-    "build": "npm run build:css && electron-builder --win"
+    "build": "npm run build:css && electron-builder --win",
+    "demo:lab8": "node examples/lab8-auth-proxy-demo.js",
+    "demo:lab9": "node examples/lab9-logging-decorator-demo.js"
   },
   "author": "Stefect",
   "license": "MIT"
 }
 ```
 
-### Task 3. Memoization Function
+---
 
-Де: `src/utils/memoize.js`
+### Task 3 — Memoization Function
+
+**Файл:** `src/utils/memoize.js`
+
+Чотири стратегії витіснення: **LRU** (найдавніший використаний), **LFU** (найрідше використаний), **TIME** (по TTL), **CUSTOM** (своя функція-компаратор). Key resolver не `JSON.stringify` — використовує `WeakMap` для об'єктів щоб уникнути витоків пам'яті.
 
 ```javascript
-const POLICY = { LRU: 'lru', LFU: 'lfu', TIME: 'time', CUSTOM: 'custom' };
+const POLICY = Object.freeze({ LRU: 'lru', LFU: 'lfu', TIME: 'time', CUSTOM: 'custom' });
 
 function memoized(...args) {
   const key = makeKey(args);
@@ -212,10 +244,8 @@ function memoized(...args) {
   clearExpired(now);
   if (cache.has(key)) {
     const meta = cache.get(key);
-    if (policy === POLICY.LRU) {
-      cache.delete(key);
-      cache.set(key, meta);
-    }
+    meta.accessCount += 1;
+    if (policy === POLICY.LRU) { cache.delete(key); cache.set(key, meta); }
     return meta.value;
   }
   const value = fn.apply(this, args);
@@ -225,79 +255,164 @@ function memoized(...args) {
 }
 ```
 
-### Task 4. Bi-Directional Priority Queue
+**Де використовується:** `src/modules/ai-handlers.js` — мемоізує `summarizeArticle` щоб не дублювати Groq-запити для однакових заголовків статей (LRU, maxSize: 100).
 
-Де: `src/utils/priority-queue.js`
+---
+
+### Task 4 — Bi-Directional Priority Queue
+
+**Файл:** `src/utils/priority-queue.js`
+
+Черга з чотирма режимами вибірки: `HIGHEST` / `LOWEST` (по значенню пріоритету), `OLDEST` / `NEWEST` (по порядку вставки). Кожен елемент зберігає `{ item, priority, order }` де `order` — монотонний лічильник вставок.
 
 ```javascript
-const MODE = Object.freeze({ HIGHEST: 'highest', LOWEST: 'lowest', OLDEST: 'oldest', NEWEST: 'newest' });
+class BrowserXTaskQueue {
+  static MODES = Object.freeze({
+    HIGHEST: 'highest', LOWEST: 'lowest',
+    OLDEST: 'oldest',   NEWEST: 'newest'
+  });
 
-peek(type = MODE.HIGHEST) {
-  const index = this._findIndex(type);
-  return index !== -1 ? this.items[index].item : null;
-}
+  enqueue(item, priority = 0) {
+    this.items.push({ item, priority: Number(priority), order: this.insertCounter++ });
+    return this.items.length;
+  }
 
-dequeue(type = MODE.HIGHEST) {
-  const index = this._findIndex(type);
-  return index !== -1 ? this.items.splice(index, 1)[0].item : null;
+  dequeue(type = BrowserXTaskQueue.MODES.HIGHEST) {
+    const index = this._findIndex(type);
+    return index !== -1 ? this.items.splice(index, 1)[0].item : null;
+  }
 }
 ```
 
-### Task 5. Async Array Function Variants
+**Де використовується:** `src/modules/ai-task-scheduler.js` — планувальник AI-задач. Термінові задачі (переклад статті яку відкрив юзер) йдуть з вищим пріоритетом, фонові фонові завдання — нижчим.
 
-Де: `src/utils/async-array.js`
+---
+
+### Task 5 — Async Array Function Variants
+
+**Файл:** `src/utils/async-array.js`
+
+`asyncMap`, `asyncFilter`, `asyncReduce`, `asyncFilterMap` — кожна в трьох варіантах: **Promise**, **callback** (Node.js-стиль), **async generator**. Підтримка `AbortSignal` для скасування та параметр `concurrency` для контролю паралельності.
 
 ```javascript
 async function asyncMap(arr, asyncFn, options = {}) {
   const { signal, concurrency = Infinity } = options;
-  const limit = normalizeLimit(concurrency, arr.length);
-  const workers = Array.from({ length: limit }, async () => {
+  const limit = normalizeConcurrency(concurrency);
+  let nextIndex = 0;
+  const results = new Array(arr.length);
+
+  const workers = Array.from({ length: Math.min(limit, arr.length) }, async () => {
     while (true) {
-      ensureNotAborted(signal, 'asyncMap');
+      throwIfAborted(signal);
       const index = nextIndex++;
       if (index >= arr.length) return;
       results[index] = await asyncFn(arr[index], index, arr);
     }
   });
+
   await Promise.all(workers);
   return results;
 }
 ```
 
-### Task 6. Large Data Processing (Streams / Async Iterators)
+**Де використовується:** `src/modules/ai-task-scheduler.js` для паралельної обробки черги задач; приклади у `examples/`.
 
-Де: `src/modules/ai-feed.js`, `src/modules/ai/feed-handlers.js`
+---
+
+### Task 6 — Large Data Processing (Streams / Async Iterators)
+
+**Файли:** `src/utils/large-data-stream.js`, `src/modules/ai-feed.js`
+
+Два сценарії: нескінченний async generator новинної стрічки обробляє статті інкрементально через `for await` без буферизації всього масиву. `large-data-stream.js` стрімить великі NDJSON-файли шматками через `readline` — для аналізу historії без завантаження в пам'ять.
 
 ```javascript
+// Стрімінг historії через readline
+async function* readNdjsonLines(filePath) {
+  const rl = readline.createInterface({ input: fs.createReadStream(filePath) });
+  for await (const line of rl) {
+    if (line.trim()) yield JSON.parse(line);
+  }
+}
+
+// Споживання нескінченного feed
 for await (const article of currentFeedGenerator) {
   if (!isFeedRunning) break;
-  // інкрементальна обробка елемента
+  const { translatedTitle, summary } = await cachedSummarizeArticle(article.title);
+  mainWindow.webContents.send('feed-article', { ...article, translatedTitle, summary });
 }
 ```
 
-### Task 7. Reactive Communication (EventEmitter)
+**Де використовується:** IPC-хендлер `analyze-history-stream` в `ipc-handlers.js` та `start-feed` в `ai-handlers.js`.
 
-Де: `src/modules/reactive-events.js`, `public/js/app/reactive-events.js`
+---
+
+### Task 7 — Reactive Communication (EventEmitter)
+
+**Файл:** `src/modules/reactive-events.js`
+
+`EventEmitter` з буфером останніх 50 подій, дедуплікацією по хосту (cooldown 5 секунд), автоматичним `subscribe`/`unsubscribe` що повертає функцію відписки. Відстежує трекери та навантаження вкладок і пушить події через IPC в renderer.
 
 ```javascript
 function subscribeReactiveEvents(listener) {
   reactiveEventBus.on(REACTIVE_BUS_EVENT, listener);
-  return () => reactiveEventBus.off(REACTIVE_BUS_EVENT, listener);
+  return () => reactiveEventBus.off(REACTIVE_BUS_EVENT, listener);  // unsubscribe
 }
 
-function unsubscribeReactiveEvents(listener) {
-  reactiveEventBus.off(REACTIVE_BUS_EVENT, listener);
-  return true;
-}
+// В main.js — підписка з автоматичним forwarding у renderer
+const unsubscribe = subscribeReactiveEvents((event) => {
+  mainWindow.webContents.send('reactive-event', event);
+});
 ```
 
-## Актуальний Підсумок
+**Де використовується:** `main.js` ініціалізує і підписується, renderer отримує події через `ipcRenderer.on('reactive-event')` і оновлює UI лічильника трекерів.
 
-BrowserX виріс із базового Electron-шаблону до модульного браузера з:
+---
 
-- керуванням вкладками через webview
-- приватним режимом і Tor-інтеграцією
-- AI-пайплайнами та інкрементальною обробкою даних
-- набором алгоритмічних утиліт, які можна використовувати окремо від UI
+### Task 8 — Auth Proxy (Proxy pattern + DI)
 
-README вище описує не абстрактну архітектуру, а конкретно те, що вже реалізовано у поточному коді репозиторію.
+**Файли:** `src/http/base-client.js`, `src/http/proxies/`, `src/services/github-service.js`
+
+Три незалежні шари де жоден не знає про конкретну реалізацію іншого. `BaseHttpClient` — обгортка `fetch`, нічого не знає про auth. Кожен проксі приймає `client` параметром і реалізує той самий інтерфейс `{ request(req) }`. `GitHubService` отримує клієнт через конструктор.
+
+```javascript
+// Складання ззовні — сервіс не знає що всередині
+const github = new GitHubService(
+  new RateLimitProxy(
+    new LoggingProxy(
+      new AuthProxy(new BaseHttpClient(), {
+        strategy: 'oauth',           // або 'jwt', 'apiKey'
+        credentials: { accessToken: process.env.GITHUB_TOKEN },
+        refreshCredentials: async () => { /* refresh logic */ }
+      })
+    ),
+    { requestsPerInterval: 30, intervalMs: 60000 }
+  )
+);
+```
+
+**Де використовується реально:** `src/modules/news-fetcher.js` — `LoggingProxy + RateLimitProxy` на запитах до Reddit/HackerNews/DevTo. `src/modules/ai-feed.js` — `RateLimitProxy` на нескінченному генераторі.
+
+---
+
+### Task 9 — Logging Decorator
+
+**Файл:** `src/utils/log-decorator.js`
+
+`createLogDecorator(options)` повертає функцію `decorate(fn, config)`. Рівні `DEBUG / INFO / ERROR`: при `level: 'ERROR'` мовчить на успіх і логує тільки виключення. Перевіряє `result.then` — якщо Promise, чекає async результат; якщо sync — логує одразу. Завжди ISO timestamp, не `Date.now()`.
+
+```javascript
+const log = createLogDecorator({
+  level: 'DEBUG',
+  formatter: (entry) =>
+    `[AI] ${entry.event} ${entry.label}` +
+    (entry.durationMs != null ? ` ${entry.durationMs}ms` : '') +
+    (entry.error ? ` — ${entry.error.message}` : '')
+});
+
+// Обгортає і sync і async прозоро
+const loggedFn = log(asyncFn, { label: 'summarize' });
+// → [AI] return summarize 847ms
+// → [AI] error summarize 3001ms — Request timeout
+```
+
+**Де використовується реально:** `src/modules/ai-handlers.js` — обгортає `summarizeArticle` перед передачею в `memoize`, щоб кожен реальний Groq-виклик логувався з точним часом.
