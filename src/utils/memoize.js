@@ -16,42 +16,12 @@ function normalizePolicy(rawPolicy) {
     return Object.values(POLICY).includes(policy) ? policy : POLICY.LRU;
 }
 
-function createDefaultKeyResolver() {
-    const objectIds = new WeakMap();
-    let sequence = 0;
-
-    const getObjectId = (value) => {
-        if (!objectIds.has(value)) {
-            sequence += 1;
-            objectIds.set(value, sequence);
-        }
-        return objectIds.get(value);
-    };
-
-    const encode = (value) => {
-        if (value === null) return 'null';
-
-        const type = typeof value;
-        if (type === 'undefined') return 'u';
-        if (type === 'number') return Number.isNaN(value) ? 'n:NaN' : `n:${value}`;
-        if (type === 'bigint') return `bi:${value.toString()}`;
-        if (type === 'string') return `s:${value}`;
-        if (type === 'boolean') return `b:${value}`;
-        if (type === 'symbol') return `sym:${String(value.description || '')}`;
-        if (type === 'function') return `fn#${getObjectId(value)}`;
-
-        if (Array.isArray(value)) {
-            return `arr:[${value.map(encode).join(',')}]`;
-        }
-
-        if (value instanceof Date) {
-            return `date:${value.getTime()}`;
-        }
-
-        return `obj#${getObjectId(value)}`;
-    };
-
-    return (args) => Array.from(args, encode).join('|');
+function defaultKeyResolver(args) {
+    try {
+        return JSON.stringify(args);
+    } catch (_) {
+        return String(args);
+    }
 }
 
 function createEntry(value, now) {
@@ -131,7 +101,7 @@ function memoize(fn, options = {}) {
     const customEvict = options.customEvict;
     const keyResolver = typeof options.keyResolver === 'function'
         ? options.keyResolver
-        : createDefaultKeyResolver();
+        : defaultKeyResolver;
     const ttlMs = Number.isFinite(options.ttl)
         ? Math.max(0, Number(options.ttl))
         : (policy === POLICY.TIME ? 60000 : Infinity);

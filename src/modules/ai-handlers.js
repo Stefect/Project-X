@@ -1,5 +1,11 @@
 const { ipcMain } = require('electron');
 const memoize = require('../utils/memoize');
+const { createLogDecorator } = require('../utils/log-decorator');
+
+const log = createLogDecorator({
+  level: 'DEBUG',
+  formatter: (entry) => `[AI] ${entry.event} ${entry.label}${entry.durationMs != null ? ` ${entry.durationMs}ms` : ''}${entry.error ? ` — ${entry.error.message}` : ''}`
+});
 
 let isFeedRunning = false;
 let currentFeedGenerator = null;
@@ -60,7 +66,7 @@ async function summarizeArticle(title, groqClient) {
 function registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager) {
 
   const cachedSummarizeArticle = memoize(
-    (title) => summarizeArticle(title, groqClient),
+    log((title) => summarizeArticle(title, groqClient), { label: 'summarize', level: 'DEBUG' }),
     { maxSize: 100, policy: 'lru' }
   );
 

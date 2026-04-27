@@ -33,59 +33,6 @@ function normalizeConcurrency(concurrency) {
   return Math.max(1, Math.floor(concurrency));
 }
 
-function bridgePromiseToCallback(promise, callback) {
-  let settled = false;
-
-  const done = (err, value) => {
-    if (settled) return;
-    settled = true;
-    callback(err, value);
-  };
-
-  promise
-    .then((value) => done(null, value))
-    .catch((error) => done(error));
-}
-
-function callNodeIterator(iteratorFn, args) {
-  return new Promise((resolve, reject) => {
-    let finished = false;
-
-    const done = (err, result) => {
-      if (finished) return;
-      finished = true;
-      if (err) {
-        reject(err);
-      } else {
-        resolve(result);
-      }
-    };
-
-    try {
-      iteratorFn(...args, done);
-    } catch (error) {
-      done(error);
-    }
-  });
-}
-
-async function runWithWorkerPool(length, concurrency, worker) {
-  let cursor = 0;
-
-  const workers = Array.from(
-    { length: Math.min(concurrency, length) },
-    async () => {
-      while (cursor < length) {
-        const index = cursor;
-        cursor += 1;
-        await worker(index);
-      }
-    }
-  );
-
-  await Promise.all(workers);
-}
-
 async function asyncMap(arr, asyncFn, options = {}) {
   const array = toArrayOrThrow(arr);
   const mapper = toFunctionOrThrow(asyncFn, 'asyncFn');
@@ -109,7 +56,15 @@ async function asyncMap(arr, asyncFn, options = {}) {
     return result;
   }
 
-  await runWithWorkerPool(array.length, concurrency, runOne);
+  let cursor = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, array.length) }, async () => {
+      while (cursor < array.length) {
+        const index = cursor++;
+        await runOne(index);
+      }
+    })
+  );
   return result;
 }
 
@@ -117,43 +72,20 @@ function asyncMapCallback(arr, asyncFn, callback, options = {}) {
   const mapper = toFunctionOrThrow(asyncFn, 'asyncFn');
   const cb = toFunctionOrThrow(callback, 'callback');
 
-  const promise = asyncMap(
+  asyncMap(
     arr,
-    (value, index, array) => callNodeIterator(mapper, [value, index, array]),
-    options
-  );
-
-  bridgePromiseToCallback(promise, cb);
-}
-
-async function asyncFilter(arr, asyncPredicate, options = {}) {
-  const array = toArrayOrThrow(arr);
-  const predicate = toFunctionOrThrow(asyncPredicate, 'asyncPredicate');
-
-  const marks = await asyncMap(array, predicate, options);
-  throwIfAborted(options.signal);
-
-  return array.filter((_, index) => Boolean(marks[index]));
-}
-
-function asyncFilterCallback(arr, asyncPredicate, callback, options = {}) {
-  const predicate = toFunctionOrThrow(asyncPredicate, 'asyncPredicate');
-  const cb = toFunctionOrThrow(callback, 'callback');
-
-  asyncMapCallback(
-    arr,
-    predicate,
-    (err, marks) => {
-      if (err) {
-        cb(err);
-        return;
+    (value, index, array) => new Promise((resolve, reject) => {
+      try {
+        mapper(value, index, array, (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        });
+      } catch (error) {
+        reject(error);
       }
-
-      const array = toArrayOrThrow(arr);
-      cb(null, array.filter((_, index) => Boolean(marks[index])));
-    },
+    }),
     options
-  );
+  ).then((result) => cb(null, result)).catch((err) => cb(err));
 }
 
 async function asyncFilterMap(arr, asyncMapper, options = {}) {
@@ -181,19 +113,6 @@ async function asyncFilterMap(arr, asyncMapper, options = {}) {
 
 asyncFilterMap.skip = FILTER_MAP_SKIP;
 
-function asyncFilterMapCallback(arr, asyncMapper, callback, options = {}) {
-  const mapper = toFunctionOrThrow(asyncMapper, 'asyncMapper');
-  const cb = toFunctionOrThrow(callback, 'callback');
-
-  const promise = asyncFilterMap(
-    arr,
-    (value, index, array) => callNodeIterator(mapper, [value, index, array]),
-    options
-  );
-
-  bridgePromiseToCallback(promise, cb);
-}
-
 async function asyncFindIndex(arr, asyncPredicate, options = {}) {
   const array = toArrayOrThrow(arr);
   const predicate = toFunctionOrThrow(asyncPredicate, 'asyncPredicate');
@@ -217,84 +136,10 @@ async function asyncFindIndex(arr, asyncPredicate, options = {}) {
   return -1;
 }
 
-function asyncFindIndexCallback(arr, asyncPredicate, callback, options = {}) {
-  const predicate = toFunctionOrThrow(asyncPredicate, 'asyncPredicate');
-  const cb = toFunctionOrThrow(callback, 'callback');
-
-  const promise = asyncFindIndex(
-    arr,
-    (value, index, array) => callNodeIterator(predicate, [value, index, array]),
-    options
-  );
-
-  bridgePromiseToCallback(promise, cb);
-}
-
 async function asyncFind(arr, asyncPredicate, options = {}) {
   const array = toArrayOrThrow(arr);
   const index = await asyncFindIndex(array, asyncPredicate, options);
   return index === -1 ? undefined : array[index];
-}
-
-function asyncFindCallback(arr, asyncPredicate, callback, options = {}) {
-  const predicate = toFunctionOrThrow(asyncPredicate, 'asyncPredicate');
-  const cb = toFunctionOrThrow(callback, 'callback');
-
-  const promise = asyncFind(
-    arr,
-    (value, index, array) => callNodeIterator(predicate, [value, index, array]),
-    options
-  );
-
-  bridgePromiseToCallback(promise, cb);
-}
-
-async function asyncSome(arr, asyncPredicate, options = {}) {
-  const index = await asyncFindIndex(arr, asyncPredicate, options);
-  return index !== -1;
-}
-
-function asyncSomeCallback(arr, asyncPredicate, callback, options = {}) {
-  const predicate = toFunctionOrThrow(asyncPredicate, 'asyncPredicate');
-  const cb = toFunctionOrThrow(callback, 'callback');
-
-  const promise = asyncSome(
-    arr,
-    (value, index, array) => callNodeIterator(predicate, [value, index, array]),
-    options
-  );
-
-  bridgePromiseToCallback(promise, cb);
-}
-
-async function asyncReduce(arr, asyncFn, initialValue, options = {}) {
-  const array = toArrayOrThrow(arr);
-  const reducer = toFunctionOrThrow(asyncFn, 'asyncFn');
-  const { signal } = options;
-
-  let accumulator = initialValue;
-  for (let i = 0; i < array.length; i += 1) {
-    throwIfAborted(signal);
-    accumulator = await reducer(accumulator, array[i], i, array);
-  }
-
-  return accumulator;
-}
-
-function asyncReduceCallback(arr, asyncFn, initialValue, callback, options = {}) {
-  const reducer = toFunctionOrThrow(asyncFn, 'asyncFn');
-  const cb = toFunctionOrThrow(callback, 'callback');
-
-  const promise = asyncReduce(
-    arr,
-    (accumulator, value, index, array) => {
-      return callNodeIterator(reducer, [accumulator, value, index, array]);
-    },
-    initialValue,
-    options
-  );
-
-  bridgePromiseToCallback(promise, cb);
 }
 
 function createAsyncController(timeoutMs = null) {

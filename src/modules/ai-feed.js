@@ -1,4 +1,10 @@
-const fetch = require('node-fetch');
+const { BaseHttpClient } = require('../http/base-client');
+const { RateLimitProxy } = require('../http/proxies/rate-limit-proxy');
+
+const httpClient = new RateLimitProxy(
+  new BaseHttpClient(),
+  { requestsPerInterval: 60, intervalMs: 60000 }
+);
 
 const FEED_LOOP_DELAY_MS = 1800;
 const MAX_SEEN_ARTICLES = 1500;
@@ -39,11 +45,9 @@ function createFeedSourceRotationIterator(sources) {
 }
 
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
-  return response.json();
+  const res = await httpClient.request({ url, headers: options.headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.data;
 }
 
 async function fetchHackerNews() {

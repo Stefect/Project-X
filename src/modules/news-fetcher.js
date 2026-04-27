@@ -1,5 +1,18 @@
-const axios = require('axios');
 const RSSParser = require('rss-parser');
+const { BaseHttpClient } = require('../http/base-client');
+const { LoggingProxy } = require('../http/proxies/logging-proxy');
+const { RateLimitProxy } = require('../http/proxies/rate-limit-proxy');
+
+const httpClient = new RateLimitProxy(
+  new LoggingProxy(
+    new BaseHttpClient(),
+    {
+      level: 'INFO',
+      format: (e) => `[NEWS] ${e.event}${e.status ? ` ${e.status}` : ''} ${e.durationMs != null ? `${e.durationMs}ms` : ''}`.trim()
+    }
+  ),
+  { requestsPerInterval: 30, intervalMs: 60000 }
+);
 
 const rssParser = new RSSParser({
   timeout: 8000,
@@ -44,9 +57,10 @@ function formatTime(ts) {
 async function fetchFromSource(source) {
   try {
     if (source.type === 'reddit') {
-      const res = await axios.get(source.url, {
+      const res = await httpClient.request({
+        url: source.url,
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; BrowserX/2.0)' },
-        timeout: 8000
+        signal: AbortSignal.timeout(8000)
       });
       return (res.data?.data?.children || [])
         .filter(p => !p.data.stickied && p.data.title)
@@ -61,10 +75,10 @@ async function fetchFromSource(source) {
     }
 
     if (source.type === 'hackernews') {
-      const idsRes = await axios.get(source.url, { timeout: 6000 });
-      const ids = idsRes.data.slice(0, 10);
+      const idsRes = await httpClient.request({ url: source.url, signal: AbortSignal.timeout(6000) });
+      const ids = (idsRes.data || []).slice(0, 10);
       const settled = await Promise.allSettled(
-        ids.map(id => axios.get(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, { timeout: 5000 }))
+        ids.map(id => httpClient.request({ url: `https://hacker-news.firebaseio.com/v0/item/${id}.json`, signal: AbortSignal.timeout(5000) }))
       );
       return settled
         .filter(r => r.status === 'fulfilled' && r.value.data?.title)
@@ -78,7 +92,7 @@ async function fetchFromSource(source) {
     }
 
     if (source.type === 'devto') {
-      const res = await axios.get(source.url, { timeout: 8000 });
+      const res = await httpClient.request({ url: source.url, signal: AbortSignal.timeout(8000) });
       return (res.data || []).slice(0, 5).map(a => ({
         title:    a.title,
         url:      a.url,
