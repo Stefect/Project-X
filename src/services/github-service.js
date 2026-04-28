@@ -47,4 +47,4 @@ class GitHubService {
   }
 }
 
-module.exports = { GitHubService };
+export { GitHubService };

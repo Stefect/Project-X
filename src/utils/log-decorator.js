@@ -115,4 +115,4 @@ function createLogDecorator(options = {}) {
   };
 }
 
-module.exports = { createLogDecorator, levelRank };
+export { createLogDecorator, levelRank };

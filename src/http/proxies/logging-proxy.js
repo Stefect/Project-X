@@ -61,4 +61,4 @@ class LoggingProxy {
   }
 }
 
-module.exports = { LoggingProxy };
+export { LoggingProxy };

@@ -211,9 +211,7 @@ memoize.clearCache = function (memoizedFn) {
     }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = memoize;
-}
+export default memoize;
 
 if (typeof window !== 'undefined') {
     window.memoize = memoize;

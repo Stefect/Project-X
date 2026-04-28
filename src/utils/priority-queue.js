@@ -133,4 +133,4 @@ class BrowserXTaskQueue {
     }
 }
 
-module.exports = BrowserXTaskQueue;
+export default BrowserXTaskQueue;

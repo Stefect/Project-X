@@ -123,4 +123,4 @@ class BaseHttpClient {
   }
 }
 
-module.exports = { BaseHttpClient };
+export { BaseHttpClient };

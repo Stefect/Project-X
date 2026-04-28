@@ -173,7 +173,7 @@ function createAsyncController(timeoutMs = null) {
   };
 }
 
-module.exports = {
+export {
   ABORT_MESSAGE,
   asyncMap,
   asyncMapCallback,

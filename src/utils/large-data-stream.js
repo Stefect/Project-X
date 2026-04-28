@@ -1,5 +1,5 @@
-const fs = require('fs');
-const readline = require('readline');
+import fs from 'fs';
+import readline from 'readline';
 
 function createAbortError() {
   const error = new Error('Stream processing aborted');
@@ -155,7 +155,7 @@ async function analyzeHistoryNdjsonFile(filePath, options = {}) {
   };
 }
 
-module.exports = {
+export {
   createAbortError,
   readNdjsonFile,
   batchAsyncIterator,

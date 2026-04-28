@@ -80,4 +80,4 @@ class AuthProxy {
   }
 }
 
-module.exports = { AuthProxy };
+export { AuthProxy };

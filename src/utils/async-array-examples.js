@@ -1,4 +1,4 @@
-﻿const asyncArray = require('./async-array');
+﻿import * as asyncArray from './async-array.js';
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -110,7 +110,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = {
+export {
   demoPromiseMapWithConcurrency,
   demoFilterMap,
   demoFindWithAbort,

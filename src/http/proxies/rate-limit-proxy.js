@@ -36,4 +36,4 @@ class RateLimitProxy {
   }
 }
 
-module.exports = { RateLimitProxy };
+export { RateLimitProxy };
