@@ -1,7 +1,26 @@
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+import 'dotenv/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import fs from 'fs';
+import { app, BrowserWindow, ipcMain, Menu, session, net, protocol, clipboard } from 'electron';
+import Groq from 'groq-sdk';
+import * as storage from './modules/storage.js';
+import * as reactiveEvents from './modules/reactive-events.js';
+import * as torManager from './modules/tor-manager.js';
+import * as themeManager from './modules/theme-manager.js';
+import * as tabManager from './modules/tab-manager.js';
+import * as ipcHandlers from './modules/ipc-handlers.js';
+import * as privacyGuard from './modules/privacy-guard.js';
+import { registerNewsHandlers } from './modules/news-handlers.js';
+import aiScheduler from './modules/ai-task-scheduler.js';
+import { infiniteArticleGenerator } from './modules/ai-feed.js';
+import { registerAIHandlers } from './modules/ai-handlers.js';
+import config from './config.js';
 
-const { app, BrowserWindow, ipcMain, Menu, session, net, protocol, clipboard } = require('electron');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 if (protocol) {
   protocol.registerSchemesAsPrivileged([
     {
@@ -15,23 +34,8 @@ if (protocol) {
     }
   ]);
 }
-const fs = require('fs');
-const Groq = require('groq-sdk');
-const storage = require('./modules/storage');
-const reactiveEvents = require('./modules/reactive-events');
-const torManager = require('./modules/tor-manager');
-const themeManager = require('./modules/theme-manager');
-const tabManager = require('./modules/tab-manager');
-const ipcHandlers = require('./modules/ipc-handlers');
-const privacyGuard = require('./modules/privacy-guard');
-const { registerNewsHandlers } = require('./modules/news-handlers');
-const aiScheduler = require('./modules/ai-task-scheduler');
-const { infiniteArticleGenerator } = require('./modules/ai-feed');
-const { registerAIHandlers } = require('./modules/ai-handlers');
 
 console.log('[CONSOLE] Starting BrowserX...');
-delete require.cache[require.resolve('./config')];
-const config = require('./config');
 let mainWindow;
 let splashWindow;
 let groqClient;

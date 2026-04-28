@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+import { contextBridge, ipcRenderer } from 'electron';
 
 const browserStorageAPI = {
   getHistory: (limit) => ipcRenderer.invoke('get-history', limit),
@@ -41,7 +41,7 @@ try {
 }
 
 try {
-  require('./modules/unified-t9');
+  await import('./modules/unified-t9.js');
 } catch (error) {
   console.warn('[UNIFIED-T9] preload init failed:', error.message);
 }
