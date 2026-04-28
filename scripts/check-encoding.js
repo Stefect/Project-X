@@ -1,10 +1,14 @@
 #!/usr/bin/env node
-"use strict";
 
-const { execSync } = require("child_process");
-const fs = require("fs");
-const path = require("path");
-const { TextDecoder } = require("util");
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { TextDecoder } from 'util';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const utf8Decoder = new TextDecoder("utf-8", { fatal: true });
 

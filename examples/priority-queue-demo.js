@@ -1,4 +1,4 @@
-const BrowserXTaskQueue = require('../src/utils/priority-queue');
+import BrowserXTaskQueue from '../src/utils/priority-queue.js';
 
 function main() {
   const queue = new BrowserXTaskQueue();
@@ -23,6 +23,4 @@ function main() {
   console.table(queue.toArray());
 }
 
-if (require.main === module) {
-  main();
-}
+main();

@@ -1,4 +1,4 @@
-const memoize = require('../src/utils/memoize');
+import memoize from '../src/utils/memoize.js';
 
 function expensiveScore(seed) {
     console.log('  -> calculate for', seed);

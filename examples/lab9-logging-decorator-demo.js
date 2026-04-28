@@ -1,4 +1,4 @@
-const { createLogDecorator } = require('../src/utils/log-decorator');
+import { createLogDecorator } from '../src/utils/log-decorator.js';
 
 const log = createLogDecorator({
   level: 'INFO',

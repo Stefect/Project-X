@@ -1,7 +1,15 @@
 
 
-const torManager = require('./src/modules/tor-manager');
-const privacyGuard = require('./src/modules/privacy-guard');
+import fs from 'fs';
+import path from 'path';
+import net from 'net';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import * as torManager from './src/modules/tor-manager.js';
+import * as privacyGuard from './src/modules/privacy-guard.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 console.log('=== 🔧 TOR MANAGER MODULE DIAGNOSTICS ===\n');
 console.log('📋 Check 1: Module Exports');
@@ -54,8 +62,6 @@ expectedPrivacyExports.forEach(exp => {
   }
 });
 console.log('\n📋 Check 4: Tor Binary');
-const fs = require('fs');
-const path = require('path');
 
 const isWindows = process.platform === 'win32';
 const torBinary = isWindows ? 'tor.exe' : 'tor';
@@ -153,7 +159,6 @@ if (fs.existsSync(ptDir)) {
   console.log('  ⚠️ PT directory not found');
 }
 console.log('\n📋 Check 8: Network Ports');
-const net = require('net');
 
 function checkPort(port, name) {
   return new Promise((resolve) => {

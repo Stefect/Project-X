@@ -1,9 +1,9 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
-const memoize = require('../src/utils/memoize');
-const asyncArray = require('../src/utils/async-array');
-const scheduler = require('../src/modules/ai-task-scheduler');
+import memoize from '../src/utils/memoize.js';
+import * as asyncArray from '../src/utils/async-array.js';
+import scheduler from '../src/modules/ai-task-scheduler.js';
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

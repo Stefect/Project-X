@@ -1,13 +1,13 @@
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const { once } = require('events');
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { once } from 'events';
 
-const {
+import {
   analyzeHistoryNdjsonFile,
   batchAsyncIterator,
   readNdjsonFile
-} = require('../src/utils/large-data-stream');
+} from '../src/utils/large-data-stream.js';
 
 const DEFAULT_ROWS = 120000;
 const SOURCE_DOMAINS = [
@@ -97,9 +97,7 @@ async function main() {
   console.log('Temporary file deleted');
 }
 
-if (require.main === module) {
-  main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
-}
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
