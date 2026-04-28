@@ -1,7 +1,12 @@
 
 
-const path = require('path');
-const { pathToFileURL } = require('url');
+import path from 'path';
+import { pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const DEFAULT_TAB_TITLE = 'New tab';
 const SEARCH_ENGINES = {
@@ -359,7 +364,7 @@ function getActiveTabId() {
   return activeTabId;
 }
 
-module.exports = {
+export {
   init,
   initFirstTab,
   createTab,

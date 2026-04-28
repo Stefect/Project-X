@@ -1,6 +1,6 @@
-const { ipcMain } = require('electron');
-const memoize = require('../utils/memoize');
-const { createLogDecorator } = require('../utils/log-decorator');
+import { ipcMain } from 'electron';
+import memoize from '../utils/memoize.js';
+import { createLogDecorator } from '../utils/log-decorator.js';
 
 const log = createLogDecorator({
   level: 'DEBUG',
@@ -389,6 +389,6 @@ ${tabsListString}`;
   console.log('[IPC] AI handlers registered');
 }
 
-module.exports = {
+export {
   registerAIHandlers
 };

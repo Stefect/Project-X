@@ -90,7 +90,7 @@ function injectLightTheme(targetView) {
     });
 }
 
-module.exports = {
+export {
   updateThemeSettings,
   injectThemeToNewtab
 };

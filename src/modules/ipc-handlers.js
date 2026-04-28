@@ -1,7 +1,7 @@
 
 
-const { ipcMain, shell, BrowserWindow } = require('electron');
-const { analyzeHistoryNdjsonFile } = require('../utils/large-data-stream');
+import { ipcMain, shell, BrowserWindow } from 'electron';
+import { analyzeHistoryNdjsonFile } from '../utils/large-data-stream.js';
 
 function getMainWindow() {
   return BrowserWindow.getAllWindows()[0] || null;
@@ -204,7 +204,7 @@ function registerAISchedulerHandlers(aiScheduler) {
   console.log('[IPC] AI Scheduler handlers registered');
 }
 
-module.exports = {
+export {
   registerStorageHandlers,
   registerAISchedulerHandlers
 };

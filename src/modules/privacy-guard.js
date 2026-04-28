@@ -1,6 +1,6 @@
 
 
-const { session, app } = require('electron');
+import { session, app, webContents } from 'electron';
 
 let isPrivacyModeActive = false;
 
@@ -68,7 +68,6 @@ function disablePrivacyMode(mainWindow) {
 
 
 function injectPrivacyScriptToAllTabs() {
-  const { webContents } = require('electron');
   const geolocationBlockScript = `
     (function() {
       if (window.__geoLocationPatched) return;
@@ -110,7 +109,6 @@ function injectPrivacyScriptToAllTabs() {
 
 
 function removePrivacyScriptFromAllTabs() {
-  const { webContents } = require('electron');
   const deactivateScript = `
     (function() {
       window.__torActive = false;
@@ -163,7 +161,7 @@ async function checkPrivacyLeaks() {
   return results;
 }
 
-module.exports = {
+export {
   initializePrivacyProtection,
   enablePrivacyMode,
   disablePrivacyMode,

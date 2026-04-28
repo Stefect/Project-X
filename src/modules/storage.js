@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const { app } = require('electron');
+import fs from 'fs';
+import path from 'path';
+import { app } from 'electron';
 const getDataPath = () => {
   const userDataPath = app.getPath('userData');
   return path.join(userDataPath, 'browserx-data.json');
@@ -217,7 +217,7 @@ function updateNote(id, newText) {
 function clearNotes() {
   setData('notes', []);
 }
-module.exports = {
+export {
   addToHistory,
   getHistory,
   searchHistory,

@@ -1,4 +1,4 @@
-const BrowserXTaskQueue = require('../utils/priority-queue');
+import BrowserXTaskQueue from '../utils/priority-queue.js';
 
 const PRIORITY = {
     LOW: 1,
@@ -85,4 +85,4 @@ class AITaskScheduler {
     }
 }
 
-module.exports = new AITaskScheduler();
+export default new AITaskScheduler();

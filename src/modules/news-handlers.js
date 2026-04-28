@@ -1,5 +1,5 @@
-const { ipcMain } = require('electron');
-const { fetchNewsArticles, CATEGORIES, SOURCES } = require('./news-fetcher');
+import { ipcMain } from 'electron';
+import { fetchNewsArticles, CATEGORIES, SOURCES } from './news-fetcher.js';
 
 function registerNewsHandlers() {
   ipcMain.handle('get-news-categories', () => CATEGORIES);
@@ -14,4 +14,4 @@ function registerNewsHandlers() {
   });
 }
 
-module.exports = { registerNewsHandlers };
+export { registerNewsHandlers };

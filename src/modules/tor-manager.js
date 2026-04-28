@@ -1,16 +1,16 @@
 
 
-const { spawn, execSync } = require('child_process');
-const { session, app } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const net = require('net');
-let privacyGuard = null;
-try {
-  privacyGuard = require('./privacy-guard');
-} catch (err) {
-  console.warn('[TOR] Privacy guard not available:', err.message);
-}
+import { spawn, execSync } from 'child_process';
+import { session, app } from 'electron';
+import path from 'path';
+import fs from 'fs';
+import net from 'net';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import * as privacyGuard from './privacy-guard.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 let torProcess = null;
 let isTorActive = false;
@@ -280,7 +280,7 @@ function stopTor() {
   }
 }
 
-module.exports = {
+export {
   startTor,
   toggleTor,
   getTorStatus,

@@ -1,7 +1,7 @@
 
 
-const { session } = require('electron');
-const EventEmitter = require('events');
+import { session } from 'electron';
+import EventEmitter from 'events';
 
 const REACTIVE_EVENT_LIMIT = 50;
 const reactiveEventBus = new EventEmitter();
@@ -162,7 +162,7 @@ function getReactiveEventBuffer() {
   return reactiveEventBuffer.slice(0, 20);
 }
 
-module.exports = {
+export {
   setupReactiveNetworkEvents,
   emitReactiveEvent,
   subscribeReactiveEvents,

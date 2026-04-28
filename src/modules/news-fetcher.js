@@ -1,7 +1,7 @@
-const RSSParser = require('rss-parser');
-const { BaseHttpClient } = require('../http/base-client');
-const { LoggingProxy } = require('../http/proxies/logging-proxy');
-const { RateLimitProxy } = require('../http/proxies/rate-limit-proxy');
+import RSSParser from 'rss-parser';
+import { BaseHttpClient } from '../http/base-client.js';
+import { LoggingProxy } from '../http/proxies/logging-proxy.js';
+import { RateLimitProxy } from '../http/proxies/rate-limit-proxy.js';
 
 const httpClient = new RateLimitProxy(
   new LoggingProxy(
@@ -134,4 +134,4 @@ async function fetchNewsArticles(selectedCategories, count = 15) {
   return all.slice(0, count);
 }
 
-module.exports = { fetchNewsArticles, CATEGORIES, SOURCES };
+export { fetchNewsArticles, CATEGORIES, SOURCES };

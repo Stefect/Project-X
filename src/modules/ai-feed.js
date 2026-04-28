@@ -1,5 +1,5 @@
-const { BaseHttpClient } = require('../http/base-client');
-const { RateLimitProxy } = require('../http/proxies/rate-limit-proxy');
+import { BaseHttpClient } from '../http/base-client.js';
+import { RateLimitProxy } from '../http/proxies/rate-limit-proxy.js';
 
 const httpClient = new RateLimitProxy(
   new BaseHttpClient(),
@@ -163,7 +163,7 @@ async function* infiniteArticleGenerator(categories = ['all']) {
   }
 }
 
-module.exports = {
+export {
   NEWS_SOURCES,
   infiniteArticleGenerator
 };
