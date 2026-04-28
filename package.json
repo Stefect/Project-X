@@ -2,6 +2,7 @@
   "name": "browserx",
   "version": "2.2.0",
   "description": "BrowserX - Privacy-focused browser with AI-powered T9 autocomplete, infinite news feed, and Tor integration",
+  "type": "module",
   "main": "src/main.js",
   "scripts": {
     "start": "npm run build:css && electron .",
@@ -57,8 +58,8 @@
     ],
     "extraResources": [
       {
-        "from": "config.js",
-        "to": "config.js"
+        "from": "config.cjs",
+        "to": "config.cjs"
       }
     ],
     "win": {
