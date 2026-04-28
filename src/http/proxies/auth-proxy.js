@@ -10,7 +10,6 @@ function buildAuthHeaders(strategy, credentials, options = {}) {
     return { Authorization: `Bearer ${credentials.jwt || credentials.token}` };
   }
 
-  // oauth / default
   const token = credentials.accessToken || credentials.token;
   const type = options.tokenType || 'Bearer';
   return { Authorization: `${type} ${token}` };
@@ -61,7 +60,6 @@ class AuthProxy {
       return response;
     }
 
-    // спробувати refresh і повторити запит
     const refreshed = await this.refreshCredentials({ response, credentials });
 
     if (!refreshed) return response;
