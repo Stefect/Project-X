@@ -6,6 +6,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "npm run build:css && electron .",
+    "check:encoding": "node scripts/check-encoding.js",
     "build:css": "postcss ./public/css/styles.css -o ./public/css/output.css --verbose",
     "build:css:watch": "postcss ./public/css/styles.css -o ./public/css/output.css --watch --verbose",
     "dev": "npm run build:css:watch & electron .",
