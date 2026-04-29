@@ -114,7 +114,7 @@ function startTor(exitCountry = null, options = {}) {
     if (bootstrapProgress === 100) {
       isTorReady = true;
       bootstrapStatus = 'Connected';
-      console.log('[TOR] ✓ Tor successfully connected and ready!');
+      console.log('[TOR] Tor successfully connected and ready!');
       if (mainWindowRef && mainWindowRef.webContents) {
         mainWindowRef.webContents.send('tor-ready', true);
       }
@@ -132,7 +132,7 @@ function startTor(exitCountry = null, options = {}) {
     console.log('[TOR] Tor process exited with code:', code);
     
     if (code === 1) {
-      console.error('[TOR] ❌ Exit code 1: Check DataDirectory permissions or configuration');
+      console.error('[TOR] Exit code 1: Check DataDirectory permissions or configuration');
     }
     
     torProcess = null;
@@ -153,7 +153,7 @@ async function toggleTor(mainWindow, tabManager = null) {
       webviewSes.setProxy({ mode: 'direct' })
     ]);
     isTorActive = false;
-    console.log('[TOR] ✅ Tor disabled - regular connection (both sessions)');
+    console.log('[TOR] Tor disabled - regular connection (both sessions)');
     if (privacyGuard) {
       privacyGuard.disablePrivacyMode(mainWindow);
     }
@@ -189,7 +189,7 @@ async function toggleTor(mainWindow, tabManager = null) {
     }
     const portAvailable = await checkPortAvailable(socksPort);
     if (portAvailable) {
-      console.error('[TOR] ❌ SOCKS port is not listening! Tor process may have crashed.');
+      console.error('[TOR] SOCKS port is not listening! Tor process may have crashed.');
       console.error('[TOR] Bootstrap was 100% but port is not responding.');
       return {
         status: false,
@@ -197,7 +197,7 @@ async function toggleTor(mainWindow, tabManager = null) {
       };
     }
     
-    console.log('[TOR] ✅ Port 9050 is listening (Tor ready)');
+    console.log('[TOR] Port 9050 is listening (Tor ready)');
     console.log('[TOR] Applying SOCKS5 proxy configuration...');
     try {
       const storageTypes = [
@@ -216,7 +216,7 @@ async function toggleTor(mainWindow, tabManager = null) {
         defaultSes.clearStorageData({ storages: storageTypes }),
         webviewSes.clearStorageData({ storages: storageTypes })
       ]);
-      console.log('[PRIVACY] ✓ Cleared ALL storage for BOTH sessions (main + webview)');
+      console.log('[PRIVACY] Cleared ALL storage for BOTH sessions (main + webview)');
     } catch (err) {
       console.warn('[PRIVACY] Failed to clear storage:', err.message);
     }
@@ -231,12 +231,12 @@ async function toggleTor(mainWindow, tabManager = null) {
       })
     ]);
     
-    console.log('[TOR] ✅ SOCKS5 proxy applied to BOTH sessions: socks5://127.0.0.1:9050');
-    console.log('[TOR] ✅ DNS resolution: Via Tor SOCKS5 (no DNS leak)');
+    console.log('[TOR] SOCKS5 proxy applied to BOTH sessions: socks5://127.0.0.1:9050');
+    console.log('[TOR] DNS resolution: Via Tor SOCKS5 (no DNS leak)');
     await new Promise(resolve => setTimeout(resolve, 500));
     
     isTorActive = true;
-    console.log('[TOR] ✅ Tor enabled successfully');
+    console.log('[TOR] Tor enabled successfully');
     if (privacyGuard) {
       privacyGuard.enablePrivacyMode(mainWindow);
     }

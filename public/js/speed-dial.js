@@ -172,8 +172,8 @@ function renderSpeedDial() {
       <div class="card-open-link absolute inset-0 z-10 group-hover:bg-black/20 transition-colors cursor-pointer"></div>
 
       <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-        <button class="edit-link-btn p-1.5 bg-black/70 hover:bg-black/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Редагувати">✏️</button>
-        <button class="delete-link-btn p-1.5 bg-black/70 hover:bg-red-500/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Видалити">🗑️</button>
+        <button class="edit-link-btn p-1.5 bg-black/70 hover:bg-black/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Редагувати">✎</button>
+        <button class="delete-link-btn p-1.5 bg-black/70 hover:bg-red-500/90 rounded-md text-xs text-white backdrop-blur-sm" data-index="${index}" title="Видалити">✕</button>
       </div>
       
       ${!link.bannerUrl ? `<div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10">

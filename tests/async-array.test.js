@@ -130,7 +130,7 @@ test('asyncFind works with async predicate', async () => {
   assert.equal(result, 'bb');
 });
 
-// ─── createAsyncController / abort ──────────────────────────────────────────
+// ─── createAsyncController / скасування ──────────────────────────────────────────────────
 
 test('asyncMap aborts when signal is cancelled', async () => {
   const ctrl = createAsyncController();
@@ -168,4 +168,18 @@ test('cancelled controller marks signal as aborted', () => {
 test('ABORT_MESSAGE is a non-empty string', () => {
   assert.equal(typeof ABORT_MESSAGE, 'string');
   assert.ok(ABORT_MESSAGE.length > 0);
+});
+
+// перевіряли що concurrency=1 справді не запускає елементи паралельно —
+// підозра була що Promise.all може все одно ігнорувати ліміт при малих масивах
+test('asyncMap with concurrency=1 runs strictly sequentially', async () => {
+  const log = [];
+  await asyncMap([30, 5, 15], async (x) => {
+    log.push(`start:${x}`);
+    await sleep(x);
+    log.push(`end:${x}`);
+  }, { concurrency: 1 });
+  assert.equal(log[0], 'start:30');
+  assert.equal(log[1], 'end:30');
+  assert.equal(log[2], 'start:5');
 });

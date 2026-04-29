@@ -115,16 +115,16 @@
   <div id="side-toolbar" class="sidebar open">
     <div class="sidebar-content">
       <button id="tor-btn" class="sidebar-btn" title="Перемкнути Tor">Tor: OFF</button>
-      <button id="check-ip-btn" class="sidebar-btn" title="Швидка перевірка IP">🔍 IP</button>
+      <button id="check-ip-btn" class="sidebar-btn" title="Швидка перевірка IP">IP</button>
       
       <hr class="divider">
       
-      <button id="theme-settings-btn" class="sidebar-btn" title="Налаштувати вигляд">🎨 Теми</button>
-      <button id="history-menu" class="sidebar-btn" title="Історія переглядів">🕐 Історія</button>
-      <button id="toggle-sidebar-toolbar" class="sidebar-btn" title="Показати/сховати конспект">📝 Нотатки</button>
-      <button id="organize-tabs-btn" class="sidebar-btn" title="Організація вкладок">📑 Групи</button>
+      <button id="theme-settings-btn" class="sidebar-btn" title="Налаштувати вигляд">Теми</button>
+      <button id="history-menu" class="sidebar-btn" title="Історія переглядів">Історія</button>
+      <button id="toggle-sidebar-toolbar" class="sidebar-btn" title="Показати/сховати конспект">Нотатки</button>
+      <button id="organize-tabs-btn" class="sidebar-btn" title="Організація вкладок">Групи</button>
       <hr class="divider">
-      <button id="toggle-news-btn" class="sidebar-btn" title="AI Стрічка новин">📰 Новини</button>
+      <button id="toggle-news-btn" class="sidebar-btn" title="AI Стрічка новин">Новини</button>
     </div>
     
     <!-- Стрілка для відкриття/закриття sidebar -->
@@ -302,7 +302,7 @@
     </div>
 
     <div class="news-footer">
-      <button id="generate-news-btn" class="generate-btn">✨ Згенерувати стрічку</button>
+      <button id="generate-news-btn" class="generate-btn">Згенерувати стрічку</button>
     </div>
   </div>
 
@@ -408,7 +408,7 @@
           case 'tracker-blocked':
             return '[SHIELD]';
           case 'ai-start':
-            return '🧠';
+            return 'AI';
           case 'ai-complete':
             return '[OK]';
           case 'ai-failed':
@@ -416,13 +416,13 @@
           case 'download-start':
             return '[DOWN]';
           case 'download-complete':
-            return '📥';
+            return 'DL';
           case 'download-failed':
             return '[ERR]';
           case 'page-load':
             return '[WEB]';
           default:
-            return '📍';
+            return 'PIN';
         }
       }
 
@@ -760,23 +760,23 @@
       // Закрити вкладку
       function closeTab(tabId) {
         try {
-          console.log('[DEL] 🗑️ Closing tab:', tabId);
+          console.log('[DEL] Closing tab:', tabId);
           console.log('[DEL] Total tabs before close:', document.querySelectorAll('.tab').length);
           
           const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
           if (tabElement) {
             tabElement.remove();
-            console.log('[OK] ✅ Tab element removed from DOM');
+            console.log('[OK] Tab element removed from DOM');
             console.log('[DEL] Total tabs after close:', document.querySelectorAll('.tab').length);
           } else {
-            console.warn('[WARN] ⚠️ Tab element not found in DOM');
+            console.warn('[WARN] Tab element not found in DOM');
           }
           
-          console.log('[IPC] 📤 Sending close-tab to main process...');
+          console.log('[IPC] Sending close-tab to main process...');
           ipcRenderer.send('close-tab', tabId);
-          console.log('[IPC] ✅ close-tab message sent');
+          console.log('[IPC] close-tab message sent');
         } catch (error) {
-          console.error('[ERR] ❌ Tab closing error:', error);
+          console.error('[ERR] Tab closing error:', error);
         }
       }
       
@@ -907,18 +907,18 @@
         if (!tab) return;
         
         const tabId = parseInt(tab.dataset.tabId);
-        console.log('[CLICK] 👆 Click on tab:', tabId);
+        console.log('[CLICK] Click on tab:', tabId);
         
         // Якщо клікнули на кнопку закриття
         if (e.target.classList.contains('tab-close')) {
-          console.log('[CLICK] 🗑️ Click on tab close button (×)');
+          console.log('[CLICK] Click on tab close button (x)');
           console.log('[CLICK] Target element:', e.target);
           e.stopPropagation();
           closeTab(tabId);
           return;
         } else {
           // Перемкнутись на вкладку
-          console.log('[CLICK] 🔄 Switching to tab');
+          console.log('[CLICK] Switching to tab');
           switchTab(tabId);
         }
       });
@@ -930,7 +930,7 @@
     if (newTabBtn) {
       console.log('[OK] Attaching handler to new tab button');
       newTabBtn.addEventListener('click', () => {
-        console.log('🆕 Click on new tab button');
+        console.log('Click on new tab button');
         createTab();
       });
     } else {
@@ -1634,7 +1634,7 @@
         }
 
         generateNewsBtn.disabled = true;
-        generateNewsBtn.textContent = '⏳ Збираємо новини...';
+        generateNewsBtn.textContent = 'Збираємо новини...';
         articlesContainer.innerHTML = '<div class="news-empty-state"><p>Запит до джерел...</p></div>';
 
         try {
@@ -1658,7 +1658,7 @@
           articlesContainer.innerHTML = '<div class="news-empty-state"><p>Помилка завантаження.<br>Перевірте підключення.</p></div>';
         } finally {
           generateNewsBtn.disabled = false;
-          generateNewsBtn.textContent = '✨ Оновити стрічку';
+          generateNewsBtn.textContent = 'Оновити стрічку';
         }
       });
     }
@@ -2600,7 +2600,7 @@
           }, 300);
         }
         
-        showTorNotification('✓ Tor готовий! Натисніть "Tor: OFF" щоб увімкнути.');
+        showTorNotification('Tor готовий! Натисніть "Tor: OFF" щоб увімкнути.');
       }
     });
     
@@ -2654,14 +2654,14 @@
           if (result.status) {
             torBtn.textContent = 'Tor: ON';
             torBtn.style.color = '#8b5cf6';
-            showTorNotification('✓ Tor увімкнено! Перегляд анонімний.');
+            showTorNotification('Tor увімкнено! Перегляд анонімний.');
           } else {
             // Перевіряємо чи це помилка "ще не готовий"
             if (result.bootstrapProgress !== undefined && result.bootstrapProgress < 100) {
               torBtn.textContent = `Tor: ${result.bootstrapProgress}%`;
               torBtn.style.color = '#f59e0b'; // Orange
               showTorNotification(
-                `⏳ Tor підключається... ${result.bootstrapProgress}% - ${result.bootstrapStatus}`,
+                `Tor підключається... ${result.bootstrapProgress}% - ${result.bootstrapStatus}`,
                 false
               );
             } else {
@@ -2674,7 +2674,7 @@
           console.error('[ERR] Error toggling Tor:', error);
           torBtn.textContent = originalText;
           torBtn.style.color = '#dc2626';
-          showTorNotification('⚠ Помилка: Tor не запущений або не готовий', true);
+          showTorNotification('Помилка: Tor не запущений або не готовий', true);
         } finally {
           // Розблоковуємо кнопку тільки якщо Tor готовий
           if (torBtn.textContent.includes('ON') || torBtn.textContent.includes('OFF')) {
@@ -2694,7 +2694,7 @@
       checkIpBtn.addEventListener('click', async () => {
         console.log('[IP] Check IP button clicked!');
         const originalText = checkIpBtn.textContent;
-        checkIpBtn.textContent = '⏳';
+        checkIpBtn.textContent = '...';
         checkIpBtn.disabled = true;
         
         try {
@@ -2721,7 +2721,7 @@
           
           resultWindow.innerHTML = `
             <div style="text-align: center; margin-bottom: 20px;">
-              <div style="font-size: 24px; margin-bottom: 10px;">⏳</div>
+              <div style="font-size: 24px; margin-bottom: 10px;">...</div>
               <div style="font-weight: 600; font-size: 16px;">Перевірка IP адреси...</div>
             </div>
           `;
@@ -2747,7 +2747,7 @@
           // Оновлюємо вікно результатів
           resultWindow.innerHTML = `
             <div style="text-align: center;">
-              <div style="font-size: 32px; margin-bottom: 15px;">${isTorExit ? '🔐' : '🌐'}</div>
+              <div style="font-size: 32px; margin-bottom: 15px;">${isTorExit ? '[TOR]' : '[IP]'}</div>
               <div style="font-weight: 600; font-size: 18px; margin-bottom: 20px; color: ${isTorExit ? '#8b5cf6' : '#3b82f6'};">
                 ${isTorExit ? 'Tor активний!' : torStatus.active ? 'Увага: Не Tor вузол!' : 'Звичайне підключення'}
               </div>
@@ -2769,7 +2769,7 @@
               </div>
               
               <div style="display: flex; gap: 10px; justify-content: center; font-size: 11px; color: #6b7280;">
-                <div>⏱ ${responseTime} мс</div>
+                <div>${responseTime} мс</div>
                 <div>•</div>
                 <div>Статус: ${torStatus.active ? 'Tor ON' : 'Tor OFF'}</div>
               </div>
@@ -2827,7 +2827,7 @@
           
         } catch (error) {
           console.error('[IP CHECK] Error:', error);
-          showTorNotification('⚠ Помилка перевірки IP: ' + error.message, true);
+          showTorNotification('Помилка перевірки IP: ' + error.message, true);
         } finally {
           checkIpBtn.textContent = originalText;
           checkIpBtn.disabled = false;
@@ -3298,7 +3298,7 @@
     // ==================== END NATIVE NEW TAB LOGIC ====================
     
   } catch (error) {
-    console.error('🚨 CRITICAL ERROR in index.html:', error);
+    console.error('CRITICAL ERROR in index.html:', error);
     alert('Помилка завантаження браузера: ' + error.message);
   }
   </script>

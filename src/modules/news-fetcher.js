@@ -20,12 +20,12 @@ const rssParser = new RSSParser({
 });
 
 const CATEGORIES = {
-  tech:    '💻 Технології',
-  ai:      '🤖 ШІ',
-  science: '🔬 Наука',
-  gaming:  '🎮 Ігри',
-  ukraine: '🇺🇦 Україна',
-  crypto:  '₿ Крипто',
+  tech:    'Технології',
+  ai:      'ШІ',
+  science: 'Наука',
+  gaming:  'Ігри',
+  ukraine: 'Україна',
+  crypto:  'Крипто',
 };
 
 const SOURCES = [

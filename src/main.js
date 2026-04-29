@@ -44,7 +44,6 @@ let splashStartTime = 0;
 
 
 function createSplashWindow() {
-  console.log('[SPLASH] Creating splash window...');
   splashStartTime = Date.now();
   
   splashWindow = new BrowserWindow({
@@ -61,36 +60,25 @@ function createSplashWindow() {
   });
   
   const splashPath = path.join(__dirname, '..', 'public', 'splash.html');
-  console.log('[SPLASH] Loading splash from:', splashPath);
-  
   splashWindow.loadFile(splashPath);
   splashWindow.center();
   
-  splashWindow.once('ready-to-show', () => {
-    console.log('[SPLASH] Splash window ready to show');
-    splashWindow.show();
-  });
-  
-  console.log('[SPLASH] Splash screen created');
+  splashWindow.once('ready-to-show', () => splashWindow.show());
 }
 
 
-function injectUnifiedT9(webviewId) {
-  console.log('[T9] Injection requested for webview:', webviewId);
+function injectUnifiedT9(_webviewId) {
+  // T9 is injected via preload.js on page load
 }
 
 
 async function createWindow() {
-  console.log('[GROQ] Starting initialization...');
-  console.log('[GROQ] config.GROQ_API_KEY:', config.GROQ_API_KEY ? `EXISTS (${config.GROQ_API_KEY.substring(0, 15)}...)` : 'NOT FOUND');
-  
   try {
     if (!config.GROQ_API_KEY || config.GROQ_API_KEY === 'YOUR_GROQ_API_KEY_HERE') {
-      console.error('[ERROR] API key not configured in .env file');
+      console.error('GROQ_API_KEY not set — AI features will be unavailable');
     } else {
       groqClient = new Groq({ apiKey: config.GROQ_API_KEY });
-      console.log('[OK] Groq AI initialized');
-      console.log('[OK] groqClient is:', typeof groqClient);
+      console.log('[OK] Groq initialized');
     }
   } catch (error) {
     console.error('[ERROR] Groq initialization error:', error.message);
@@ -108,7 +96,7 @@ async function createWindow() {
     defaultSes.setProxy({ mode: 'direct' }),
     webviewSes.setProxy({ mode: 'direct' })
   ]);
-  console.log('[PROXY] ✅ Direct connection enabled for both sessions');
+  console.log('[PROXY] Direct connection enabled for both sessions');
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -247,12 +235,12 @@ app.whenReady().then(async () => {
         
         if (isTorEnabled) {
           const url = webContents.getURL();
-          console.log(`[PRIVACY] ❌ BLOCKED geolocation request from: ${url}`);
+          console.log(`[PRIVACY] BLOCKED geolocation request from: ${url}`);
           console.log('[PRIVACY] Reason: Tor is active, geolocation would reveal real location');
           callback(false);
           return;
         } else {
-          console.log('[PRIVACY] ⚠️ Geolocation request (Tor OFF, allowing)');
+          console.log('[PRIVACY] Geolocation request (Tor OFF, allowing)');
         }
       }
       callback(true);
@@ -296,7 +284,7 @@ app.whenReady().then(async () => {
                 configurable: false,
                 enumerable: true
               });
-              console.log('[PRIVACY GUARD] ✓ Geolocation API has been disabled');
+              console.log('[PRIVACY GUARD] Geolocation API has been disabled');
             } catch (e) {
               console.error('[PRIVACY GUARD] Failed to block geolocation:', e);
             }
@@ -309,7 +297,7 @@ app.whenReady().then(async () => {
     });
   });
   
-  console.log('[PRIVACY] ✓ Global web-contents-created handler registered');
+  console.log('[PRIVACY] Global web-contents-created handler registered');
   app.on('session-created', (customSession) => {
     console.log('[PRIVACY] New session created, applying permission handler...');
     
@@ -319,7 +307,7 @@ app.whenReady().then(async () => {
         
         if (isTorEnabled) {
           const url = webContents.getURL();
-          console.log(`[PRIVACY] ❌ BLOCKED geolocation in custom session from: ${url}`);
+          console.log(`[PRIVACY] BLOCKED geolocation in custom session from: ${url}`);
           callback(false);
           return;
         }
@@ -328,7 +316,7 @@ app.whenReady().then(async () => {
     });
   });
   
-  console.log('[PRIVACY] ✓ Global session-created handler registered');
+  console.log('[PRIVACY] Global session-created handler registered');
   
   await createWindow();
   console.log('[TOR] Tor auto-start DISABLED. User will enable manually via button.');
@@ -494,14 +482,14 @@ ipcMain.on('switch-tab', (event, tabId) => {
 });
 
 ipcMain.on('close-tab', (event, tabId) => {
-  console.log('[IPC] 📨 Received close-tab request for tabId:', tabId);
+  console.log('[IPC] Received close-tab request for tabId:', tabId);
   const shouldClose = tabManager.closeTab(tabId, mainWindow);
   console.log('[IPC] Tab manager returned shouldClose:', shouldClose);
   if (shouldClose) {
-    console.log('[TAB] 🚪 Last tab closed - quitting application');
+    console.log('[TAB] Last tab closed - quitting application');
     app.quit();
   } else {
-    console.log('[TAB] ✅ Tab closed successfully, continuing');
+    console.log('[TAB] Tab closed successfully, continuing');
   }
 });
 
@@ -510,14 +498,14 @@ ipcMain.on('reorder-tabs', (event, newOrder) => {
 });
 
 ipcMain.on('navigate', (event, input) => {
-  console.log('📨 [ДІАГНОСТИКА MAIN] Отримано IPC navigate від renderer');
-  console.log('📨 [ДІАГНОСТИКА MAIN] Input URL:', input);
-  console.log('📨 [ДІАГНОСТИКА MAIN] Tor enabled:', torManager.isTorEnabled());
-  console.log('📨 [ДІАГНОСТИКА MAIN] Викликаємо tabManager.navigate()...');
+  console.log('[ДІАГНОСТИКА MAIN] Отримано IPC navigate від renderer');
+  console.log('[ДІАГНОСТИКА MAIN] Input URL:', input);
+  console.log('[ДІАГНОСТИКА MAIN] Tor enabled:', torManager.isTorEnabled());
+  console.log('[ДІАГНОСТИКА MAIN] Викликаємо tabManager.navigate()...');
   
   tabManager.navigate(input, torManager.isTorEnabled());
   
-  console.log('✅ [ДІАГНОСТИКА MAIN] tabManager.navigate() виконано');
+  console.log('[ДІАГНОСТИКА MAIN] tabManager.navigate() виконано');
 });
 
 ipcMain.on('go-back', () => {
@@ -601,19 +589,19 @@ ipcMain.handle('check-ip', async () => {
       const torData = await fetchWithProxy('https://check.torproject.org/api/ip', true);
       ip = torData.IP;
       responseTime = Date.now() - startTime;
-      console.log('[IP CHECK] ✓ Got IP from Tor Project API:', ip);
+      console.log('[IP CHECK] Got IP from Tor Project API:', ip);
     } catch (err1) {
       console.warn('[IP CHECK] Tor Project API failed:', err1.message);
       
       try {
         ip = await fetchWithProxy('https://ident.me/', false);
         responseTime = Date.now() - startTime;
-        console.log('[IP CHECK] ✓ Got IP from ident.me:', ip);
+        console.log('[IP CHECK] Got IP from ident.me:', ip);
       } catch (err2) {
         console.warn('[IP CHECK] ident.me failed:', err2.message);
         ip = await fetchWithProxy('https://icanhazip.com/', false);
         responseTime = Date.now() - startTime;
-        console.log('[IP CHECK] ✓ Got IP from icanhazip.com:', ip);
+        console.log('[IP CHECK] Got IP from icanhazip.com:', ip);
       }
     }
     
@@ -675,9 +663,9 @@ ipcMain.handle('check-ip', async () => {
       });
       if (geoResult && geoResult.country_name) {
         geoData = geoResult;
-        console.log('[IP CHECK] ✓ Got geo data:', geoData.country_name, geoData.city);
+        console.log('[IP CHECK] Got geo data:', geoData.country_name, geoData.city);
       } else {
-        console.log('[IP CHECK] → Using default geo data for Tor');
+        console.log('[IP CHECK] Using default geo data for Tor');
       }
     } catch (geoErr) {
       console.warn('[IP CHECK] Geo lookup exception:', geoErr.message);
@@ -700,53 +688,6 @@ ipcMain.handle('check-ip', async () => {
 ipcHandlers.registerStorageHandlers(storage, tabManager);
 ipcHandlers.registerAISchedulerHandlers(aiScheduler);
 registerNewsHandlers();
-setTimeout(() => {
-  console.log('\n[TEST] 🧪 Демонстрація AI Task Scheduler...\n');
-  aiScheduler.addTask({
-    name: 'Саммарі фонової вкладки #1',
-    type: 'summary',
-    execute: async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('   📝 Саммарі готовий');
-    }
-  }, 1);
-
-  aiScheduler.addTask({
-    name: 'Саммарі фонової вкладки #2',
-    type: 'summary',
-    execute: async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('   📝 Саммарі готовий');
-    }
-  }, 1);
-  aiScheduler.addTask({
-    name: 'Переклад сторінки',
-    type: 'translation',
-    execute: async () => {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('   🌐 Переклад завершено');
-    }
-  }, 5);
-  aiScheduler.addTask({
-    name: 'T9 Автодоповнення тексту',
-    type: 't9',
-    execute: async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      console.log('   ⚡ T9 підказка готова');
-    }
-  }, 10);
-
-  aiScheduler.addTask({
-    name: 'Аналіз контенту',
-    type: 'analysis',
-    execute: async () => {
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      console.log('   🔍 Аналіз завершено');
-    }
-  }, 2);
-
-  console.log('[TEST] ✅ Завдання додані. Виконання за пріоритетом.\n');
-}, 5000);
 
 console.log('[CONSOLE] BrowserX main process initialized');
 function handleAppUrl(url) {

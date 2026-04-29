@@ -414,7 +414,7 @@
 
       xrayBox.innerHTML = `
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-          <span style="font-size:12px;opacity:0.6;">🔍</span>
+          <span style="font-size:12px;opacity:0.6;">↗</span>
           <span style="font-size:13px;font-weight:600;color:#7aa2f7;line-height:1.3;">${escapeHtml(title)}</span>
         </div>
         <div style="font-size:12px;color:#a9b1d6;line-height:1.4;">${escapeHtml(desc)}</div>
@@ -497,7 +497,7 @@
         context += (context ? '. ' : '') + surroundingText;
       }
       context = context.substring(0, 250);
-      showXRay(link, { title: '⏳ Аналіз...', description: 'X-Ray сканує посилання...' });
+      showXRay(link, { title: 'Аналіз...', description: 'X-Ray сканує посилання...' });
 
       try {
         if (!window.api?.describeUrl) {

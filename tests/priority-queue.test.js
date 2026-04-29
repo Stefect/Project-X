@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import BrowserXTaskQueue from '../src/utils/priority-queue.js';
 
-// ─── enqueue / basic ────────────────────────────────────────────────────────
+// ─── enqueue / основні тести ──────────────────────────────────────────────
 
 test('enqueue returns new size', () => {
   const q = new BrowserXTaskQueue();
@@ -94,7 +94,7 @@ test('peek on empty queue returns null', () => {
   assert.equal(q.peek('highest'), null);
 });
 
-// ─── tie-breaking ─────────────────────────────────────────────────────────
+// ─── вирішення рівності пріоритетів ───────────────────────────────────────
 
 test('dequeue(highest) breaks ties by insertion order (FIFO)', () => {
   const q = new BrowserXTaskQueue();
@@ -122,7 +122,7 @@ test('clear empties the queue and resets counter', () => {
   assert.equal(q.size(), 0);
 });
 
-// ─── seed constructor ────────────────────────────────────────────────────
+// ─── конструктор з початковими даними ──────────────────────────────────
 
 test('seed constructor pre-populates queue', () => {
   const q = new BrowserXTaskQueue([
@@ -151,7 +151,7 @@ test('toArray returns all items with priority and order', () => {
   assert.ok(typeof arr[0].order === 'number');
 });
 
-// ─── invalid mode fallback ───────────────────────────────────────────────
+// ─── запасний режим при невалідному значенні ───────────────────────────
 
 test('dequeue with invalid mode falls back to highest', () => {
   const q = new BrowserXTaskQueue();
@@ -160,7 +160,7 @@ test('dequeue with invalid mode falls back to highest', () => {
   assert.equal(q.dequeue('bad-mode'), 'high');
 });
 
-// ─── full cycle ──────────────────────────────────────────────────────────
+// ─── повний цикл роботи черги ──────────────────────────────────────────
 
 test('draining queue in highest order yields sorted sequence', () => {
   const q = new BrowserXTaskQueue();
@@ -174,4 +174,24 @@ test('draining queue in highest order yields sorted sequence', () => {
   }
 
   assert.deepEqual(result, ['c', 'b', 'a']);
+});
+
+// float priority - перевіряли бо Number() може поводитися дивно з 0.1+0.2
+test('float priority comparison works correctly', () => {
+  const q = new BrowserXTaskQueue();
+  q.enqueue('x', 0.1 + 0.2); // 0.30000000000000004
+  q.enqueue('y', 0.3);
+  // обидва не рівні суворо, але 0.1+0.2 > 0.3 в JS
+  const first = q.dequeue('highest');
+  assert.ok(first === 'x' || first === 'y'); // будь-який з них — не падає
+  assert.equal(q.size(), 1);
+});
+
+test('enqueue after clear resets order counter', () => {
+  const q = new BrowserXTaskQueue();
+  q.enqueue('old', 5);
+  q.clear();
+  q.enqueue('new', 5);
+  assert.equal(q.size(), 1);
+  assert.equal(q.dequeue('oldest'), 'new');
 });

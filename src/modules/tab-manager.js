@@ -133,8 +133,8 @@ function createTab(mainWindow, url = null, { storage, themeManager, injectUnifie
 
 
 function setupTabEventHandlers(tabOrId, mainWindow, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel }) {
-  const id = typeof tabOrId === 'object' ? tabOrId.id : tabOrId;
-  console.log('[TAB] Handlers are managed in renderer for tab:', id);
+  // webview dom-ready / did-navigate слухаються в index.html через IPC;
+  // тут нема що чіпляти на рівні main process
 }
 
 
