@@ -4,7 +4,11 @@ import { session } from 'electron';
 import EventEmitter from 'events';
 
 const REACTIVE_EVENT_LIMIT = 50;
+const REACTIVE_ERROR_CHANNEL = 'reactive-error';
 const reactiveEventBus = new EventEmitter();
+// Default no-op handler prevents EventEmitter from throwing when no consumer
+// has subscribed to the error channel yet.
+reactiveEventBus.on(REACTIVE_ERROR_CHANNEL, () => {});
 const reactiveEventBuffer = [];
 const trackerHostMarkers = [
   'doubleclick.net',
@@ -79,7 +83,19 @@ function emitReactiveEvent(payload, mainWindow) {
     reactiveEventBuffer.length = REACTIVE_EVENT_LIMIT;
   }
 
-  reactiveEventBus.emit('event', event);
+  // Call each subscriber individually so a throwing listener does not prevent
+  // subsequent ones from receiving the event.
+  const listeners = reactiveEventBus.rawListeners('event');
+  for (const listener of listeners) {
+    try {
+      listener(event);
+    } catch (err) {
+      reactiveEventBus.emit(REACTIVE_ERROR_CHANNEL, {
+        error: err.message,
+        listener: listener.name || 'anonymous'
+      });
+    }
+  }
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('reactive-event', event);
@@ -96,6 +112,14 @@ function subscribeReactiveEvents(listener) {
   reactiveEventBus.on('event', listener);
 
   return () => unsubscribeReactiveEvents(listener);
+}
+
+function subscribeErrorChannel(handler) {
+  if (typeof handler !== 'function') {
+    throw new TypeError('handler must be a function');
+  }
+  reactiveEventBus.on(REACTIVE_ERROR_CHANNEL, handler);
+  return () => reactiveEventBus.off(REACTIVE_ERROR_CHANNEL, handler);
 }
 
 function unsubscribeReactiveEvents(listener) {
@@ -166,6 +190,7 @@ export {
   setupReactiveNetworkEvents,
   emitReactiveEvent,
   subscribeReactiveEvents,
+  subscribeErrorChannel,
   unsubscribeReactiveEvents,
   getReactiveEventBuffer,
   formatUrlLabel

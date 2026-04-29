@@ -7,7 +7,7 @@ import {
   analyzeHistoryNdjsonFile,
   batchAsyncIterator,
   readNdjsonFile
-} from '../src/utils/large-data-stream.js';
+} from 'browserx/large-data-stream';
 
 const DEFAULT_ROWS = 120000;
 const SOURCE_DOMAINS = [

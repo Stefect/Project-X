@@ -73,6 +73,16 @@ class BrowserXTaskQueue {
         }
 
         const normalized = this._normalizeMode(mode);
+
+        // Items are pushed in insertion order and splice preserves relative order,
+        // so index 0 is always the oldest and the last index is always the newest.
+        if (normalized === BrowserXTaskQueue.MODES.OLDEST) {
+            return 0;
+        }
+        if (normalized === BrowserXTaskQueue.MODES.NEWEST) {
+            return this.items.length - 1;
+        }
+
         let selectedIndex = 0;
 
         for (let i = 1; i < this.items.length; i += 1) {
