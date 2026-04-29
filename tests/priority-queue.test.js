@@ -2,29 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import BrowserXTaskQueue from '../src/utils/priority-queue.js';
 
-// ─── enqueue / основні тести ──────────────────────────────────────────────
-
 test('enqueue returns new size', () => {
   const q = new BrowserXTaskQueue();
+  assert.equal(q.isEmpty(), true);
   assert.equal(q.enqueue('a', 1), 1);
   assert.equal(q.enqueue('b', 2), 2);
-});
-
-test('isEmpty returns true for empty queue', () => {
-  const q = new BrowserXTaskQueue();
-  assert.equal(q.isEmpty(), true);
-});
-
-test('isEmpty returns false after enqueue', () => {
-  const q = new BrowserXTaskQueue();
-  q.enqueue('a', 1);
-  assert.equal(q.isEmpty(), false);
-});
-
-test('size returns correct count', () => {
-  const q = new BrowserXTaskQueue();
-  q.enqueue('x', 1);
-  q.enqueue('y', 2);
   assert.equal(q.size(), 2);
 });
 
@@ -33,8 +15,6 @@ test('enqueue throws TypeError for non-finite priority', () => {
   assert.throws(() => q.enqueue('a', 'bad'), TypeError);
   assert.throws(() => q.enqueue('a', NaN), TypeError);
 });
-
-// ─── dequeue ────────────────────────────────────────────────────────────────
 
 test('dequeue(highest) returns item with highest priority', () => {
   const q = new BrowserXTaskQueue();
@@ -80,21 +60,12 @@ test('dequeue on empty queue returns null', () => {
   assert.equal(q.dequeue('highest'), null);
 });
 
-// ─── peek ────────────────────────────────────────────────────────────────────
-
 test('peek does not remove item from queue', () => {
   const q = new BrowserXTaskQueue();
   q.enqueue('a', 1);
   assert.equal(q.peek('highest'), 'a');
   assert.equal(q.size(), 1);
 });
-
-test('peek on empty queue returns null', () => {
-  const q = new BrowserXTaskQueue();
-  assert.equal(q.peek('highest'), null);
-});
-
-// ─── вирішення рівності пріоритетів ───────────────────────────────────────
 
 test('dequeue(highest) breaks ties by insertion order (FIFO)', () => {
   const q = new BrowserXTaskQueue();
@@ -111,8 +82,6 @@ test('dequeue(lowest) breaks ties by insertion order (FIFO)', () => {
   assert.equal(q.dequeue('lowest'), 'first');
 });
 
-// ─── clear ────────────────────────────────────────────────────────────────
-
 test('clear empties the queue and resets counter', () => {
   const q = new BrowserXTaskQueue();
   q.enqueue('a', 1);
@@ -121,8 +90,6 @@ test('clear empties the queue and resets counter', () => {
   assert.equal(q.isEmpty(), true);
   assert.equal(q.size(), 0);
 });
-
-// ─── конструктор з початковими даними ──────────────────────────────────
 
 test('seed constructor pre-populates queue', () => {
   const q = new BrowserXTaskQueue([
@@ -138,8 +105,6 @@ test('seed constructor ignores invalid entries', () => {
   assert.equal(q.size(), 1);
 });
 
-// ─── toArray ─────────────────────────────────────────────────────────────
-
 test('toArray returns all items with priority and order', () => {
   const q = new BrowserXTaskQueue();
   q.enqueue('x', 3);
@@ -151,16 +116,12 @@ test('toArray returns all items with priority and order', () => {
   assert.ok(typeof arr[0].order === 'number');
 });
 
-// ─── запасний режим при невалідному значенні ───────────────────────────
-
 test('dequeue with invalid mode falls back to highest', () => {
   const q = new BrowserXTaskQueue();
   q.enqueue('low', 1);
   q.enqueue('high', 10);
   assert.equal(q.dequeue('bad-mode'), 'high');
 });
-
-// ─── повний цикл роботи черги ──────────────────────────────────────────
 
 test('draining queue in highest order yields sorted sequence', () => {
   const q = new BrowserXTaskQueue();

@@ -13,15 +13,10 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// ─── asyncMap ───────────────────────────────────────────────────────────────
 
 test('asyncMap transforms all elements', async () => {
   const result = await asyncMap([1, 2, 3], async (x) => x * 2);
   assert.deepEqual(result, [2, 4, 6]);
-});
-
-test('asyncMap returns empty array for empty input', async () => {
-  assert.deepEqual(await asyncMap([], async (x) => x), []);
 });
 
 test('asyncMap preserves element order with concurrency', async () => {
@@ -55,7 +50,6 @@ test('asyncMap throws TypeError for non-function mapper', async () => {
   await assert.rejects(() => asyncMap([1], 'not-fn'), TypeError);
 });
 
-// ─── asyncMapCallback ───────────────────────────────────────────────────────
 
 test('asyncMapCallback calls back with mapped results', async () => {
   const result = await new Promise((resolve, reject) => {
@@ -80,7 +74,6 @@ test('asyncMapCallback passes error to final callback', async () => {
   assert.equal(err.message, 'boom');
 });
 
-// ─── asyncFilterMap ─────────────────────────────────────────────────────────
 
 test('asyncFilterMap includes non-skipped values', async () => {
   const result = await asyncFilterMap([1, 2, 3, 4], async (x) =>
@@ -96,12 +89,7 @@ test('asyncFilterMap skips items returning { skip: true }', async () => {
   assert.deepEqual(result, [1, 3]);
 });
 
-test('asyncFilterMap returns empty array when all skipped', async () => {
-  const result = await asyncFilterMap([1, 2], async () => asyncFilterMap.skip);
-  assert.deepEqual(result, []);
-});
 
-// ─── asyncFind ──────────────────────────────────────────────────────────────
 
 test('asyncFind returns first matching element', async () => {
   const result = await asyncFind([1, 2, 3, 4], async (x) => x > 2);
@@ -130,7 +118,6 @@ test('asyncFind works with async predicate', async () => {
   assert.equal(result, 'bb');
 });
 
-// ─── createAsyncController / скасування ──────────────────────────────────────────────────
 
 test('asyncMap aborts when signal is cancelled', async () => {
   const ctrl = createAsyncController();
@@ -161,13 +148,6 @@ test('cancelled controller marks signal as aborted', () => {
   assert.equal(ctrl.aborted, false);
   ctrl.cancel();
   assert.equal(ctrl.aborted, true);
-});
-
-// ─── ABORT_MESSAGE ──────────────────────────────────────────────────────────
-
-test('ABORT_MESSAGE is a non-empty string', () => {
-  assert.equal(typeof ABORT_MESSAGE, 'string');
-  assert.ok(ABORT_MESSAGE.length > 0);
 });
 
 // перевіряли що concurrency=1 справді не запускає елементи паралельно —

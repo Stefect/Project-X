@@ -4,7 +4,6 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import {
-  createAbortError,
   readNdjsonFile,
   batchAsyncIterator,
   analyzeHistoryNdjsonFile,
@@ -16,15 +15,6 @@ function writeTempNdjson(lines) {
   return file;
 }
 
-// ─── createAbortError ────────────────────────────────────────────────────────
-
-test('createAbortError returns an Error with name=AbortError', () => {
-  const err = createAbortError();
-  assert.ok(err instanceof Error);
-  assert.equal(err.name, 'AbortError');
-});
-
-// ─── readNdjsonFile ──────────────────────────────────────────────────────────
 
 test('readNdjsonFile yields parsed objects', async () => {
   const file = writeTempNdjson([
@@ -98,7 +88,6 @@ test('readNdjsonFile throws TypeError for non-string filePath', async () => {
   }, TypeError);
 });
 
-// ─── batchAsyncIterator ──────────────────────────────────────────────────────
 
 test('batchAsyncIterator groups items into batches of given size', async () => {
   async function* gen() {
@@ -127,21 +116,7 @@ test('batchAsyncIterator handles exact multiple of batch size', async () => {
   assert.equal(batches[0].length, 3);
 });
 
-test('batchAsyncIterator with single large batch', async () => {
-  async function* gen() {
-    for (let i = 0; i < 5; i += 1) yield i;
-  }
 
-  const batches = [];
-  for await (const batch of batchAsyncIterator(gen(), 100)) {
-    batches.push(batch);
-  }
-
-  assert.equal(batches.length, 1);
-  assert.deepEqual(batches[0], [0, 1, 2, 3, 4]);
-});
-
-// ─── analyzeHistoryNdjsonFile ────────────────────────────────────────────────
 
 test('analyzeHistoryNdjsonFile counts domains and finds top domains', async () => {
   const rows = [

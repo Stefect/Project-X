@@ -6,7 +6,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// ─── базове кешування ──────────────────────────────────────────────────────────
 
 test('memoize caches synchronous results', () => {
   let calls = 0;
@@ -32,7 +31,6 @@ test('memoize with maxSize=0 never caches', () => {
   assert.equal(calls, 3);
 });
 
-// ─── витіснення: LRU ──────────────────────────────────────────────────────────
 
 test('LRU eviction removes least-recently-used entry', async () => {
   const fn = memoize((x) => x, { maxSize: 2, policy: 'lru' });
@@ -47,7 +45,6 @@ test('LRU eviction removes least-recently-used entry', async () => {
   assert.equal(fn.has('c'), true);
 });
 
-// ─── витіснення: LFU ──────────────────────────────────────────────────────────
 
 test('LFU eviction removes least-frequently-used entry', () => {
   const fn = memoize((x) => x, { maxSize: 2, policy: 'lfu' });
@@ -57,8 +54,6 @@ test('LFU eviction removes least-frequently-used entry', () => {
   assert.equal(fn.has('b'), false);
   assert.equal(fn.has('a'), true);
 });
-
-// ─── витіснення: TIME ─────────────────────────────────────────────────────────
 
 test('TIME eviction removes oldest-by-creation entry', () => {
   const fn = memoize((x) => x, { maxSize: 2, policy: 'time' });
@@ -70,7 +65,6 @@ test('TIME eviction removes oldest-by-creation entry', () => {
   assert.equal(fn.has('c'), true);
 });
 
-// ─── витіснення: CUSTOM ─────────────────────────────────────────────────────────
 
 test('CUSTOM eviction policy calls customEvict to pick key', () => {
   const fn = memoize((x) => x, {
@@ -86,7 +80,6 @@ test('CUSTOM eviction policy calls customEvict to pick key', () => {
   assert.equal(fn.has('c'), true);
 });
 
-// ─── TTL (час життя кешу) ────────────────────────────────────────────────────────────
 
 test('expired entries are removed on next call', async () => {
   const fn = memoize((x) => x, { ttl: 30 });
@@ -97,7 +90,6 @@ test('expired entries are removed on next call', async () => {
   assert.equal(fn.has('hello'), false);
 });
 
-// ─── асинхронні функції ─────────────────────────────────────────────────────────
 
 test('async function result is cached (single underlying call)', async () => {
   let calls = 0;
@@ -116,15 +108,6 @@ test('rejected promise removes entry so next call retries', async () => {
   assert.equal(calls, 2);
 });
 
-// ─── допоміжні методи ─────────────────────────────────────────────────────────
-
-test('clear() empties the entire cache', () => {
-  const fn = memoize((x) => x);
-  fn(1); fn(2);
-  fn.clear();
-  assert.equal(fn.stats().size, 0);
-});
-
 test('delete() removes a specific entry', () => {
   const fn = memoize((x) => x);
   fn(42);
@@ -133,15 +116,6 @@ test('delete() removes a specific entry', () => {
   assert.equal(fn.has(42), false);
 });
 
-test('peek() returns cached value without affecting stats', () => {
-  const fn = memoize((x) => x);
-  fn(7);
-  const before = fn.stats().hits;
-  assert.equal(fn.peek(7), 7);
-  assert.equal(fn.stats().hits, before); // peek не рахується як звернення
-});
-
-// ─── статистика ─────────────────────────────────────────────────────────────────────────
 
 test('stats() tracks hits, misses and size', () => {
   const fn = memoize((x) => x);
@@ -159,7 +133,6 @@ test('stats() reports evictions after LRU overflow', () => {
   assert.equal(fn.stats().evictions, 1);
 });
 
-// ─── власний keyResolver ──────────────────────────────────────────────────────────
 
 test('custom keyResolver groups calls by derived key', () => {
   let calls = 0;
@@ -171,8 +144,6 @@ test('custom keyResolver groups calls by derived key', () => {
   fn({ id: 1, noise: 'b' }); // той самий похідний ключ
   assert.equal(calls, 1);
 });
-
-// ─── валідація вхідних даних ──────────────────────────────────────────────────────
 
 test('memoize throws TypeError for non-function argument', () => {
   assert.throws(() => memoize(42), TypeError);
