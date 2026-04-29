@@ -26,3 +26,6 @@ jobs:
 
       - name: Run encoding guard
         run: npm run check:encoding
+
+      - name: Run tests
+        run: npm test
