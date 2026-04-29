@@ -25,3 +25,9 @@ bin/tor/*.exe
 bin/tor/pluggable_transports/*.exe
 bin/tor/pluggable_transports/*.dylib
 bin/tor/pluggable_transports/*.so
+
+# IDE files
+.idea/
+
+# Generated CSS
+public/css/output.css
