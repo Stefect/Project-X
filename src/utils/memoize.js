@@ -223,7 +223,3 @@ memoize.clearCache = function (memoizedFn) {
 };
 
 export default memoize;
-
-if (typeof window !== 'undefined') {
-    window.memoize = memoize;
-}

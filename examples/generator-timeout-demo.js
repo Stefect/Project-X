@@ -152,9 +152,7 @@ async function main() {
   console.log(randomResult.join(', '));
 }
 
-if (require.main === module) {
-  main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
-}
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
