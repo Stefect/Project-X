@@ -18,7 +18,7 @@
   },
   "scripts": {
     "start": "npm run build:css && electron .",
-    "test": "node --test tests/priority-queue.test.js tests/memoize.test.js tests/async-array.test.js tests/large-data-stream.test.js tests/browserx-edge-flows.test.js",
+    "test": "node --test tests/priority-queue.test.js tests/memoize.test.js tests/async-array.test.js tests/large-data-stream.test.js tests/browserx-edge-flows.test.js tests/lab8-9-patterns.test.js",
     "check:encoding": "node scripts/check-encoding.js",
     "build:css": "postcss ./public/css/styles.css -o ./public/css/output.css --verbose",
     "build:css:watch": "postcss ./public/css/styles.css -o ./public/css/output.css --watch --verbose",
