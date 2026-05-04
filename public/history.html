@@ -210,8 +210,21 @@
 
     let allHistory = [];
     async function loadHistory() {
-      allHistory = await window.browserStorage.getHistory(1000);
-      renderHistory(allHistory);
+      try {
+        if (!window.browserStorage) {
+          throw new Error('API недоступне');
+        }
+        allHistory = await window.browserStorage.getHistory(1000);
+        renderHistory(allHistory);
+      } catch (e) {
+        console.error('[HISTORY] Load error:', e);
+        historyList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚠</div>
+            <p>Помилка завантаження історії</p>
+          </div>
+        `;
+      }
     }
     function formatTime(timestamp) {
       const date = new Date(timestamp);

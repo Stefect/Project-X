@@ -72,10 +72,10 @@ function startTor(exitCountry = null, options = {}) {
   pendingExitCountry = exitCountry;
   const isWindows = process.platform === 'win32';
   const torBinary = isWindows ? 'tor.exe' : 'tor';
-  const torPath = path.join(__dirname, '..', '..', 'bin', 'tor', torBinary);
+  const torPath = path.join(__dirname, '..', '..', 'tor', torBinary);
   if (!fs.existsSync(torPath)) {
     console.log(`[TOR] Tor not found at path: ${torPath}`);
-    console.log('[TOR] Download Tor Expert Bundle and place binary in bin/tor/ folder');
+    console.log('[TOR] Download Tor Expert Bundle and place binary in tor/ folder');
     console.log(`   Windows: tor.exe | macOS/Linux: tor`);
     return;
   }
@@ -90,8 +90,8 @@ function startTor(exitCountry = null, options = {}) {
   
   console.log(`[TOR] Starting Tor (${process.platform}):`, torPath);
   
-  const geoipPath = path.join(__dirname, '..', '..', 'bin', 'data', 'geoip');
-  const geoip6Path = path.join(__dirname, '..', '..', 'bin', 'data', 'geoip6');
+  const geoipPath = path.join(__dirname, '..', '..', 'data', 'geoip');
+  const geoip6Path = path.join(__dirname, '..', '..', 'data', 'geoip6');
   
   const torArgs = [
     '--GeoIPFile', geoipPath,
@@ -99,7 +99,7 @@ function startTor(exitCountry = null, options = {}) {
   ];
   
   const spawnOptions = {
-    cwd: path.join(__dirname, '..', '..', 'bin', 'tor')
+    cwd: path.join(__dirname, '..', '..', 'tor')
   };
   if (isWindows) {
     spawnOptions.windowsHide = true;
@@ -169,6 +169,19 @@ async function toggleTor(mainWindow, tabManager = null) {
   } else {
     if (!torProcess || torProcess.exitCode !== null) {
       console.log('[TOR] Tor process not running, starting now...');
+      
+      // Check if binary exists before starting
+      const isWindows = process.platform === 'win32';
+      const torBinary = isWindows ? 'tor.exe' : 'tor';
+      const torPath = path.join(__dirname, '..', '..', 'tor', torBinary);
+      if (!fs.existsSync(torPath)) {
+        console.warn('[TOR] Binary not found:', torPath);
+        return {
+          status: false,
+          message: 'Tor не встановлено. Завантажте Tor Expert Bundle і помістіть у tor/'
+        };
+      }
+      
       startTor('DE', { mainWindow });
       return {
         status: false,

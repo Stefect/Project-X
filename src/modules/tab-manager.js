@@ -88,7 +88,7 @@ function createWebviewElement(tabId, url) {
     <webview
       id="webview-${tabId}"
       src="${srcValue}"
-      preload="${pathToFileURL(path.join(__dirname, '..', 'preload.js')).href}"
+      preload="${pathToFileURL(path.join(__dirname, '..', 'preload.cjs')).href}"
       partition="persist:main"
       class="${isActive ? 'active' : ''}"
       webpreferences="contextIsolation=yes, nodeIntegration=no"

@@ -22,6 +22,10 @@ bin/tor/pluggable_transports/pt_config.json
 release/
 bin/data/
 bin/tor/*.exe
+
+# Tor runtime files at project root
+tor/
+data/
 bin/tor/pluggable_transports/*.exe
 bin/tor/pluggable_transports/*.dylib
 bin/tor/pluggable_transports/*.so

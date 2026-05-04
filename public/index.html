@@ -1203,25 +1203,24 @@
         try {
           const result = organizeTabsByDomain();
           
-          if (result && result.success) {
+          if (result === null) {
+            // alert() was already shown inside organizeTabsByDomain (< 2 tabs)
+            organizeTabsBtn.innerHTML = 'Групи';
+            organizeTabsBtn.disabled = false;
+          } else if (result.success) {
             displayOrganizedGroups(result.groups, result.tabsData);
             organizeTabsBtn.innerHTML = '[OK] Готово!';
             setTimeout(() => {
-              organizeTabsBtn.innerHTML = ' Групи';
+              organizeTabsBtn.innerHTML = 'Групи';
               organizeTabsBtn.disabled = false;
             }, 1500);
           } else {
             organizeTabsBtn.innerHTML = '[ERR] Помилка';
             setTimeout(() => {
-              organizeTabsBtn.innerHTML = ' Групи';
+              organizeTabsBtn.innerHTML = 'Групи';
               organizeTabsBtn.disabled = false;
             }, 2000);
           }
-          
-          setTimeout(() => {
-            organizeTabsBtn.innerHTML = ' Навести лад';
-            organizeTabsBtn.disabled = false;
-          }, 2000);
 
         } catch (error) {
           console.error('[ERR] Error:', error);

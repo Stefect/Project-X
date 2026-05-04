@@ -10,7 +10,16 @@ function registerNewsHandlers() {
 
   ipcMain.handle('fetch-news', async (_event, { categories, count } = {}) => {
     const cats = Array.isArray(categories) && categories.length ? categories : Object.keys(CATEGORIES);
-    return fetchNewsArticles(cats, count || 15);
+    try {
+      const articles = await Promise.race([
+        fetchNewsArticles(cats, count || 15),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 20000))
+      ]);
+      return articles;
+    } catch (e) {
+      console.warn('[NEWS] fetch-news error/timeout:', e.message);
+      return [];
+    }
   });
 }
 
