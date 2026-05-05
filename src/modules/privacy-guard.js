@@ -21,11 +21,7 @@ function initializePrivacyProtection() {
       callback(true);
     }
   });
-  setupGeolocationSpoofing();
 }
-
-
-function setupGeolocationSpoofing() {}
 
 
 function enablePrivacyMode(mainWindow) {
@@ -48,42 +44,42 @@ function disablePrivacyMode(mainWindow) {
 }
 
 
+const GEO_BLOCK_SCRIPT = `
+  (function() {
+    if (window.__geoLocationPatched) return;
+    window.__geoLocationPatched = true;
+    window.__torActive = true;
+
+    const originalGeolocation = navigator.geolocation;
+    const fakeGeolocation = {
+      getCurrentPosition: function(success, error) {
+        console.warn('[PRIVACY] Geolocation blocked - Tor active');
+        if (error) error({ code: 1, message: 'User denied Geolocation' });
+      },
+      watchPosition: function(success, error) {
+        console.warn('[PRIVACY] Geolocation watchPosition blocked');
+        if (error) error({ code: 1, message: 'User denied Geolocation' });
+        return -1;
+      },
+      clearWatch: function() {}
+    };
+
+    Object.defineProperty(navigator, 'geolocation', {
+      get: () => window.__torActive ? fakeGeolocation : originalGeolocation,
+      configurable: false
+    });
+  })();
+`;
+
+function injectGeolocationBlockToContents(contents) {
+  contents.executeJavaScript(GEO_BLOCK_SCRIPT)
+    .catch(err => console.error('[PRIVACY] Failed to inject geolocation block:', err.message));
+}
+
 function injectPrivacyScriptToAllTabs() {
-  const geolocationBlockScript = `
-    (function() {
-      if (window.__geoLocationPatched) return;
-      window.__geoLocationPatched = true;
-      window.__torActive = true;
-      
-      const originalGeolocation = navigator.geolocation;
-      const fakeGeolocation = {
-        getCurrentPosition: function(success, error) {
-          console.warn('[PRIVACY] Geolocation blocked - Tor active');
-          if (error) {
-            error({ code: 1, message: 'User denied Geolocation' });
-          }
-        },
-        watchPosition: function(success, error) {
-          console.warn('[PRIVACY] Geolocation watchPosition blocked');
-          if (error) {
-            error({ code: 1, message: 'User denied Geolocation' });
-          }
-          return -1;
-        },
-        clearWatch: function() {}
-      };
-      
-      Object.defineProperty(navigator, 'geolocation', {
-        get: () => window.__torActive ? fakeGeolocation : originalGeolocation,
-        configurable: false
-      });
-    })();
-  `;
-  
   webContents.getAllWebContents().forEach(contents => {
     if (contents.getType() === 'browserView' || contents.getType() === 'webview') {
-      contents.executeJavaScript(geolocationBlockScript)
-        .catch(err => console.error('[PRIVACY] Failed to inject geolocation block:', err));
+      injectGeolocationBlockToContents(contents);
     }
   });
 }
@@ -147,5 +143,6 @@ export {
   disablePrivacyMode,
   isPrivacyModeEnabled,
   checkPrivacyLeaks,
-  injectPrivacyScriptToAllTabs
+  injectPrivacyScriptToAllTabs,
+  injectGeolocationBlockToContents
 };
