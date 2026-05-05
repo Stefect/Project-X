@@ -67,11 +67,6 @@ function createSplashWindow() {
 }
 
 
-function injectUnifiedT9(_webviewId) {
-  // T9 is injected via preload.js on page load
-}
-
-
 async function createWindow() {
   try {
     if (!config.GROQ_API_KEY || config.GROQ_API_KEY === 'YOUR_GROQ_API_KEY_HERE') {
@@ -225,6 +220,7 @@ app.whenReady().then(async () => {
   protocol.handle('app', appProtocolHandler);
   session.fromPartition('persist:main').protocol.handle('app', appProtocolHandler);
   console.log('[PROTOCOL] app:// protocol registered for internal pages');
+  registerDownloadHandlers();
   createSplashWindow();
   await new Promise(resolve => setTimeout(resolve, 500));
   privacyGuard.initializePrivacyProtection();
@@ -688,6 +684,52 @@ ipcMain.handle('check-ip', async () => {
 ipcHandlers.registerStorageHandlers(storage, tabManager);
 ipcHandlers.registerAISchedulerHandlers(aiScheduler);
 registerNewsHandlers();
+
+// ==================== DOWNLOADS ====================
+let downloadIdCounter = 0;
+function registerDownloadHandlers() {
+  const handleSession = (ses) => {
+    ses.on('will-download', (event, item) => {
+      const id = ++downloadIdCounter;
+      const filename = item.getFilename();
+      const totalBytes = item.getTotalBytes();
+
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('download-started', { id, filename, totalBytes });
+      }
+
+      item.on('updated', (e, state) => {
+        if (state === 'progressing' && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('download-progress', {
+            id,
+            receivedBytes: item.getReceivedBytes(),
+            totalBytes: item.getTotalBytes()
+          });
+        }
+      });
+
+      item.once('done', (e, state) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('download-done', { id, state });
+        }
+        console.log(`[DOWNLOAD] ${filename}: ${state}`);
+      });
+    });
+  };
+
+  handleSession(session.defaultSession);
+  handleSession(session.fromPartition('persist:main'));
+  console.log('[IPC] Download handlers registered');
+}
+// registerDownloadHandlers() is called inside app.whenReady() below
+// ==================== END DOWNLOADS ====================
+
+// IPC: знайдено на сторінці — пробрасуємо результат з webview в renderer
+ipcMain.on('found-in-page-result', (event, result) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('found-in-page', result);
+  }
+});
 
 console.log('[CONSOLE] BrowserX main process initialized');
 function handleAppUrl(url) {

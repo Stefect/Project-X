@@ -202,7 +202,7 @@
 
     try {
       const suggestion = await Promise.race([
-        window.api.invoke('predict-completion', text),
+        window.api.predictCompletion(text),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('AI timeout')), CONFIG.aiTimeout)
         )

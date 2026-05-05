@@ -17,6 +17,7 @@
       <div class="tab active" data-tab-id="1">
         <img class="tab-favicon" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237aa2f7' stroke-width='1.5'%3E%3Ccircle cx='8' cy='8' r='6.5'/%3E%3Cpath d='M8 1.5C8 1.5 4 5 4 8s4 6.5 4 6.5M8 1.5C8 1.5 12 5 12 8s-4 6.5-4 6.5M1.5 8h13'/%3E%3C/svg%3E">
         <span class="tab-title">Нова вкладка</span>
+        <span class="tab-mute" title="Вимкнути звук" style="display:none; cursor:pointer; font-size:12px;">🔊</span>
         <span class="tab-close">×</span>
       </div>
       <button class="new-tab-btn" id="new-tab-btn" title="Нова вкладка (Ctrl+T)">+</button>
@@ -42,6 +43,37 @@
     <button id="forward" class="nav-button" title="Вперед">▶</button>
     <button id="reload" class="nav-button" title="Оновити">↻</button>
     <input type="text" id="url" class="address-bar" placeholder="Пошук або адреса...">
+  </div>
+
+  <!-- Find-in-page bar (Ctrl+F) -->
+  <div id="find-bar" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999;
+    background:#1e2030; border-top:1px solid rgba(255,255,255,0.1); padding:6px 12px;
+    display:none; align-items:center; gap:8px; height:38px;">
+    <input id="find-input" type="text" placeholder="Знайти на сторінці..." autocomplete="off"
+      style="flex:1; max-width:300px; background:#252535; border:1px solid rgba(255,255,255,0.15);
+      color:#fff; border-radius:6px; padding:4px 10px; font-size:13px; outline:none;">
+    <span id="find-count" style="font-size:12px; color:#888; min-width:60px;"></span>
+    <button id="find-prev" title="Попереднє (Shift+Enter)"
+      style="background:rgba(255,255,255,0.07); border:none; color:#ccc; border-radius:4px;
+      padding:3px 8px; cursor:pointer; font-size:14px;">▲</button>
+    <button id="find-next" title="Наступне (Enter)"
+      style="background:rgba(255,255,255,0.07); border:none; color:#ccc; border-radius:4px;
+      padding:3px 8px; cursor:pointer; font-size:14px;">▼</button>
+    <button id="find-close" title="Закрити (Esc)"
+      style="background:none; border:none; color:#888; cursor:pointer; font-size:16px; padding:2px 6px;">✕</button>
+  </div>
+
+  <!-- Downloads panel — grows upward from bottom-right, anchored at bottom:0 -->
+  <div id="downloads-panel" style="display:none; position:fixed; bottom:0; right:0; width:340px;
+    background:#1a1b26; border:1px solid rgba(255,255,255,0.1);
+    border-radius:12px 12px 0 0; z-index:99998; overflow:hidden; box-shadow:0 -4px 20px rgba(0,0,0,0.4);">
+    <div style="display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.08);">
+      <span style="font-size:13px; font-weight:600; color:#fff;">Завантаження</span>
+      <button id="downloads-close" style="background:none; border:none; color:#888; cursor:pointer; font-size:16px;">✕</button>
+    </div>
+    <div id="downloads-list" style="overflow-y:auto; max-height:320px; padding:8px 0;"></div>
+    <div id="downloads-empty" style="text-align:center; padding:24px; color:#555; font-size:13px;">Немає завантажень</div>
   </div>
 
   <!-- Нативна нова вкладка (показується, коли немає активного сайту) -->
@@ -123,6 +155,7 @@
       <button id="history-menu" class="sidebar-btn" title="Історія переглядів">Історія</button>
       <button id="toggle-sidebar-toolbar" class="sidebar-btn" title="Показати/сховати конспект">Нотатки</button>
       <button id="organize-tabs-btn" class="sidebar-btn" title="Організація вкладок">Групи</button>
+      <button id="downloads-btn" class="sidebar-btn" title="Завантаження">Завантаження</button>
       <hr class="divider">
       <button id="toggle-news-btn" class="sidebar-btn" title="AI Стрічка новин">Новини</button>
     </div>
@@ -700,6 +733,7 @@
           tabElement.innerHTML = `
             <img class="tab-favicon" src="${newTabFavicon}" onerror="this.src='${newTabFavicon}'">
             <span class="tab-title">${result.title || 'Нова вкладка'}</span>
+            <span class="tab-mute" title="Вимкнути звук" style="display:none; cursor:pointer; font-size:12px;">🔊</span>
             <span class="tab-close">×</span>
           `;
           
@@ -868,6 +902,7 @@
         tabElement.innerHTML = `
           <img class="tab-favicon" src="${faviconUrl}" onerror="this.src='${globeIcon}'">
           <span class="tab-title">${data.title || 'Завантаження...'}</span>
+          <span class="tab-mute" title="Вимкнути звук" style="display:none; cursor:pointer; font-size:12px;">🔊</span>
           <span class="tab-close">x</span>
         `;
         
@@ -909,6 +944,18 @@
         const tabId = parseInt(tab.dataset.tabId);
         console.log('[CLICK] Click on tab:', tabId);
         
+        // Якщо клікнули на mute
+        if (e.target.classList.contains('tab-mute')) {
+          e.stopPropagation();
+          const webview = document.getElementById(`webview-${tabId}`);
+          if (webview) {
+            const muted = !webview.isAudioMuted();
+            webview.setAudioMuted(muted);
+            e.target.textContent = muted ? '🔇' : '🔊';
+            e.target.title = muted ? 'Увімкнути звук' : 'Вимкнути звук';
+          }
+          return;
+        }
         // Якщо клікнули на кнопку закриття
         if (e.target.classList.contains('tab-close')) {
           console.log('[CLICK] Click on tab close button (x)');
@@ -2658,11 +2705,8 @@
             // Перевіряємо чи це помилка "ще не готовий"
             if (result.bootstrapProgress !== undefined && result.bootstrapProgress < 100) {
               torBtn.textContent = `Tor: ${result.bootstrapProgress}%`;
-              torBtn.style.color = '#f59e0b'; // Orange
-              showTorNotification(
-                `Tor підключається... ${result.bootstrapProgress}% - ${result.bootstrapStatus}`,
-                false
-              );
+              torBtn.style.color = '#f59e0b';
+              // Не показуємо окремий тост — оранжевий bootstrap-тост з'явиться через tor-bootstrap-progress
             } else {
               torBtn.textContent = 'Tor: OFF';
               torBtn.style.color = '#9ca3af';
@@ -3037,6 +3081,10 @@
         if (tab) {
           const titleSpan = tab.querySelector('.tab-title');
           if (titleSpan && !url.startsWith('data:')) titleSpan.textContent = title || 'Нова вкладка';
+          // Зберігаємо URL для функції групування
+          if (url && !url.startsWith('data:') && !url.startsWith('file://') && url !== 'about:blank') {
+            tab.dataset.url = url;
+          }
         }
 
         // Синхронізуємо URL і заголовок у main process для коректного збереження сесії
@@ -3076,6 +3124,12 @@
             webview.classList.remove('active');
             if (nativeNewTab) nativeNewTab.style.display = '';
           }
+        }
+
+        // Зберігаємо URL для функції групування
+        if (url && !url.startsWith('file://') && url !== 'about:blank' && url !== '') {
+          const tabEl = document.querySelector(`[data-tab-id="${tabId}"]`);
+          if (tabEl) tabEl.dataset.url = url;
         }
 
         // Оновлюємо URL bar якщо це активна вкладка
@@ -3189,6 +3243,36 @@
         }
       });
 
+      // Звук на вкладці — показуємо 🔊 коли грає медіа
+      webview.addEventListener('media-started-playing', () => {
+        const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
+        if (tab) {
+          const muteBtn = tab.querySelector('.tab-mute');
+          if (muteBtn) muteBtn.style.display = 'inline';
+        }
+      });
+      webview.addEventListener('media-paused', () => {
+        const tab = document.querySelector(`[data-tab-id="${tabId}"]`);
+        if (tab) {
+          const muteBtn = tab.querySelector('.tab-mute');
+          if (muteBtn && !webview.isAudioMuted()) muteBtn.style.display = 'none';
+        }
+      });
+
+      // Find-in-page результати з webview
+      webview.addEventListener('found-in-page', (e) => {
+        if (webview.classList.contains('active')) {
+          const findCountEl = document.getElementById('find-count');
+          if (findCountEl && e.result) {
+            const r = e.result;
+            findCountEl.textContent = r.matches > 0
+              ? `${r.activeMatchOrdinal}/${r.matches}`
+              : 'Не знайдено';
+            findCountEl.style.color = r.matches > 0 ? '#888' : '#ef4444';
+          }
+        }
+      });
+
       // Контекстне меню (ПКМ)
       webview.addEventListener('context-menu', (e) => {
         e.preventDefault();
@@ -3295,7 +3379,142 @@
     }
     
     // ==================== END NATIVE NEW TAB LOGIC ====================
-    
+
+    // ==================== FIND IN PAGE (Ctrl+F) ====================
+    const findBar    = document.getElementById('find-bar');
+    const findInput  = document.getElementById('find-input');
+    const findCount  = document.getElementById('find-count');
+    const findPrev   = document.getElementById('find-prev');
+    const findNext   = document.getElementById('find-next');
+    const findClose  = document.getElementById('find-close');
+
+    function getActiveWebview() {
+      return document.getElementById(`webview-${currentTabId}`) || document.querySelector('webview');
+    }
+
+    function openFindBar() {
+      findBar.style.display = 'flex';
+      findInput.focus();
+      findInput.select();
+    }
+    function closeFindBar() {
+      findBar.style.display = 'none';
+      findCount.textContent = '';
+      const wv = getActiveWebview();
+      if (wv) wv.stopFindInPage('clearSelection');
+    }
+    function doFind(forward = true) {
+      const wv = getActiveWebview();
+      if (!wv || !findInput.value.trim()) return;
+      wv.findInPage(findInput.value, { forward, findNext: true });
+    }
+
+    findInput.addEventListener('input', () => {
+      const wv = getActiveWebview();
+      if (!wv) return;
+      if (!findInput.value.trim()) { wv.stopFindInPage('clearSelection'); findCount.textContent = ''; return; }
+      wv.findInPage(findInput.value, { forward: true });
+    });
+    findInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.shiftKey ? doFind(false) : doFind(true); }
+      if (e.key === 'Escape') closeFindBar();
+    });
+    findNext.addEventListener('click', () => doFind(true));
+    findPrev.addEventListener('click', () => doFind(false));
+    findClose.addEventListener('click', closeFindBar);
+
+    // Отримуємо результати findInPage
+    document.addEventListener('found-in-page', (e) => {
+      const r = e.result;
+      if (r && r.matches !== undefined) {
+        findCount.textContent = r.matches > 0
+          ? `${r.activeMatchOrdinal}/${r.matches}`
+          : 'Не знайдено';
+        findCount.style.color = r.matches > 0 ? '#888' : '#ef4444';
+      }
+    });
+    // webview кидає 'found-in-page' через IPC — слухаємо через ipcRenderer
+    ipcRenderer.on('found-in-page', (event, result) => {
+      if (result && result.matches !== undefined) {
+        findCount.textContent = result.matches > 0
+          ? `${result.activeMatchOrdinal}/${result.matches}`
+          : 'Не знайдено';
+        findCount.style.color = result.matches > 0 ? '#888' : '#ef4444';
+      }
+    });
+
+    // Ctrl+F shortcut
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        openFindBar();
+      }
+    });
+    // ==================== END FIND IN PAGE ====================
+
+    // ==================== DOWNLOADS PANEL ====================
+    const downloadsPanel  = document.getElementById('downloads-panel');
+    const downloadsList   = document.getElementById('downloads-list');
+    const downloadsEmpty  = document.getElementById('downloads-empty');
+    const downloadsClose  = document.getElementById('downloads-close');
+    const downloadsBtn    = document.getElementById('downloads-btn');
+    let downloadItems = {};
+
+    function formatBytes(bytes) {
+      if (!bytes) return '';
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes/1024).toFixed(1)} KB`;
+      return `${(bytes/1024/1024).toFixed(1)} MB`;
+    }
+
+    function renderDownloadItem(id, filename, receivedBytes, totalBytes, state) {
+      let el = document.getElementById(`dl-${id}`);
+      const percent = totalBytes > 0 ? Math.round(receivedBytes / totalBytes * 100) : 0;
+      const sizeText = totalBytes > 0
+        ? `${formatBytes(receivedBytes)} / ${formatBytes(totalBytes)}`
+        : formatBytes(receivedBytes);
+      const stateLabel = state === 'completed' ? '✓' : state === 'cancelled' ? '✗' : `${percent}%`;
+      const barColor = state === 'completed' ? '#22c55e' : state === 'cancelled' ? '#ef4444' : '#3b82f6';
+
+      if (!el) {
+        el = document.createElement('div');
+        el.id = `dl-${id}`;
+        el.style.cssText = 'padding:8px 14px; border-bottom:1px solid rgba(255,255,255,0.05);';
+        downloadsList.prepend(el);
+        downloadsEmpty.style.display = 'none';
+      }
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:12px;color:#ddd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;" title="${filename}">${filename}</span>
+          <span style="font-size:11px;color:${barColor};margin-left:8px;flex-shrink:0;">${stateLabel}</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.08);height:3px;border-radius:2px;overflow:hidden;">
+          <div style="background:${barColor};height:100%;width:${state==='completed'?100:percent}%;transition:width 0.3s;"></div>
+        </div>
+        <div style="font-size:11px;color:#666;margin-top:3px;">${sizeText}</div>
+      `;
+    }
+
+    ipcRenderer.on('download-started', (event, { id, filename, totalBytes }) => {
+      downloadItems[id] = { filename, totalBytes };
+      downloadsPanel.style.display = 'block';
+      renderDownloadItem(id, filename, 0, totalBytes, 'progressing');
+    });
+    ipcRenderer.on('download-progress', (event, { id, receivedBytes, totalBytes }) => {
+      const item = downloadItems[id];
+      if (item) renderDownloadItem(id, item.filename, receivedBytes, totalBytes, 'progressing');
+    });
+    ipcRenderer.on('download-done', (event, { id, state }) => {
+      const item = downloadItems[id];
+      if (item) renderDownloadItem(id, item.filename, item.totalBytes, item.totalBytes, state);
+    });
+
+    if (downloadsClose) downloadsClose.addEventListener('click', () => { downloadsPanel.style.display = 'none'; });
+    if (downloadsBtn) downloadsBtn.addEventListener('click', () => {
+      downloadsPanel.style.display = downloadsPanel.style.display === 'none' ? 'block' : 'none';
+    });
+    // ==================== END DOWNLOADS PANEL ====================
+
   } catch (error) {
     console.error('CRITICAL ERROR in index.html:', error);
     alert('Помилка завантаження браузера: ' + error.message);

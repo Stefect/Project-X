@@ -1,6 +1,7 @@
 
 
-import { ipcMain, shell, BrowserWindow } from 'electron';
+import { ipcMain, shell, BrowserWindow, app } from 'electron';
+import path from 'path';
 import { analyzeHistoryNdjsonFile } from '../utils/large-data-stream.js';
 
 function getMainWindow() {
@@ -133,7 +134,13 @@ function registerStorageHandlers(storage, tabManager) {
   });
   
   ipcMain.handle('open-external', async (event, url) => {
+    const ALLOWED_PROTOCOLS = ['http:', 'https:'];
     try {
+      const parsed = new URL(String(url));
+      if (!ALLOWED_PROTOCOLS.includes(parsed.protocol)) {
+        console.warn('[SHELL] Blocked open-external — disallowed protocol:', parsed.protocol);
+        return { success: false, error: 'Protocol not allowed' };
+      }
       await shell.openExternal(url);
       return { success: true };
     } catch (error) {
@@ -170,7 +177,9 @@ function registerStorageHandlers(storage, tabManager) {
 
   ipcMain.handle('analyze-history-stream', async (_event, payload = {}) => {
     try {
-      const { filePath, topN = 10 } = payload;
+      const { topN = 10 } = payload;
+      // Never use a renderer-provided filePath — use only the known app data path
+      const filePath = path.join(app.getPath('userData'), 'history.ndjson');
       const stats = await analyzeHistoryNdjsonFile(filePath, { topN });
       return { success: true, stats };
     } catch (error) {

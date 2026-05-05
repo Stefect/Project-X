@@ -92,8 +92,15 @@ function startTor(exitCountry = null, options = {}) {
   
   const geoipPath = path.join(__dirname, '..', '..', 'data', 'geoip');
   const geoip6Path = path.join(__dirname, '..', '..', 'data', 'geoip6');
+
+  // Isolated DataDirectory in app userData — never write to install directory
+  const torDataDir = path.join(app.getPath('userData'), 'tor-data');
+  if (!fs.existsSync(torDataDir)) {
+    fs.mkdirSync(torDataDir, { recursive: true });
+  }
   
   const torArgs = [
+    '--DataDirectory', torDataDir,
     '--GeoIPFile', geoipPath,
     '--GeoIPv6File', geoip6Path
   ];
@@ -106,25 +113,38 @@ function startTor(exitCountry = null, options = {}) {
   }
   
   torProcess = spawn(torPath, torArgs, spawnOptions);
-  
+
+  // Buffer stdout to avoid missing bootstrap lines split across chunks
+  let stdoutBuf = '';
   torProcess.stdout.on('data', (data) => {
-    const output = data.toString('utf8');
-    console.log('Tor:', output);
-    parseBootstrapLine(output);
-    if (bootstrapProgress === 100) {
-      isTorReady = true;
-      bootstrapStatus = 'Connected';
-      console.log('[TOR] Tor successfully connected and ready!');
-      if (mainWindowRef && mainWindowRef.webContents) {
-        mainWindowRef.webContents.send('tor-ready', true);
+    stdoutBuf += data.toString('utf8');
+    const lines = stdoutBuf.split('\n');
+    stdoutBuf = lines.pop(); // keep incomplete last line
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      console.log('Tor:', line);
+      parseBootstrapLine(line);
+      if (bootstrapProgress === 100 && !isTorReady) {
+        isTorReady = true;
+        bootstrapStatus = 'Connected';
+        console.log('[TOR] Tor successfully connected and ready!');
+        if (mainWindowRef && mainWindowRef.webContents) {
+          mainWindowRef.webContents.send('tor-ready', true);
+        }
       }
     }
   });
   
+  // Buffer stderr too
+  let stderrBuf = '';
   torProcess.stderr.on('data', (data) => {
-    const output = data.toString('utf8');
-    if (output.includes('[err]') || output.includes('ERROR')) {
-      console.error('Tor Error:', output);
+    stderrBuf += data.toString('utf8');
+    const lines = stderrBuf.split('\n');
+    stderrBuf = lines.pop();
+    for (const line of lines) {
+      if (line.includes('[err]') || line.includes('ERROR')) {
+        console.error('Tor Error:', line);
+      }
     }
   });
   
