@@ -123,7 +123,6 @@ function createTab(mainWindow, url = null, { storage, themeManager, injectUnifie
     url: targetUrl
   });
   mainWindow.webContents.send('switch-webview', { tabId: newTab.id });
-  setupTabEventHandlers(newTab, mainWindow, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel });
   
   console.log('[TAB] Created tab:', newTab.id);
   
@@ -131,16 +130,6 @@ function createTab(mainWindow, url = null, { storage, themeManager, injectUnifie
   return { id: newTab.id, url: targetUrl, title: newTab.title };
 }
 
-
-function setupTabEventHandlers(tabOrId, mainWindow, { storage, themeManager, injectUnifiedT9, emitReactiveEvent, formatUrlLabel }) {
-  // webview dom-ready / did-navigate слухаються в index.html через IPC;
-  // тут нема що чіпляти на рівні main process
-}
-
-
-function registerWindowOpenHandler(browserView, mainWindow) {
-  console.log('[TAB] window.open is handled by renderer/webview');
-}
 
 
 function switchTab(tabId, mainWindow, sidebarWidth) {
@@ -255,13 +244,6 @@ function reload() {
 }
 
 
-function updateActiveTabBounds(mainWindow, sidebarWidth, offsetRight = 0) {
-}
-
-
-function setTopbarHeight(height) {
-}
-
 
 function getSessionData() {
   return tabs
@@ -310,14 +292,6 @@ function restoreSession(sessionData, mainWindow, { storage, themeManager, inject
       tabId,
       html: webviewHTML,
       url: savedTab.url
-    });
-
-    setupTabEventHandlers(tabData, mainWindow, {
-      storage,
-      themeManager,
-      injectUnifiedT9,
-      emitReactiveEvent,
-      formatUrlLabel
     });
 
     mainWindow.webContents.send('tab-restored', {
@@ -375,14 +349,10 @@ export {
   goBack,
   goForward,
   reload,
-  updateActiveTabBounds,
-  setTopbarHeight,
   getSessionData,
   restoreSession,
   updateTabInfo,
   getAllTabs,
   getActiveTab,
-  getActiveTabId,
-  setupTabEventHandlers,
-  registerWindowOpenHandler
+  getActiveTabId
 };
