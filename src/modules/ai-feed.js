@@ -28,21 +28,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function createFeedSourceRotationIterator(sources) {
-  if (!Array.isArray(sources) || sources.length === 0) {
-    throw new Error('Feed sources must be a non-empty array');
-  }
 
-  let index = 0;
-
-  return {
-    next() {
-      const current = sources[index];
-      index = (index + 1) % sources.length;
-      return { value: current, done: false };
-    }
-  };
-}
 
 async function fetchJson(url, options = {}) {
   const res = await httpClient.request({ url, headers: options.headers });
@@ -101,42 +87,21 @@ const SOURCE_FETCHERS = {
   Reddit: fetchReddit
 };
 
-function createFeedCategoryMatcher(categories = ['all']) {
-  const categorySet = new Set(
-    (Array.isArray(categories) ? categories : [categories])
-      .map((value) => String(value || '').toLowerCase())
-  );
-
-  const allowAll = categorySet.has('all') || categorySet.size === 0;
-
-  return (article) => {
-    if (allowAll) return true;
-    return categorySet.has(String(article.category || '').toLowerCase());
-  };
-}
-
-function rememberSeenFeedArticle(seenKeys, seenOrder, key) {
-  seenKeys.add(key);
-  seenOrder.push(key);
-
-  if (seenOrder.length > MAX_SEEN_ARTICLES) {
-    const oldestKey = seenOrder.shift();
-    seenKeys.delete(oldestKey);
-  }
-}
-
 async function* infiniteArticleGenerator(categories = ['all']) {
-  const sources = NEWS_SOURCES;
-  const sourceIterator = createFeedSourceRotationIterator(sources);
-  const shouldIncludeCategory = createFeedCategoryMatcher(categories);
+  const categorySet = new Set(
+    (Array.isArray(categories) ? categories : [categories]).map((v) => String(v || '').toLowerCase())
+  );
+  const allowAll = categorySet.has('all') || categorySet.size === 0;
 
   const seenKeys = new Set();
   const seenOrder = [];
+  let sourceIndex = 0;
 
   while (true) {
-    const source = sourceIterator.next().value;
-    const fetcher = SOURCE_FETCHERS[source.name];
+    const source = NEWS_SOURCES[sourceIndex];
+    sourceIndex = (sourceIndex + 1) % NEWS_SOURCES.length;
 
+    const fetcher = SOURCE_FETCHERS[source.name];
     if (!fetcher) {
       await sleep(FEED_LOOP_DELAY_MS);
       continue;
@@ -146,16 +111,13 @@ async function* infiniteArticleGenerator(categories = ['all']) {
 
     for (const article of articles) {
       const articleKey = article.url || `${source.name}-${article.title}`;
+      if (seenKeys.has(articleKey)) continue;
+      if (!allowAll && !categorySet.has(String(article.category || '').toLowerCase())) continue;
 
-      if (seenKeys.has(articleKey)) {
-        continue;
-      }
+      seenKeys.add(articleKey);
+      seenOrder.push(articleKey);
+      if (seenOrder.length > MAX_SEEN_ARTICLES) seenKeys.delete(seenOrder.shift());
 
-      if (!shouldIncludeCategory(article)) {
-        continue;
-      }
-
-      rememberSeenFeedArticle(seenKeys, seenOrder, articleKey);
       yield article;
     }
 
