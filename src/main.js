@@ -2,9 +2,7 @@ import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import fs from 'fs';
-import { app, BrowserWindow, ipcMain, Menu, session, net, protocol, clipboard } from 'electron';
-import Groq from 'groq-sdk';
+import { app, BrowserWindow, ipcMain, session, net, protocol } from 'electron';
 import * as storage from './modules/storage.js';
 import * as reactiveEvents from './modules/reactive-events.js';
 import * as torManager from './modules/tor-manager.js';
@@ -14,9 +12,10 @@ import * as ipcHandlers from './modules/ipc-handlers.js';
 import * as privacyGuard from './modules/privacy-guard.js';
 import { registerNewsHandlers } from './modules/news-handlers.js';
 import aiScheduler from './modules/ai-task-scheduler.js';
-import { infiniteArticleGenerator } from './modules/ai-feed.js';
-import { registerAIHandlers } from './modules/ai-handlers.js';
-import config from './config.js';
+import { getMainWindow, createSplashWindow, createWindow, restoreSessionSmart, injectUnifiedT9 } from './app/window-manager.js';
+import { registerContextMenu } from './app/context-menu.js';
+import { registerDownloadHandlers } from './modules/download-handlers.js';
+import { checkIp } from './modules/ip-checker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -36,168 +35,7 @@ if (protocol) {
 }
 
 console.log('[CONSOLE] Starting BrowserX...');
-let mainWindow;
-let splashWindow;
-let groqClient;
-let aiHandlersRegistered = false;
-let splashStartTime = 0;
 
-
-function createSplashWindow() {
-  splashStartTime = Date.now();
-  
-  splashWindow = new BrowserWindow({
-    width: 500,
-    height: 350,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    resizable: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true
-    }
-  });
-  
-  const splashPath = path.join(__dirname, '..', 'public', 'splash.html');
-  splashWindow.loadFile(splashPath);
-  splashWindow.center();
-  
-  splashWindow.once('ready-to-show', () => splashWindow.show());
-}
-
-
-async function createWindow() {
-  try {
-    if (!config.GROQ_API_KEY || config.GROQ_API_KEY === 'YOUR_GROQ_API_KEY_HERE') {
-      console.error('GROQ_API_KEY not set — AI features will be unavailable');
-    } else {
-      groqClient = new Groq({ apiKey: config.GROQ_API_KEY });
-      console.log('[OK] Groq initialized');
-    }
-  } catch (error) {
-    console.error('[ERROR] Groq initialization error:', error.message);
-  }
-
-  if (!aiHandlersRegistered) {
-    registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
-    aiHandlersRegistered = true;
-    console.log('[IPC] AI handlers wired in createWindow()');
-  }
-  console.log('[PROXY] Setting direct connection (no proxy) on startup...');
-  const defaultSes = session.defaultSession;
-  const webviewSes = session.fromPartition('persist:main');
-  await Promise.all([
-    defaultSes.setProxy({ mode: 'direct' }),
-    webviewSes.setProxy({ mode: 'direct' })
-  ]);
-  console.log('[PROXY] Direct connection enabled for both sessions');
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    frame: false,
-    titleBarStyle: 'hidden',
-    show: false,
-    backgroundColor: '#1a1b26',
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      webviewTag: true
-    }
-  });
-  mainWindow.webContents.once('did-finish-load', () => {
-    console.log('[MAIN] All resources loaded (did-finish-load)');
-    setTimeout(() => {
-      console.log('[MAIN] App fully initialized, closing splash');
-      if (splashWindow && !splashWindow.isDestroyed()) {
-        splashWindow.close();
-        splashWindow = null;
-      }
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.show();
-        mainWindow.focus();
-      }
-    }, 800);
-  });
-  mainWindow.on('closed', () => {
-    if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.close();
-      splashWindow = null;
-    }
-    mainWindow = null;
-  });
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('[ERROR] Main window failed to load:', errorDescription);
-    if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.close();
-      splashWindow = null;
-    }
-    mainWindow.show();
-  });
-  const template = [
-    {
-      label: 'View',
-      submenu: [
-        {
-          label: 'Toggle Main Window DevTools',
-          accelerator: 'F12',
-          click: () => {
-            if (mainWindow.webContents.isDevToolsOpened()) {
-              mainWindow.webContents.closeDevTools();
-            } else {
-              mainWindow.webContents.openDevTools({ mode: 'detach' });
-            }
-          }
-        },
-        {
-          label: 'Toggle WebView DevTools',
-          accelerator: 'Ctrl+Shift+I',
-          click: () => {
-            mainWindow.webContents.send('toggle-webview-devtools');
-          }
-        },
-        { type: 'separator' },
-        { role: 'reload' },
-        { role: 'forceReload' }
-      ]
-    }
-  ];
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
-  mainWindow.loadFile(path.join(__dirname, '..', 'public', 'index.html'));
-  tabManager.init(mainWindow);
-  mainWindow.on('close', () => {
-    const sessionTabs = tabManager.getSessionData();
-    console.log('[SESSION] Before save:');
-    sessionTabs.forEach((tab, i) => {
-      console.log(`  Tab ${i}: url=${tab.url}, currentIndex=${tab.currentIndex}, navHistory.length=${tab.navigationHistory?.length || 0}`);
-    });
-    const activeTabId = tabManager.getActiveTabId();
-    storage.saveSession(sessionTabs, activeTabId);
-    console.log('[SESSION] Auto-saved on close');
-  });
-}
-
-
-function restoreSessionSmart() {
-  try {
-    const session = storage.getSession();
-    
-    tabManager.restoreSession(
-      session, 
-      mainWindow, 
-      { 
-        storage, 
-        themeManager, 
-        injectUnifiedT9, 
-        emitReactiveEvent: (payload) => reactiveEvents.emitReactiveEvent(payload, mainWindow),
-        formatUrlLabel: reactiveEvents.formatUrlLabel
-      }
-    );
-  } catch (error) {
-    console.error('[ERROR] Session restore error:', error.message);
-  }
-}
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -220,7 +58,7 @@ app.whenReady().then(async () => {
   protocol.handle('app', appProtocolHandler);
   session.fromPartition('persist:main').protocol.handle('app', appProtocolHandler);
   console.log('[PROTOCOL] app:// protocol registered for internal pages');
-  registerDownloadHandlers();
+  registerDownloadHandlers(getMainWindow);
   createSplashWindow();
   await new Promise(resolve => setTimeout(resolve, 500));
   privacyGuard.initializePrivacyProtection();
@@ -242,53 +80,8 @@ app.whenReady().then(async () => {
       callback(true);
     });
     contents.on('did-finish-load', () => {
-      const isTorEnabled = torManager.isTorEnabled();
-      if (isTorEnabled) {
-        const geolocationBlockScript = `
-          (function() {
-            if (window.__geoLocationBlocked) return;
-            window.__geoLocationBlocked = true;
-            
-            const fakeGeolocation = {
-              getCurrentPosition: function(success, error) {
-                console.warn('[PRIVACY GUARD] Geolocation blocked - Tor is active');
-                if (error) {
-                  error({ 
-                    code: 1, 
-                    message: 'User denied Geolocation',
-                    PERMISSION_DENIED: 1
-                  });
-                }
-              },
-              watchPosition: function(success, error) {
-                console.warn('[PRIVACY GUARD] Geolocation watchPosition blocked');
-                if (error) {
-                  error({ 
-                    code: 1, 
-                    message: 'User denied Geolocation',
-                    PERMISSION_DENIED: 1
-                  });
-                }
-                return -1;
-              },
-              clearWatch: function() {}
-            };
-            
-            try {
-              Object.defineProperty(navigator, 'geolocation', {
-                get: () => fakeGeolocation,
-                configurable: false,
-                enumerable: true
-              });
-              console.log('[PRIVACY GUARD] Geolocation API has been disabled');
-            } catch (e) {
-              console.error('[PRIVACY GUARD] Failed to block geolocation:', e);
-            }
-          })();
-        `;
-        
-        contents.executeJavaScript(geolocationBlockScript)
-          .catch(err => console.error('[PRIVACY] Failed to inject geolocation block:', err.message));
+      if (torManager.isTorEnabled()) {
+        privacyGuard.injectGeolocationBlockToContents(contents);
       }
     });
   });
@@ -316,7 +109,8 @@ app.whenReady().then(async () => {
   
   await createWindow();
   console.log('[TOR] Tor auto-start DISABLED. User will enable manually via button.');
-  
+
+  const mainWindow = getMainWindow();
   reactiveEvents.setupReactiveNetworkEvents(mainWindow);
   mainWindow.webContents.once('did-finish-load', () => {
     setTimeout(() => restoreSessionSmart(), 500);
@@ -340,109 +134,37 @@ app.on('will-quit', () => {
 });
 
 ipcMain.on('window-minimize', () => {
-  mainWindow.minimize();
+  getMainWindow().minimize();
 });
 
 ipcMain.on('window-maximize', () => {
-  if (mainWindow.isMaximized()) {
-    mainWindow.unmaximize();
+  const win = getMainWindow();
+  if (win.isMaximized()) {
+    win.unmaximize();
   } else {
-    mainWindow.maximize();
+    win.maximize();
   }
 });
 
 ipcMain.on('window-close', () => {
   console.log('[WINDOW] Close command received');
-  if (mainWindow) mainWindow.close();
+  const win = getMainWindow();
+  if (win) win.close();
   app.quit();
 });
 
-ipcMain.on('show-context-menu', (event, params) => {
-  const { tabId, selectionText, linkURL, linkText, srcURL, mediaType, isEditable, pageURL } = params;
-  const template = [];
-  if (selectionText) {
-    const label = selectionText.length > 30 ? selectionText.substring(0, 30) + '…' : selectionText;
-    if (isEditable) {
-      template.push({ label: 'Вирізати', click: () => mainWindow.webContents.send('context-menu-action', { action: 'cut', tabId }) });
-    }
-    template.push({ label: 'Копіювати', click: () => mainWindow.webContents.send('context-menu-action', { action: 'copy', tabId }) });
-    template.push({ type: 'separator' });
-    template.push({
-      label: `Знайти: "${label}"`,
-      click: () => mainWindow.webContents.send('context-menu-action', { action: 'search', tabId, text: selectionText })
-    });
-    template.push({
-      label: `Перекласти: "${label}"`,
-      click: () => mainWindow.webContents.send('context-menu-action', { action: 'translate', tabId, text: selectionText })
-    });
-  }
-  if (isEditable) {
-    template.push({ label: 'Вставити', click: () => mainWindow.webContents.send('context-menu-action', { action: 'paste', tabId }) });
-    template.push({ label: 'Виділити все', click: () => mainWindow.webContents.send('context-menu-action', { action: 'select-all', tabId }) });
-  }
-  if (linkURL) {
-    if (template.length > 0) template.push({ type: 'separator' });
-    template.push({
-      label: 'Відкрити посилання в новій вкладці',
-      click: () => mainWindow.webContents.send('context-menu-action', { action: 'open-link-new-tab', tabId, url: linkURL })
-    });
-    template.push({
-      label: 'Копіювати адресу посилання',
-      click: () => clipboard.writeText(linkURL)
-    });
-    if (linkText) {
-      template.push({
-        label: 'Копіювати текст посилання',
-        click: () => clipboard.writeText(linkText)
-      });
-    }
-  }
-  if (mediaType === 'image' && srcURL) {
-    if (template.length > 0) template.push({ type: 'separator' });
-    template.push({
-      label: 'Відкрити зображення в новій вкладці',
-      click: () => mainWindow.webContents.send('context-menu-action', { action: 'open-link-new-tab', tabId, url: srcURL })
-    });
-    template.push({
-      label: 'Копіювати адресу зображення',
-      click: () => clipboard.writeText(srcURL)
-    });
-    template.push({
-      label: 'Зберегти зображення як…',
-      click: () => mainWindow.webContents.send('context-menu-action', { action: 'save-image', tabId, url: srcURL })
-    });
-  }
-  if (template.length > 0) template.push({ type: 'separator' });
-  template.push({ label: 'Назад',    click: () => tabManager.goBack()   });
-  template.push({ label: 'Вперед',  click: () => tabManager.goForward() });
-  template.push({ label: 'Оновити', click: () => tabManager.reload()    });
-
-  template.push({ type: 'separator' });
-  template.push({
-    label: 'Копіювати адресу сторінки',
-    click: () => clipboard.writeText(pageURL)
-  });
-  template.push({
-    label: 'Переглянути вихідний код',
-    click: () => mainWindow.webContents.send('context-menu-action', { action: 'view-source', tabId, url: pageURL })
-  });
-  template.push({
-    label: 'Інструменти розробника',
-    click: () => mainWindow.webContents.send('toggle-webview-devtools')
-  });
-
-  Menu.buildFromTemplate(template).popup({ window: mainWindow });
-});
+registerContextMenu(getMainWindow);
 
 ipcMain.on('apply-theme', (event, theme) => {
   console.log('[THEME] Applying:', theme.name);
-  mainWindow.webContents.send('theme-changed', theme);
+  getMainWindow().webContents.send('theme-changed', theme);
 });
 
 ipcMain.on('update-theme-settings', (event, settings) => {
   themeManager.updateThemeSettings(settings);
-  if (mainWindow) {
-    mainWindow.webContents.send('update-newtab-themes', settings);
+  const win = getMainWindow();
+  if (win) {
+    win.webContents.send('update-newtab-themes', settings);
   }
 });
 
@@ -464,6 +186,7 @@ ipcMain.on('topbar-height-changed', (event, height) => {
 });
 
 ipcMain.handle('create-tab', async (event, url = null) => {
+  const mainWindow = getMainWindow();
   return tabManager.createTab(mainWindow, url, {
     storage,
     themeManager,
@@ -474,12 +197,12 @@ ipcMain.handle('create-tab', async (event, url = null) => {
 });
 
 ipcMain.on('switch-tab', (event, tabId) => {
-  tabManager.switchTab(tabId, mainWindow, 0);
+  tabManager.switchTab(tabId, getMainWindow(), 0);
 });
 
 ipcMain.on('close-tab', (event, tabId) => {
   console.log('[IPC] Received close-tab request for tabId:', tabId);
-  const shouldClose = tabManager.closeTab(tabId, mainWindow);
+  const shouldClose = tabManager.closeTab(tabId, getMainWindow());
   console.log('[IPC] Tab manager returned shouldClose:', shouldClose);
   if (shouldClose) {
     console.log('[TAB] Last tab closed - quitting application');
@@ -521,7 +244,7 @@ ipcMain.handle('get-reactive-events', () => {
 });
 
 ipcMain.handle('toggle-tor', async () => {
-  return await torManager.toggleTor(mainWindow, tabManager);
+  return await torManager.toggleTor(getMainWindow(), tabManager);
 });
 
 ipcMain.handle('get-tor-status', () => {
@@ -533,208 +256,25 @@ ipcMain.handle('is-tor-enabled', () => {
 });
 
 ipcMain.handle('check-ip', async () => {
-  try {
-    const startTime = Date.now();
-    const fetchWithProxy = (url, isJson = true) => {
-      return new Promise((resolve, reject) => {
-        const request = net.request({
-          url: url,
-          session: session.defaultSession
-        });
-        
-        let data = '';
-        
-        request.on('response', (response) => {
-          console.log(`[IP CHECK] Response status: ${response.statusCode} for ${url}`);
-          
-          response.on('data', (chunk) => {
-            data += chunk.toString();
-          });
-          
-          response.on('end', () => {
-            try {
-              if (isJson) {
-                const jsonData = JSON.parse(data);
-                resolve(jsonData);
-              } else {
-                resolve(data.trim());
-              }
-            } catch (err) {
-              console.error('[IP CHECK] Parse error:', err.message);
-              console.error('[IP CHECK] Received data:', data.substring(0, 200));
-              reject(new Error(`Parse error: ${err.message}`));
-            }
-          });
-          
-          response.on('error', (err) => {
-            reject(new Error(`Response error: ${err.message}`));
-          });
-        });
-        
-        request.on('error', (err) => {
-          reject(new Error(`Request error: ${err.message}`));
-        });
-        
-        request.end();
-      });
-    };
-    
-    let ip = null;
-    let responseTime = 0;
-    try {
-      const torData = await fetchWithProxy('https://check.torproject.org/api/ip', true);
-      ip = torData.IP;
-      responseTime = Date.now() - startTime;
-      console.log('[IP CHECK] Got IP from Tor Project API:', ip);
-    } catch (err1) {
-      console.warn('[IP CHECK] Tor Project API failed:', err1.message);
-      
-      try {
-        ip = await fetchWithProxy('https://ident.me/', false);
-        responseTime = Date.now() - startTime;
-        console.log('[IP CHECK] Got IP from ident.me:', ip);
-      } catch (err2) {
-        console.warn('[IP CHECK] ident.me failed:', err2.message);
-        ip = await fetchWithProxy('https://icanhazip.com/', false);
-        responseTime = Date.now() - startTime;
-        console.log('[IP CHECK] Got IP from icanhazip.com:', ip);
-      }
-    }
-    
-    if (!ip) {
-      throw new Error('Не вдалося отримати IP адресу');
-    }
-    const torStatus = torManager.getTorStatus();
-    let geoData = {
-      country_name: torStatus.active ? 'Tor Network' : 'Невідомо',
-      city: torStatus.active ? 'Anonymous' : 'Невідомо',
-      region: '',
-      org: torStatus.active ? 'Tor Exit Node' : 'Невідомо',
-      asn: ''
-    };
-    
-    try {
-      const geoRequest = net.request({
-        url: `https://ipapi.co/${ip}/json/`,
-        session: session.defaultSession
-      });
-      
-      const geoResult = await new Promise((resolve, reject) => {
-        let data = '';
-        let statusCode = 0;
-        
-        geoRequest.on('response', (response) => {
-          statusCode = response.statusCode;
-          console.log(`[IP CHECK] Geo API response status: ${statusCode}`);
-          
-          response.on('data', (chunk) => {
-            data += chunk.toString();
-          });
-          
-          response.on('end', () => {
-            if (statusCode === 200) {
-              try {
-                const jsonData = JSON.parse(data);
-                resolve(jsonData);
-              } catch (err) {
-                console.warn('[IP CHECK] Geo API повернув не-JSON:', data.substring(0, 100));
-                resolve(null);
-              }
-            } else {
-              console.warn(`[IP CHECK] Geo API заблокував запит (HTTP ${statusCode})`);
-              if (statusCode === 403) {
-                console.warn('[IP CHECK] Cloudflare блокує Tor трафік - використовуємо дефолтні значення');
-              }
-              resolve(null);
-            }
-          });
-        });
-        
-        geoRequest.on('error', (err) => {
-          console.warn('[IP CHECK] Geo request error:', err.message);
-          resolve(null);
-        });
-        
-        geoRequest.end();
-      });
-      if (geoResult && geoResult.country_name) {
-        geoData = geoResult;
-        console.log('[IP CHECK] Got geo data:', geoData.country_name, geoData.city);
-      } else {
-        console.log('[IP CHECK] Using default geo data for Tor');
-      }
-    } catch (geoErr) {
-      console.warn('[IP CHECK] Geo lookup exception:', geoErr.message);
-    }
-    
-    return {
-      ip: ip,
-      responseTime: responseTime,
-      country: geoData.country_name || 'Невідомо',
-      city: geoData.city || 'Невідомо',
-      region: geoData.region || '',
-      org: geoData.org || 'Невідомо',
-      asn: geoData.asn || ''
-    };
-  } catch (error) {
-    console.error('[IP CHECK] Error:', error);
-    throw new Error(`Не вдалося перевірити IP: ${error.message}`);
-  }
+  return checkIp(torManager);
 });
 ipcHandlers.registerStorageHandlers(storage, tabManager);
 ipcHandlers.registerAISchedulerHandlers(aiScheduler);
 registerNewsHandlers();
 
-// ==================== DOWNLOADS ====================
-let downloadIdCounter = 0;
-function registerDownloadHandlers() {
-  const handleSession = (ses) => {
-    ses.on('will-download', (event, item) => {
-      const id = ++downloadIdCounter;
-      const filename = item.getFilename();
-      const totalBytes = item.getTotalBytes();
-
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('download-started', { id, filename, totalBytes });
-      }
-
-      item.on('updated', (e, state) => {
-        if (state === 'progressing' && mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('download-progress', {
-            id,
-            receivedBytes: item.getReceivedBytes(),
-            totalBytes: item.getTotalBytes()
-          });
-        }
-      });
-
-      item.once('done', (e, state) => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('download-done', { id, state });
-        }
-        console.log(`[DOWNLOAD] ${filename}: ${state}`);
-      });
-    });
-  };
-
-  handleSession(session.defaultSession);
-  handleSession(session.fromPartition('persist:main'));
-  console.log('[IPC] Download handlers registered');
-}
-// registerDownloadHandlers() is called inside app.whenReady() below
-// ==================== END DOWNLOADS ====================
-
 // IPC: знайдено на сторінці — пробрасуємо результат з webview в renderer
 ipcMain.on('found-in-page-result', (event, result) => {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('found-in-page', result);
+  const win = getMainWindow();
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('found-in-page', result);
   }
 });
 
 console.log('[CONSOLE] BrowserX main process initialized');
+
 function handleAppUrl(url) {
   console.log('[PROTOCOL] Handling app:// URL:', url);
-
+  const mainWindow = getMainWindow();
   if (mainWindow) {
     const { pathname } = new URL(url);
     console.log('[PROTOCOL] Loading:', pathname);
@@ -759,6 +299,7 @@ app.on('second-instance', (event, commandLine, workingDirectory) => {
   if (url) {
     handleAppUrl(url);
   }
+  const mainWindow = getMainWindow();
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
