@@ -1,13 +1,17 @@
+// Модуль потокової обробки даних:
+// зчитує NDJSON файли, групує дані пакетами, аналізує історію перегляду
 import fs from 'fs';
 import readline from 'readline';
 import { createAbortError, throwIfAborted } from './async-array.js';
 
+// Перетворює значення на ціле позитивне число, або повертає fallback
 function toFinitePositiveInt(value, fallback) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return fallback;
   return Math.max(1, Math.floor(numeric));
 }
 
+// Видобуває hostname з URL-рядка; повертає null для невалідних URL
 function toHostname(rawUrl) {
   if (!rawUrl) return null;
 
@@ -19,6 +23,8 @@ function toHostname(rawUrl) {
   }
 }
 
+// Асинхронний генератор, що зчитує файл NDJSON рядок за рядком:
+// бланкові рядки пропускаються, невалідний JSON — за опцією skipInvalidLines
 async function* readNdjsonFile(filePath, options = {}) {
   if (!filePath || typeof filePath !== 'string') {
     throw new TypeError('filePath must be a non-empty string');
@@ -44,6 +50,7 @@ async function* readNdjsonFile(filePath, options = {}) {
 
   let lineNumber = 0;
 
+  // Звільняємо ресурси потоку після завершення або помилки
   try {
     for await (const line of rl) {
       throwIfAborted(signal);
@@ -71,6 +78,7 @@ async function* readNdjsonFile(filePath, options = {}) {
   }
 }
 
+// Групує елементи асинхронного ітератора у пакети фіксованого розміру (Task 6)
 async function* batchAsyncIterator(source, batchSize = 1000, options = {}) {
   const size = toFinitePositiveInt(batchSize, 1000);
   const { signal } = options;
@@ -92,6 +100,7 @@ async function* batchAsyncIterator(source, batchSize = 1000, options = {}) {
   }
 }
 
+// Аналізує NDJSON-файл історії: підраховує відвідування за доменами, повертає топ-N доменів
 async function analyzeHistoryNdjsonFile(filePath, options = {}) {
   const {
     topN = 10,
@@ -109,6 +118,7 @@ async function analyzeHistoryNdjsonFile(filePath, options = {}) {
   let validUrlRows = 0;
   let invalidUrlRows = 0;
 
+  // Переходимо по всіх рядках, накопичуємо кількість візитів за кожним доменом
   for await (const row of readNdjsonFile(filePath, { signal, skipInvalidLines })) {
     throwIfAborted(signal);
     totalRows += 1;
@@ -130,6 +140,7 @@ async function analyzeHistoryNdjsonFile(filePath, options = {}) {
     }
   }
 
+  // Сортуємо домени за спаданням відвідувань і беремо топ-N
   const topDomains = Array.from(visitsByDomain.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, topLimit)

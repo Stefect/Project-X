@@ -1,3 +1,4 @@
+// Завантаження змінних середовища з .env файлу
 import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -17,9 +18,11 @@ import { registerContextMenu } from './app/context-menu.js';
 import { registerDownloadHandlers } from './modules/download-handlers.js';
 import { checkIp } from './modules/ip-checker.js';
 
+// Емуляція __dirname для ESM-модулів (в ESM ця змінна відсутня за замовчуванням)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Реєстрація кастомної схеми 'app://' як привілейованої до старту Electron
 if (protocol) {
   protocol.registerSchemesAsPrivileged([
     {
@@ -34,33 +37,42 @@ if (protocol) {
   ]);
 }
 
+// Гарантуємо запуск лише одного екземпляру програми
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   app.quit();
 }
 
+// Точка входу: ініціалізація застосунку після готовності Electron
 app.whenReady().then(async () => {
+  // Шлях до статичних файлів інтерфейсу
   const publicDir = path.resolve(path.join(__dirname, '..', 'public'));
+  // Обробник кастомного протоколу app:// — захист від path traversal та обслуговування файлів
   const appProtocolHandler = (request) => {
     const { pathname } = new URL(request.url);
     const resolved = path.resolve(path.join(publicDir, pathname));
+    // Блокуємо вихід за межі публічної директорії (path traversal)
     if (!resolved.startsWith(publicDir + path.sep) && resolved !== publicDir) {
       return new Response('Not Found', { status: 404 });
     }
     return net.fetch('file://' + resolved);
   };
+  // Реєструємо протокол для основної сесії та webview-сесії
   protocol.handle('app', appProtocolHandler);
   session.fromPartition('persist:main').protocol.handle('app', appProtocolHandler);
   registerDownloadHandlers(getMainWindow);
+  // Показуємо splash-екран під час завантаження
   createSplashWindow();
   await new Promise(resolve => setTimeout(resolve, 500));
+  // Ініціалізація захисту приватності (блокування трекерів тощо)
   privacyGuard.initializePrivacyProtection();
+  // Блокуємо геолокацію у всіх webContents при увімкненому Tor
   app.on('web-contents-created', (event, contents) => {
     contents.session.setPermissionRequestHandler((webContents, permission, callback) => {
       if (permission === 'geolocation') {
         const isTorEnabled = torManager.isTorEnabled();
-        
+        // Якщо Tor увімкнений — забороняємо доступ до геолокації
         if (isTorEnabled) {
           callback(false);
           return;
@@ -68,6 +80,7 @@ app.whenReady().then(async () => {
       }
       callback(true);
     });
+    // Після завантаження сторінки — додаємо JS-блокування геолокації для Tor
     contents.on('did-finish-load', () => {
       if (torManager.isTorEnabled()) {
         privacyGuard.injectGeolocationBlockToContents(contents);
@@ -89,10 +102,13 @@ app.whenReady().then(async () => {
     });
   });
 
+  // Створення головного вікна браузера
   await createWindow();
 
   const mainWindow = getMainWindow();
+  // Підписка на мережеві події (онлайн/офлайн, зміна IP)
   reactiveEvents.setupReactiveNetworkEvents(mainWindow);
+  // Відновлення попередньої сесії (вкладки) після завантаження інтерфейсу
   mainWindow.webContents.once('did-finish-load', () => {
     setTimeout(() => restoreSessionSmart(), 500);
   });
@@ -104,16 +120,19 @@ app.whenReady().then(async () => {
   });
 });
 
+// Закриваємо застосунок при закритті всіх вікон (крім macOS)
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
+// Зупиняємо процес Tor перед виходом
 app.on('will-quit', () => {
   torManager.stopTor();
 });
 
+// IPC-обробники керування вікном (мінімізація, максимізація, закриття)
 ipcMain.on('window-minimize', () => {
   getMainWindow().minimize();
 });
@@ -135,6 +154,7 @@ ipcMain.on('window-close', () => {
 
 registerContextMenu(getMainWindow);
 
+// IPC-обробники теми та налаштувань відображення
 ipcMain.on('apply-theme', (event, theme) => {
   getMainWindow().webContents.send('theme-changed', theme);
 });
@@ -151,6 +171,7 @@ ipcMain.on('topbar-height-changed', (event, height) => {
   tabManager.setTopbarHeight(height);
 });
 
+// IPC-обробники управління вкладками
 ipcMain.handle('create-tab', async (event, url = null) => {
   const mainWindow = getMainWindow();
   return tabManager.createTab(mainWindow, url, {
@@ -193,10 +214,12 @@ ipcMain.on('reload', () => {
   tabManager.reload();
 });
 
+// Реактивні події мережі (для відображення статусу у UI)
 ipcMain.handle('get-reactive-events', () => {
   return reactiveEvents.getReactiveEventBuffer();
 });
 
+// IPC-обробники Tor (увімкнення/вимкнення, статус, перевірка IP)
 ipcMain.handle('toggle-tor', async () => {
   return await torManager.toggleTor(getMainWindow(), tabManager);
 });
@@ -212,6 +235,7 @@ ipcMain.handle('is-tor-enabled', () => {
 ipcMain.handle('check-ip', async () => {
   return checkIp(torManager);
 });
+// Реєстрація обробників сховища (history, bookmarks, notes, settings) та AI-планувальника
 ipcHandlers.registerStorageHandlers(storage, tabManager);
 ipcHandlers.registerAISchedulerHandlers(aiScheduler);
 registerNewsHandlers();
@@ -223,6 +247,7 @@ ipcMain.on('found-in-page-result', (event, result) => {
   }
 });
 
+// Обробка deep link URL типу app:// (наприклад, при відкритті з командного рядка)
 function handleAppUrl(url) {
   const mainWindow = getMainWindow();
   if (mainWindow) {
@@ -240,6 +265,7 @@ if (process.argv.length >= 2) {
     });
   }
 }
+// Якщо запущено другий екземпляр — відновлюємо фокус на існуючому вікні
 app.on('second-instance', (event, commandLine, workingDirectory) => {
   const url = commandLine.find(arg => arg.startsWith('app://'));
   if (url) {

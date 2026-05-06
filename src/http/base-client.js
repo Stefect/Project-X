@@ -1,3 +1,7 @@
+// Базовий HTTP-клієнт: будує URL, нормалізує заголовки,
+// підготовляє тіло запиту і читає відповідь у єдиному форматі
+
+// Додає query-параметри до URL: підтримує масиви (декілька значень з одним ключем)
 function buildUrl(inputUrl, query = {}) {
   const url = new URL(inputUrl);
 
@@ -19,6 +23,7 @@ function buildUrl(inputUrl, query = {}) {
   return url.toString();
 }
 
+// Нормалізує заголовки: приймає Headers-об'єкт або звичайний об'єкт; повертає plain object
 function normalizeHeaders(headers) {
   const result = {};
 
@@ -44,6 +49,7 @@ function isPlainObject(value) {
   return Boolean(value) && Object.prototype.toString.call(value) === '[object Object]';
 }
 
+// Готує тіло запиту: об'єкт → JSON + авто Content-Type, інші типи — без змін
 function prepareBody(body, headers) {
   if (body === undefined || body === null) {
     return undefined;
@@ -68,6 +74,7 @@ function prepareBody(body, headers) {
   return body;
 }
 
+// Читає тіло відповіді: JSON, текст або null (204 No Content)
 async function readResponseBody(response) {
   if (response.status === 204) {
     return null;
@@ -90,6 +97,8 @@ async function readResponseBody(response) {
   }
 }
 
+// Клас BaseHttpClient: обгортовує fetch API,
+// повертає знормалізовану відповідь з розпарсеним тілом і метаданими
 class BaseHttpClient {
   constructor({ fetchImpl } = {}) {
     this.fetchImpl = fetchImpl || globalThis.fetch;

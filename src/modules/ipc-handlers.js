@@ -1,13 +1,16 @@
 
 
+// Допоміжні функції для отримання поточного вікна браузера
 import { ipcMain, shell, BrowserWindow, app } from 'electron';
 import path from 'path';
 import { analyzeHistoryNdjsonFile } from '../utils/large-data-stream.js';
 
+// Повертає посилання на перше наявне вікно Electron
 function getMainWindow() {
   return BrowserWindow.getAllWindows()[0] || null;
 }
 
+// Надсилає навігацію активної вкладки на заданий URL через IPC
 function navigateActiveTab(tabManager, url) {
   const mainWindow = getMainWindow();
   if (!mainWindow) return false;
@@ -20,6 +23,7 @@ function navigateActiveTab(tabManager, url) {
   return true;
 }
 
+// Перетворює файлові URL (внутрішні сторінки) на внутрішню схему app://
 function toInternalAppUrl(url) {
   if (!url || !url.startsWith('file://')) return url;
 
@@ -32,8 +36,10 @@ function toInternalAppUrl(url) {
 }
 
 
+// Реєструє усі IPC-обробники сховища: історія, закладки, нотатки, налаштування, сесія
 function registerStorageHandlers(storage, tabManager) {
   
+  // Обробники історії перегляду (отримання, пошук, очищення, видалення)
   ipcMain.handle('get-history', (event, limit) => {
     return storage.getHistory(limit || 100);
   });
@@ -62,6 +68,7 @@ function registerStorageHandlers(storage, tabManager) {
     navigateActiveTab(tabManager, 'app://localhost/history.html');
   });
   
+  // Обробники закладок (отримання, додавання, видалення, перевірка)
   ipcMain.handle('get-bookmarks', () => {
     return storage.getBookmarks();
   });
@@ -79,6 +86,7 @@ function registerStorageHandlers(storage, tabManager) {
     return storage.isBookmarked(url);
   });
   
+  // Обробники сесії (збереження/отримання вкладок, оновлення URL вкладки)
   ipcMain.on('save-session', () => {
     const sessionTabs = tabManager.getSessionData();
     const activeTabId = tabManager.getActiveTabId();
@@ -93,6 +101,7 @@ function registerStorageHandlers(storage, tabManager) {
     tabManager.updateTabInfo(tabId, url, title);
   });
   
+  // Обробники налаштувань (отримання і збереження усіх налаштувань)
   ipcMain.handle('get-settings', () => {
     return storage.getAllSettings();
   });
@@ -101,6 +110,7 @@ function registerStorageHandlers(storage, tabManager) {
     storage.setAllSettings(settings);
   });
   
+  // Обробники нотаток (створення, витягування, видалення, редагування, очищення)
   ipcMain.on('save-note', (event, { text, url }) => {
     storage.addNote(text, url);
   });
@@ -121,6 +131,7 @@ function registerStorageHandlers(storage, tabManager) {
     storage.clearNotes();
   });
   
+  // Безпечне відкриття зовнішніх URL: перевіряємо протокол перед відкриттям
   ipcMain.handle('open-external', async (event, url) => {
     const ALLOWED_PROTOCOLS = ['http:', 'https:'];
     try {
@@ -160,6 +171,7 @@ function registerStorageHandlers(storage, tabManager) {
     }
   });
 
+  // Потоковий аналіз NDJSON-історії: віддає топ-N доменів з найбільшою кількістю відвідувань
   ipcMain.handle('analyze-history-stream', async (_event, payload = {}) => {
     try {
       const { topN = 10 } = payload;
@@ -173,6 +185,7 @@ function registerStorageHandlers(storage, tabManager) {
   });
 }
 
+// Реєструє IPC-обробники AI Task Scheduler: додавання завдань, статус, очищення
 function registerAISchedulerHandlers(aiScheduler) {
   ipcMain.handle('ai-add-task', async (event, { task, priority }) => {
     try {

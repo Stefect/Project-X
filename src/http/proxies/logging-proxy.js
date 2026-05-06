@@ -1,3 +1,4 @@
+// Проксі-клас: логує кожен HTTP-запит (відправлення, відповідь, помилку)
 class LoggingProxy {
   constructor(client, options = {}) {
     if (!client || typeof client.request !== 'function') {
@@ -11,6 +12,7 @@ class LoggingProxy {
     this.sink = options.sink || console;
   }
 
+  // Виводить запис у синк з авторуванням timestamp; підтримує функцію, об'єкт і console як синк
   write(entry) {
     const formatted = this.format(entry);
     const record = { ...entry, timestamp: new Date().toISOString(), message: formatted };
@@ -29,6 +31,7 @@ class LoggingProxy {
     }
   }
 
+  // Виконує HTTP-запит: логує відправлення, відповідь і помилку (ERROR-рівень)
   async request(request = {}) {
     const startedAt = Date.now();
 

@@ -1,0 +1,6 @@
+tree b76b7fe9e0e24064c9977949c4a4b1c6404f379e
+parent 0998b53fcfc16b936fb27a05cf2d19ca6393e5df
+author Stefect <student@example.com> 1770236553 +0200
+committer Stefect <student@example.com> 1770236553 +0200
+
+Реорганізація структури проекту: розділено код, UI та тести по папках

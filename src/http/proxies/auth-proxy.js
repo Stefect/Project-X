@@ -1,3 +1,5 @@
+// Будує HTTP-заголовки автентифікації залежно від стратегії:
+// apiKey → X-API-Key, jwt → Bearer token, oauth → Authorization header
 function buildAuthHeaders(strategy, credentials, options = {}) {
   if (!credentials) return {};
 
@@ -15,6 +17,7 @@ function buildAuthHeaders(strategy, credentials, options = {}) {
   return { Authorization: `${type} ${token}` };
 }
 
+// Проксі-клас: додає автентифікацію до кожного запиту і автоматично оновлює credentials при 401
 class AuthProxy {
   constructor(client, options = {}) {
     if (!client || typeof client.request !== 'function') {
@@ -39,6 +42,7 @@ class AuthProxy {
     return this;
   }
 
+  // Виконує запит: додає auth-заголовки, а при 401 — оновлює credentials і повторює запит
   async request(request = {}) {
     const credentials = typeof this.credentials === 'function'
       ? await this.credentials(request)

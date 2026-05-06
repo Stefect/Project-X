@@ -1,4 +1,6 @@
+// Пріоритетна черга BrowserX: підтримує витягування за пріоритетом, порядком вставки, найстарішим/найновішим
 class BrowserXTaskQueue {
+    // Чотири режими витягування
     static MODES = Object.freeze({
         HIGHEST: 'highest',
         LOWEST: 'lowest',
@@ -6,6 +8,7 @@ class BrowserXTaskQueue {
         NEWEST: 'newest'
     });
 
+    // Приймає опціональний масив seed для попереднього заповнення черги
     constructor(seed = []) {
         this.items = [];
         this.insertCounter = 0;
@@ -19,6 +22,7 @@ class BrowserXTaskQueue {
         }
     }
 
+    // Додає елемент до черги; пріоритет має бути кінцевим числом; повертає новий розмір черги
     enqueue(item, priority = 0) {
         const numericPriority = Number(priority);
         if (!Number.isFinite(numericPriority)) {
@@ -34,6 +38,7 @@ class BrowserXTaskQueue {
         return this.items.length;
     }
 
+    // Нормалізує режим: якщо невідомий — повертає HIGHEST за замовчуванням
     _normalizeMode(mode) {
         const raw = String(mode || '').toLowerCase();
         return Object.values(BrowserXTaskQueue.MODES).includes(raw)
@@ -41,6 +46,7 @@ class BrowserXTaskQueue {
             : BrowserXTaskQueue.MODES.HIGHEST;
     }
 
+    // Порівнює два елементи і визначає, чи є кандидат кращим за поточним режимом
     _isCandidateBetter(current, candidate, mode) {
         if (mode === BrowserXTaskQueue.MODES.HIGHEST) {
             if (candidate.priority !== current.priority) {
@@ -67,6 +73,7 @@ class BrowserXTaskQueue {
         return false;
     }
 
+    // Знаходить індекс елемента для витягування/перегляду залежно від режиму
     _findIndex(mode) {
         if (this.items.length === 0) {
             return -1;
@@ -92,11 +99,13 @@ class BrowserXTaskQueue {
         return selectedIndex;
     }
 
+    // Повертає елемент без видалення з черги
     peek(mode) {
         const index = this._findIndex(mode);
         return index === -1 ? null : this.items[index].item;
     }
 
+    // Витягує і видаляє елемент з черги
     dequeue(mode) {
         const index = this._findIndex(mode);
         if (index === -1) {
@@ -115,11 +124,13 @@ class BrowserXTaskQueue {
         return this.items.length;
     }
 
+    // Очищає чергу і скидає лічильник порядку
     clear() {
         this.items = [];
         this.insertCounter = 0;
     }
 
+    // Повертає копію всіх елементів у вигляді плоских об'єктів для інспекції
     toArray() {
         return this.items.map((entry) => ({
             item: entry.item,

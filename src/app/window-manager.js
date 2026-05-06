@@ -14,15 +14,18 @@ import config from '../config.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Глобальний стан: посилання на вікна, ініціалізація Groq і AI-обробників
 let mainWindow = null;
 let splashWindow = null;
 let groqClient = null;
 let aiHandlersRegistered = false;
 
+// Повертає посилання на основне вікно
 function getMainWindow() {
   return mainWindow;
 }
 
+// Повертає посилання на splash-вікно
 function getSplashWindow() {
   return splashWindow;
 }
@@ -30,6 +33,7 @@ function getSplashWindow() {
 function injectUnifiedT9() {
 }
 
+// Створює splash-екран — показується поки завантажується основне вікно
 function createSplashWindow() {
   splashWindow = new BrowserWindow({
     width: 500,
@@ -50,22 +54,27 @@ function createSplashWindow() {
   splashWindow.once('ready-to-show', () => splashWindow.show());
 }
 
+// Створює основне вікно браузера: ініціалізує Groq, реєструє AI-обробники,
+// застосовує проксі-налаштування сесії, створює BrowserWindow та меню
 async function createWindow() {
   try {
     if (!config.GROQ_API_KEY || config.GROQ_API_KEY === 'YOUR_GROQ_API_KEY_HERE') {
       console.error('GROQ_API_KEY not set — AI features will be unavailable');
     } else {
+      // Ініціалізація клієнта Groq API для AI-функцій
       groqClient = new Groq({ apiKey: config.GROQ_API_KEY });
     }
   } catch (error) {
     console.error('[ERROR] Groq initialization error:', error.message);
   }
 
+  // Реєструємо AI IPC-обробники лише один раз (захист від двойної реєстрації)
   if (!aiHandlersRegistered) {
     registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
     aiHandlersRegistered = true;
   }
 
+  // Скидаємо проксі для основної сесії та webview-сесії (запити йдуть безпосередньо)
   const defaultSes = session.defaultSession;
   const webviewSes = session.fromPartition('persist:main');
   await Promise.all([
@@ -73,6 +82,7 @@ async function createWindow() {
     webviewSes.setProxy({ mode: 'direct' })
   ]);
 
+  // Створюємо головне вікно: без рамки, з підтримкою webview-тегів
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -87,6 +97,7 @@ async function createWindow() {
     }
   });
 
+  // Після завантаження інтерфейсу — закриваємо splash і показуємо основне вікно
   mainWindow.webContents.once('did-finish-load', () => {
     setTimeout(() => {
       if (splashWindow && !splashWindow.isDestroyed()) {
@@ -151,6 +162,7 @@ async function createWindow() {
   mainWindow.loadFile(path.join(__dirname, '..', '..', 'public', 'index.html'));
   tabManager.init(mainWindow);
 
+  // Під час закриття основного вікна — зберігаємо сесію вкладок
   mainWindow.on('close', () => {
     const sessionTabs = tabManager.getSessionData();
     const activeTabId = tabManager.getActiveTabId();
@@ -158,6 +170,7 @@ async function createWindow() {
   });
 }
 
+// Відновлює попередню сесію: завантажує збережені вкладки і активну вкладку
 function restoreSessionSmart() {
   try {
     const savedSession = storage.getSession();

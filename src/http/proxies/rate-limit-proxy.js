@@ -1,3 +1,5 @@
+// Проксі-клас: обмежує частоту запитів через розрахування інтервалу між запитами:
+// запити виконуються послідовно з дотриманням spacingMs мілісекунд між ними
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -17,9 +19,11 @@ class RateLimitProxy {
     this.queue = Promise.resolve();
   }
 
+  // Виконує запит з очікуванням: додає запит до внутрішньої черги, щоб зберігти порядок виконання
   async request(request = {}) {
     const execute = async () => {
       const now = Date.now();
+      // Чекаємо, якщо до наступного дозволеного вікна ще залишилось час
       const waitMs = Math.max(0, this.nextAvailableAt - now);
 
       if (waitMs > 0) {
