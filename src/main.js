@@ -34,15 +34,10 @@ if (protocol) {
   ]);
 }
 
-console.log('[CONSOLE] Starting BrowserX...');
-
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  console.log('[PROTOCOL] Another instance is already running, quitting...');
   app.quit();
-} else {
-  console.log('[PROTOCOL] Single instance lock acquired');
 }
 
 app.whenReady().then(async () => {
@@ -57,7 +52,6 @@ app.whenReady().then(async () => {
   };
   protocol.handle('app', appProtocolHandler);
   session.fromPartition('persist:main').protocol.handle('app', appProtocolHandler);
-  console.log('[PROTOCOL] app:// protocol registered for internal pages');
   registerDownloadHandlers(getMainWindow);
   createSplashWindow();
   await new Promise(resolve => setTimeout(resolve, 500));
@@ -68,13 +62,8 @@ app.whenReady().then(async () => {
         const isTorEnabled = torManager.isTorEnabled();
         
         if (isTorEnabled) {
-          const url = webContents.getURL();
-          console.log(`[PRIVACY] BLOCKED geolocation request from: ${url}`);
-          console.log('[PRIVACY] Reason: Tor is active, geolocation would reveal real location');
           callback(false);
           return;
-        } else {
-          console.log('[PRIVACY] Geolocation request (Tor OFF, allowing)');
         }
       }
       callback(true);
@@ -86,17 +75,12 @@ app.whenReady().then(async () => {
     });
   });
   
-  console.log('[PRIVACY] Global web-contents-created handler registered');
   app.on('session-created', (customSession) => {
-    console.log('[PRIVACY] New session created, applying permission handler...');
-    
     customSession.setPermissionRequestHandler((webContents, permission, callback) => {
       if (permission === 'geolocation') {
         const isTorEnabled = torManager.isTorEnabled();
         
         if (isTorEnabled) {
-          const url = webContents.getURL();
-          console.log(`[PRIVACY] BLOCKED geolocation in custom session from: ${url}`);
           callback(false);
           return;
         }
@@ -104,11 +88,8 @@ app.whenReady().then(async () => {
       callback(true);
     });
   });
-  
-  console.log('[PRIVACY] Global session-created handler registered');
-  
+
   await createWindow();
-  console.log('[TOR] Tor auto-start DISABLED. User will enable manually via button.');
 
   const mainWindow = getMainWindow();
   reactiveEvents.setupReactiveNetworkEvents(mainWindow);
@@ -147,7 +128,6 @@ ipcMain.on('window-maximize', () => {
 });
 
 ipcMain.on('window-close', () => {
-  console.log('[WINDOW] Close command received');
   const win = getMainWindow();
   if (win) win.close();
   app.quit();
@@ -156,7 +136,6 @@ ipcMain.on('window-close', () => {
 registerContextMenu(getMainWindow);
 
 ipcMain.on('apply-theme', (event, theme) => {
-  console.log('[THEME] Applying:', theme.name);
   getMainWindow().webContents.send('theme-changed', theme);
 });
 
@@ -168,21 +147,8 @@ ipcMain.on('update-theme-settings', (event, settings) => {
   }
 });
 
-ipcMain.on('sidebar-toggled', (event, isCollapsed) => {
-  console.log(`[UI-WEBVIEW] Sidebar ${isCollapsed ? 'collapsed' : 'expanded'}`);
-});
-
-ipcMain.on('menu-toggled', (event, isOpen) => {
-  console.log(`[UI-WEBVIEW] Menu ${isOpen ? 'opened' : 'closed'}`);
-});
-
-ipcMain.on('settings-panel-toggled', (event, isOpen) => {
-  console.log(`[UI-WEBVIEW] Settings panel ${isOpen ? 'opened' : 'closed'}`);
-});
-
 ipcMain.on('topbar-height-changed', (event, height) => {
   tabManager.setTopbarHeight(height);
-  console.log(`[UI-WEBVIEW] Topbar height changed to: ${height}px`);
 });
 
 ipcMain.handle('create-tab', async (event, url = null) => {
@@ -201,14 +167,9 @@ ipcMain.on('switch-tab', (event, tabId) => {
 });
 
 ipcMain.on('close-tab', (event, tabId) => {
-  console.log('[IPC] Received close-tab request for tabId:', tabId);
   const shouldClose = tabManager.closeTab(tabId, getMainWindow());
-  console.log('[IPC] Tab manager returned shouldClose:', shouldClose);
   if (shouldClose) {
-    console.log('[TAB] Last tab closed - quitting application');
     app.quit();
-  } else {
-    console.log('[TAB] Tab closed successfully, continuing');
   }
 });
 
@@ -217,14 +178,7 @@ ipcMain.on('reorder-tabs', (event, newOrder) => {
 });
 
 ipcMain.on('navigate', (event, input) => {
-  console.log('[ДІАГНОСТИКА MAIN] Отримано IPC navigate від renderer');
-  console.log('[ДІАГНОСТИКА MAIN] Input URL:', input);
-  console.log('[ДІАГНОСТИКА MAIN] Tor enabled:', torManager.isTorEnabled());
-  console.log('[ДІАГНОСТИКА MAIN] Викликаємо tabManager.navigate()...');
-  
   tabManager.navigate(input, torManager.isTorEnabled());
-  
-  console.log('[ДІАГНОСТИКА MAIN] tabManager.navigate() виконано');
 });
 
 ipcMain.on('go-back', () => {
@@ -262,7 +216,6 @@ ipcHandlers.registerStorageHandlers(storage, tabManager);
 ipcHandlers.registerAISchedulerHandlers(aiScheduler);
 registerNewsHandlers();
 
-// IPC: знайдено на сторінці — пробрасуємо результат з webview в renderer
 ipcMain.on('found-in-page-result', (event, result) => {
   const win = getMainWindow();
   if (win && !win.isDestroyed()) {
@@ -270,14 +223,10 @@ ipcMain.on('found-in-page-result', (event, result) => {
   }
 });
 
-console.log('[CONSOLE] BrowserX main process initialized');
-
 function handleAppUrl(url) {
-  console.log('[PROTOCOL] Handling app:// URL:', url);
   const mainWindow = getMainWindow();
   if (mainWindow) {
     const { pathname } = new URL(url);
-    console.log('[PROTOCOL] Loading:', pathname);
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
     mainWindow.webContents.send('handle-app-url', pathname);
@@ -286,15 +235,12 @@ function handleAppUrl(url) {
 if (process.argv.length >= 2) {
   const possibleUrl = process.argv.find(arg => arg.startsWith('app://'));
   if (possibleUrl) {
-    console.log('[PROTOCOL] Found app:// URL in startup args:', possibleUrl);
     app.whenReady().then(() => {
       setTimeout(() => handleAppUrl(possibleUrl), 1000);
     });
   }
 }
 app.on('second-instance', (event, commandLine, workingDirectory) => {
-  console.log('[PROTOCOL] Second instance detected');
-
   const url = commandLine.find(arg => arg.startsWith('app://'));
   if (url) {
     handleAppUrl(url);

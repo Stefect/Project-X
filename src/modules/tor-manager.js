@@ -93,7 +93,6 @@ function startTor(exitCountry = null, options = {}) {
   const geoipPath = path.join(__dirname, '..', '..', 'data', 'geoip');
   const geoip6Path = path.join(__dirname, '..', '..', 'data', 'geoip6');
 
-  // Isolated DataDirectory in app userData — never write to install directory
   const torDataDir = path.join(app.getPath('userData'), 'tor-data');
   if (!fs.existsSync(torDataDir)) {
     fs.mkdirSync(torDataDir, { recursive: true });
@@ -114,12 +113,11 @@ function startTor(exitCountry = null, options = {}) {
   
   torProcess = spawn(torPath, torArgs, spawnOptions);
 
-  // Buffer stdout to avoid missing bootstrap lines split across chunks
   let stdoutBuf = '';
   torProcess.stdout.on('data', (data) => {
     stdoutBuf += data.toString('utf8');
     const lines = stdoutBuf.split('\n');
-    stdoutBuf = lines.pop(); // keep incomplete last line
+    stdoutBuf = lines.pop();
     for (const line of lines) {
       if (!line.trim()) continue;
       console.log('Tor:', line);
@@ -135,7 +133,6 @@ function startTor(exitCountry = null, options = {}) {
     }
   });
   
-  // Buffer stderr too
   let stderrBuf = '';
   torProcess.stderr.on('data', (data) => {
     stderrBuf += data.toString('utf8');
@@ -190,7 +187,6 @@ async function toggleTor(mainWindow, tabManager = null) {
     if (!torProcess || torProcess.exitCode !== null) {
       console.log('[TOR] Tor process not running, starting now...');
       
-      // Check if binary exists before starting
       const isWindows = process.platform === 'win32';
       const torBinary = isWindows ? 'tor.exe' : 'tor';
       const torPath = path.join(__dirname, '..', '..', 'tor', torBinary);

@@ -1,6 +1,3 @@
-// Task 8: LoggingProxy — Proxy-обгортка для логування HTTP-запитів і відповідей.
-// Реалізує той самий інтерфейс request(), що й BaseHttpClient — прозора для клієнта.
-// Логує event: 'request' перед відправкою і event: 'response'/'failure' після.
 class LoggingProxy {
   constructor(client, options = {}) {
     if (!client || typeof client.request !== 'function') {
@@ -10,15 +7,10 @@ class LoggingProxy {
     this.client = client;
     this.level = options.level || 'INFO';
     this.includeBody = options.includeBody !== false;
-    // Форматтер: перетворює об'єкт запису у рядок для виводу.
-    // Приймає як options.formatter (для сумісності з createLogDecorator), так і options.format.
     this.format = options.formatter || options.format || ((entry) => JSON.stringify(entry));
-    // sink: може бути console, функцією або об'єктом з методами info/error/debug.
     this.sink = options.sink || console;
   }
 
-  // Внутрішній метод запису — розподіляє між sink.error / sink.debug / sink.info
-  // залежно від рівня. Підтримує як функцію-sink, так і logger-об'єкти (winston, pino).
   write(entry) {
     const formatted = this.format(entry);
     const record = { ...entry, timestamp: new Date().toISOString(), message: formatted };
@@ -40,7 +32,6 @@ class LoggingProxy {
   async request(request = {}) {
     const startedAt = Date.now();
 
-    // Логуємо вихідний запит. Якщо includeBody=false — лише URL і метод (без чутливих даних).
     this.write({
       level: 'DEBUG',
       event: 'request',
@@ -50,8 +41,6 @@ class LoggingProxy {
     try {
       const response = await this.client.request(request);
 
-      // Успішна відповідь → рівень this.level (INFO за замовчуванням).
-      // Помилкова відповідь (4xx/5xx) → рівень ERROR.
       this.write({
         level: response.ok ? this.level : 'ERROR',
         event: 'response',
@@ -61,7 +50,6 @@ class LoggingProxy {
 
       return response;
     } catch (error) {
-      // Мережева помилка (не HTTP) — логуємо як failure з detalями.
       this.write({
         level: 'ERROR',
         event: 'failure',

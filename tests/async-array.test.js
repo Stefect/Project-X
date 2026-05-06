@@ -150,8 +150,6 @@ test('cancelled controller marks signal as aborted', () => {
   assert.equal(ctrl.aborted, true);
 });
 
-// перевіряли що concurrency=1 справді не запускає елементи паралельно —
-// підозра була що Promise.all може все одно ігнорувати ліміт при малих масивах
 test('asyncMap with concurrency=1 runs strictly sequentially', async () => {
   const log = [];
   await asyncMap([30, 5, 15], async (x) => {

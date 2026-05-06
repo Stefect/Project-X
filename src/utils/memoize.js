@@ -46,8 +46,6 @@ function pickEvictionKey(cache, policy, customEvict) {
     if (cache.size === 0) return undefined;
 
     if (policy === POLICY.LRU) {
-        // Map maintains insertion order; after delete+set on access, the first
-        // key in the Map is always the least-recently-used one — O(1).
         return cache.keys().next().value;
     }
 
@@ -155,7 +153,6 @@ function memoize(fn, options = {}) {
         const cached = cache.get(key);
         if (cached) {
             if (policy === POLICY.LRU) {
-                // Move to the end of the Map so it is not the next eviction candidate.
                 cache.delete(key);
                 cache.set(key, cached);
             }
@@ -215,11 +212,5 @@ function memoize(fn, options = {}) {
 
     return memoizedFn;
 }
-
-memoize.clearCache = function (memoizedFn) {
-    if (memoizedFn && memoizedFn._cache) {
-        memoizedFn._cache.clear();
-    }
-};
 
 export default memoize;

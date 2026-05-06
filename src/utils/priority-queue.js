@@ -74,8 +74,6 @@ class BrowserXTaskQueue {
 
         const normalized = this._normalizeMode(mode);
 
-        // Items are pushed in insertion order and splice preserves relative order,
-        // so index 0 is always the oldest and the last index is always the newest.
         if (normalized === BrowserXTaskQueue.MODES.OLDEST) {
             return 0;
         }
@@ -94,30 +92,18 @@ class BrowserXTaskQueue {
         return selectedIndex;
     }
 
-    _pickEntry(mode) {
+    peek(mode) {
+        const index = this._findIndex(mode);
+        return index === -1 ? null : this.items[index].item;
+    }
+
+    dequeue(mode) {
         const index = this._findIndex(mode);
         if (index === -1) {
             return null;
         }
 
-        return {
-            index,
-            entry: this.items[index]
-        };
-    }
-
-    peek(mode) {
-        const picked = this._pickEntry(mode);
-        return picked ? picked.entry.item : null;
-    }
-
-    dequeue(mode) {
-        const picked = this._pickEntry(mode);
-        if (!picked) {
-            return null;
-        }
-
-        const [removed] = this.items.splice(picked.index, 1);
+        const [removed] = this.items.splice(index, 1);
         return removed.item;
     }
 

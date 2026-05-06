@@ -1,17 +1,6 @@
 import fs from 'fs';
 import readline from 'readline';
-
-function createAbortError() {
-  const error = new Error('Stream processing aborted');
-  error.name = 'AbortError';
-  return error;
-}
-
-function throwIfAborted(signal) {
-  if (signal && signal.aborted) {
-    throw createAbortError();
-  }
-}
+import { createAbortError, throwIfAborted } from './async-array.js';
 
 function toFinitePositiveInt(value, fallback) {
   const numeric = Number(value);

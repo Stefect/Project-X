@@ -11,7 +11,7 @@ const httpClient = new RateLimitProxy(
       format: (e) => `[NEWS] ${e.event}${e.status ? ` ${e.status}` : ''} ${e.durationMs != null ? `${e.durationMs}ms` : ''}`.trim()
     }
   ),
-  { requestsPerInterval: 120, intervalMs: 60000 } // 500ms spacing — prevents serial queuing
+  { requestsPerInterval: 120, intervalMs: 60000 }
 );
 
 const rssParser = new RSSParser({

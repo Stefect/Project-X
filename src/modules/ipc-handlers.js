@@ -44,12 +44,10 @@ function registerStorageHandlers(storage, tabManager) {
 
   ipcMain.on('clear-history', () => {
     storage.clearHistory();
-    console.log('[HISTORY] Cleared');
   });
 
   ipcMain.on('delete-history-item', (event, url) => {
     storage.deleteHistoryItem(url);
-    console.log('[HISTORY] Deleted:', url);
   });
 
   ipcMain.on('add-to-history', (event, { url, title, favicon }) => {
@@ -57,12 +55,10 @@ function registerStorageHandlers(storage, tabManager) {
   });
 
   ipcMain.on('open-url-from-history', (event, url) => {
-    console.log('[HISTORY] Opening:', url);
     navigateActiveTab(tabManager, url);
   });
 
   ipcMain.on('open-history', async (event) => {
-    console.log('[HISTORY] Opening history page');
     navigateActiveTab(tabManager, 'app://localhost/history.html');
   });
   
@@ -72,13 +68,11 @@ function registerStorageHandlers(storage, tabManager) {
 
   ipcMain.handle('add-bookmark', (event, { url, title, favicon }) => {
     const added = storage.addBookmark(url, title, favicon);
-    console.log(added ? '[BOOKMARK] Added:' : '[BOOKMARK] Already exists:', url);
     return added;
   });
 
   ipcMain.on('remove-bookmark', (event, url) => {
     storage.removeBookmark(url);
-    console.log('[BOOKMARK] Removed:', url);
   });
 
   ipcMain.handle('is-bookmarked', (event, url) => {
@@ -89,7 +83,6 @@ function registerStorageHandlers(storage, tabManager) {
     const sessionTabs = tabManager.getSessionData();
     const activeTabId = tabManager.getActiveTabId();
     storage.saveSession(sessionTabs, activeTabId);
-    console.log('[SESSION] Saved:', sessionTabs.length, 'tabs');
   });
 
   ipcMain.handle('get-session', () => {
@@ -106,12 +99,10 @@ function registerStorageHandlers(storage, tabManager) {
 
   ipcMain.on('save-settings', (event, settings) => {
     storage.setAllSettings(settings);
-    console.log('[SETTINGS] Saved');
   });
   
   ipcMain.on('save-note', (event, { text, url }) => {
     storage.addNote(text, url);
-    console.log('[NOTES] Saved');
   });
 
   ipcMain.handle('get-notes', () => {
@@ -120,17 +111,14 @@ function registerStorageHandlers(storage, tabManager) {
 
   ipcMain.on('delete-note', (event, id) => {
     storage.deleteNote(id);
-    console.log('[NOTES] Deleted:', id);
   });
 
   ipcMain.on('update-note', (event, { id, text }) => {
     storage.updateNote(id, text);
-    console.log('[NOTES] Updated:', id);
   });
 
   ipcMain.on('clear-notes', () => {
     storage.clearNotes();
-    console.log('[NOTES] Cleared');
   });
   
   ipcMain.handle('open-external', async (event, url) => {
@@ -151,7 +139,6 @@ function registerStorageHandlers(storage, tabManager) {
 
   ipcMain.handle('open-in-browser', async (event, url) => {
     try {
-      console.log('[BROWSER] Opening in new tab:', url);
       const mainWindow = getMainWindow();
       if (mainWindow) {
         mainWindow.webContents.send('open-in-new-tab', url);
@@ -165,8 +152,6 @@ function registerStorageHandlers(storage, tabManager) {
   ipcMain.handle('navigate-url', async (event, url) => {
     try {
       const targetUrl = toInternalAppUrl(url);
-      console.log('[NAVIGATE] Navigating to:', targetUrl);
-
       navigateActiveTab(tabManager, targetUrl);
       return { success: true };
     } catch (error) {
@@ -178,7 +163,6 @@ function registerStorageHandlers(storage, tabManager) {
   ipcMain.handle('analyze-history-stream', async (_event, payload = {}) => {
     try {
       const { topN = 10 } = payload;
-      // Never use a renderer-provided filePath — use only the known app data path
       const filePath = path.join(app.getPath('userData'), 'history.ndjson');
       const stats = await analyzeHistoryNdjsonFile(filePath, { topN });
       return { success: true, stats };
@@ -187,8 +171,6 @@ function registerStorageHandlers(storage, tabManager) {
       return { success: false, error: error.message };
     }
   });
-
-  console.log('[IPC] Storage handlers registered');
 }
 
 function registerAISchedulerHandlers(aiScheduler) {
@@ -209,8 +191,6 @@ function registerAISchedulerHandlers(aiScheduler) {
   ipcMain.on('ai-clear-queue', () => {
     aiScheduler.clearQueue();
   });
-
-  console.log('[IPC] AI Scheduler handlers registered');
 }
 
 export {

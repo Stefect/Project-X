@@ -28,7 +28,6 @@ function getSplashWindow() {
 }
 
 function injectUnifiedT9() {
-  // T9 autocomplete injection is handled by the renderer via <webview> preload
 }
 
 function createSplashWindow() {
@@ -57,7 +56,6 @@ async function createWindow() {
       console.error('GROQ_API_KEY not set — AI features will be unavailable');
     } else {
       groqClient = new Groq({ apiKey: config.GROQ_API_KEY });
-      console.log('[OK] Groq initialized');
     }
   } catch (error) {
     console.error('[ERROR] Groq initialization error:', error.message);
@@ -66,17 +64,14 @@ async function createWindow() {
   if (!aiHandlersRegistered) {
     registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
     aiHandlersRegistered = true;
-    console.log('[IPC] AI handlers wired in createWindow()');
   }
 
-  console.log('[PROXY] Setting direct connection (no proxy) on startup...');
   const defaultSes = session.defaultSession;
   const webviewSes = session.fromPartition('persist:main');
   await Promise.all([
     defaultSes.setProxy({ mode: 'direct' }),
     webviewSes.setProxy({ mode: 'direct' })
   ]);
-  console.log('[PROXY] Direct connection enabled for both sessions');
 
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -93,9 +88,7 @@ async function createWindow() {
   });
 
   mainWindow.webContents.once('did-finish-load', () => {
-    console.log('[MAIN] All resources loaded (did-finish-load)');
     setTimeout(() => {
-      console.log('[MAIN] App fully initialized, closing splash');
       if (splashWindow && !splashWindow.isDestroyed()) {
         splashWindow.close();
         splashWindow = null;
@@ -160,13 +153,8 @@ async function createWindow() {
 
   mainWindow.on('close', () => {
     const sessionTabs = tabManager.getSessionData();
-    console.log('[SESSION] Before save:');
-    sessionTabs.forEach((tab, i) => {
-      console.log(`  Tab ${i}: url=${tab.url}, currentIndex=${tab.currentIndex}, navHistory.length=${tab.navigationHistory?.length || 0}`);
-    });
     const activeTabId = tabManager.getActiveTabId();
     storage.saveSession(sessionTabs, activeTabId);
-    console.log('[SESSION] Auto-saved on close');
   });
 }
 

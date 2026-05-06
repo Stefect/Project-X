@@ -25,7 +25,6 @@ const mainAPI = {
   openInBrowser: (url) => ipcRenderer.invoke('open-in-browser', url),
   describeUrl: (url, linkText, context) => ipcRenderer.invoke('describe-url', url, linkText, context),
   analyzeHistoryStream: (topN = 10) => ipcRenderer.invoke('analyze-history-stream', { topN }),
-  // Explicit channel — no generic invoke exposed
   predictCompletion: (text) => ipcRenderer.invoke('predict-completion', text),
   fetchNews: (categories, count) => ipcRenderer.invoke('fetch-news', { categories, count }),
   getNewsCategories: () => ipcRenderer.invoke('get-news-categories'),

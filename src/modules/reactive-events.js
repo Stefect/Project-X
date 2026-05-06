@@ -6,8 +6,6 @@ import EventEmitter from 'events';
 const REACTIVE_EVENT_LIMIT = 50;
 const REACTIVE_ERROR_CHANNEL = 'reactive-error';
 const reactiveEventBus = new EventEmitter();
-// Default no-op handler prevents EventEmitter from throwing when no consumer
-// has subscribed to the error channel yet.
 reactiveEventBus.on(REACTIVE_ERROR_CHANNEL, () => {});
 const reactiveEventBuffer = [];
 const trackerHostMarkers = [
@@ -83,8 +81,6 @@ function emitReactiveEvent(payload, mainWindow) {
     reactiveEventBuffer.length = REACTIVE_EVENT_LIMIT;
   }
 
-  // Call each subscriber individually so a throwing listener does not prevent
-  // subsequent ones from receiving the event.
   const listeners = reactiveEventBus.rawListeners('event');
   for (const listener of listeners) {
     try {

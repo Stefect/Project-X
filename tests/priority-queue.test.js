@@ -137,14 +137,12 @@ test('draining queue in highest order yields sorted sequence', () => {
   assert.deepEqual(result, ['c', 'b', 'a']);
 });
 
-// float priority - перевіряли бо Number() може поводитися дивно з 0.1+0.2
 test('float priority comparison works correctly', () => {
   const q = new BrowserXTaskQueue();
-  q.enqueue('x', 0.1 + 0.2); // 0.30000000000000004
+  q.enqueue('x', 0.1 + 0.2);
   q.enqueue('y', 0.3);
-  // обидва не рівні суворо, але 0.1+0.2 > 0.3 в JS
   const first = q.dequeue('highest');
-  assert.ok(first === 'x' || first === 'y'); // будь-який з них — не падає
+  assert.ok(first === 'x' || first === 'y');
   assert.equal(q.size(), 1);
 });
 

@@ -175,6 +175,8 @@ function createAsyncController(timeoutMs = null) {
 
 export {
   ABORT_MESSAGE,
+  createAbortError,
+  throwIfAborted,
   asyncMap,
   asyncMapCallback,
   asyncFilterMap,

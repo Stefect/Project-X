@@ -36,10 +36,9 @@ test('LRU eviction removes least-recently-used entry', async () => {
   const fn = memoize((x) => x, { maxSize: 2, policy: 'lru' });
   fn('a');
   fn('b');
-  // Невелика затримка гарантує, що кеш-хіт fn('a') встановить lastAccessAt > b.lastAccessAt
   await new Promise((r) => setTimeout(r, 2));
-  fn('a'); // оновлення 'a' — 'b' тепер є LRU
-  fn('c'); // викликає витіснення 'b'
+  fn('a');
+  fn('c');
   assert.equal(fn.has('b'), false);
   assert.equal(fn.has('a'), true);
   assert.equal(fn.has('c'), true);
@@ -48,9 +47,9 @@ test('LRU eviction removes least-recently-used entry', async () => {
 
 test('LFU eviction removes least-frequently-used entry', () => {
   const fn = memoize((x) => x, { maxSize: 2, policy: 'lfu' });
-  fn('a'); fn('a'); fn('a'); // 3 звернення
-  fn('b');                   // 1 звернення — LFU
-  fn('c');                   // викликає витіснення 'b'
+  fn('a'); fn('a'); fn('a');
+  fn('b');
+  fn('c');
   assert.equal(fn.has('b'), false);
   assert.equal(fn.has('a'), true);
 });
@@ -59,7 +58,7 @@ test('TIME eviction removes oldest-by-creation entry', () => {
   const fn = memoize((x) => x, { maxSize: 2, policy: 'time' });
   fn('a');
   fn('b');
-  fn('c'); // 'a' was created first — should be evicted
+  fn('c');
   assert.equal(fn.has('a'), false);
   assert.equal(fn.has('b'), true);
   assert.equal(fn.has('c'), true);
@@ -70,11 +69,11 @@ test('CUSTOM eviction policy calls customEvict to pick key', () => {
   const fn = memoize((x) => x, {
     maxSize: 2,
     policy: 'custom',
-    customEvict: (cache) => cache.keys().next().value, // завжди витіснює найстаріший запис
+    customEvict: (cache) => cache.keys().next().value,
   });
   fn('a');
   fn('b');
-  fn('c'); // витісняє 'a' (перший доданий)
+  fn('c');
   assert.equal(fn.has('a'), false);
   assert.equal(fn.has('b'), true);
   assert.equal(fn.has('c'), true);
@@ -86,7 +85,7 @@ test('expired entries are removed on next call', async () => {
   fn('hello');
   assert.equal(fn.has('hello'), true);
   await sleep(50);
-  fn('trigger'); // ініціює видалення прострочених записів
+  fn('trigger');
   assert.equal(fn.has('hello'), false);
 });
 
@@ -129,7 +128,7 @@ test('stats() tracks hits, misses and size', () => {
 test('stats() reports evictions after LRU overflow', () => {
   const fn = memoize((x) => x, { maxSize: 1, policy: 'lru' });
   fn('a');
-  fn('b'); // витісняє 'a'
+  fn('b');
   assert.equal(fn.stats().evictions, 1);
 });
 
@@ -141,7 +140,7 @@ test('custom keyResolver groups calls by derived key', () => {
     { keyResolver: (args) => String(args[0].id) },
   );
   fn({ id: 1, noise: 'a' });
-  fn({ id: 1, noise: 'b' }); // той самий похідний ключ
+  fn({ id: 1, noise: 'b' });
   assert.equal(calls, 1);
 });
 
@@ -150,8 +149,6 @@ test('memoize throws TypeError for non-function argument', () => {
   assert.throws(() => memoize(null), TypeError);
 });
 
-// натрапили на це при інтеграції з AI handlers: undefined-аргумент мав кешуватися
-// окремо від виклику без аргументу, інакше перший виклик ламав другий
 test('undefined arg is cached independently', () => {
   let calls = 0;
   const fn = memoize((x) => { calls++; return x === undefined ? 'undef' : x; });

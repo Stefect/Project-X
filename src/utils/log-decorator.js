@@ -19,19 +19,20 @@ function createLogDecorator(options = {}) {
   const sink = options.sink || console;
 
   function emit(entry) {
-    const formatted = formatter(entry);
+    const stamped = { ...entry, timestamp: new Date().toISOString() };
+    const formatted = formatter(stamped);
 
     if (typeof sink === 'function') {
-      sink(formatted, entry);
+      sink(formatted, stamped);
       return;
     }
 
-    if (entry.level === 'ERROR' && sink.error) {
-      sink.error(formatted, entry);
-    } else if (entry.level === 'DEBUG' && sink.debug) {
-      sink.debug(formatted, entry);
+    if (stamped.level === 'ERROR' && sink.error) {
+      sink.error(formatted, stamped);
+    } else if (stamped.level === 'DEBUG' && sink.debug) {
+      sink.debug(formatted, stamped);
     } else {
-      (sink.info || console.log).call(sink, formatted, entry);
+      (sink.info || console.log).call(sink, formatted, stamped);
     }
   }
 
@@ -55,7 +56,7 @@ function createLogDecorator(options = {}) {
       const startedAt = Date.now();
 
       if (canLog('DEBUG')) {
-        emit({ timestamp: new Date().toISOString(), level: 'DEBUG', event: 'call', label, args: trySerialize(args) });
+        emit({ level: 'DEBUG', event: 'call', label, args: trySerialize(args) });
       }
 
       let result;
@@ -63,7 +64,6 @@ function createLogDecorator(options = {}) {
         result = fn.apply(this, args);
       } catch (error) {
         emit({
-          timestamp: new Date().toISOString(),
           level: 'ERROR',
           event: 'error',
           label,
@@ -77,7 +77,6 @@ function createLogDecorator(options = {}) {
         return result.then((value) => {
           if (canLog('INFO')) {
             emit({
-              timestamp: new Date().toISOString(),
               level: 'INFO',
               event: 'return',
               label,
@@ -88,7 +87,6 @@ function createLogDecorator(options = {}) {
           return value;
         }).catch((error) => {
           emit({
-            timestamp: new Date().toISOString(),
             level: 'ERROR',
             event: 'error',
             label,
@@ -101,7 +99,6 @@ function createLogDecorator(options = {}) {
 
       if (canLog('INFO')) {
         emit({
-          timestamp: new Date().toISOString(),
           level: 'INFO',
           event: 'return',
           label,

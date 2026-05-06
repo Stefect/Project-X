@@ -1,5 +1,4 @@
-// Task 8 + Task 9: тести Proxy-ланцюжка і Logging Decorator.
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { BaseHttpClient } from '../src/http/base-client.js';
@@ -37,7 +36,6 @@ function unauthorized() {
   };
 }
 
-// ─── Task 8: Proxy chain ────────────────────────────────────────────────────
 
 test('AuthProxy retries with refreshed token after 401', async () => {
   const calls = [];
@@ -138,7 +136,6 @@ test('AuthProxy without refreshCredentials returns 401 response as-is', async ()
 
 test('RateLimitProxy enforces minimum spacing between requests', async () => {
   const base = new BaseHttpClient({ fetchImpl: async () => okJson({ ok: true }) });
-  // spacingMs = floor(100 / 1) = 100ms
   const limited = new RateLimitProxy(base, { requestsPerInterval: 1, intervalMs: 100 });
 
   await limited.request({ url: 'https://example.com/1' });
@@ -167,7 +164,6 @@ test('LoggingProxy logs failure event on network error', async () => {
   assert.ok(failure.error.message.includes('network error'));
 });
 
-// ─── Task 9: Logging Decorator ───────────────────────────────────────────────
 
 test('createLogDecorator at ERROR level does not log successful sync call', () => {
   const entries = [];
@@ -259,7 +255,6 @@ test('createLogDecorator per-function ERROR level suppresses success events', ()
     formatter: (entry) => JSON.stringify(entry)
   });
 
-  // Per-function ERROR: success call should produce no log entries for this function
   const fn = log((x) => x, { label: 'strict', level: 'ERROR' });
   fn(42);
 
