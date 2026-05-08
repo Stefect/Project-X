@@ -103,10 +103,10 @@ function pickEvictionKey(cache, policy, customEvict) {
     return selectedKey;
 }
 
-// Основна функція: обгортовує fn цехуванням з кешуванням результатів (підтримує Promise)
+// Основна функція: обгортовує fn мемоізацією — кешує результати викликів (підтримує Promise)
 function memoize(fn, options = {}) {
     if (typeof fn !== 'function') {
-        throw new TypeError('мемоізе очікує функцію як перший аргумент');
+        throw new TypeError('memoize очікує функцію як перший аргумент');
     }
 
     const cache = new Map();

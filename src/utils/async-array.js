@@ -63,7 +63,7 @@ async function asyncMap(arr, asyncFn, options = {}) {
     return result;
   }
 
-  // Запуск з обмеженою кількістю вороночно активних завдань
+  // Запуск з обмеженою кількістю одночасно активних завдань
   let cursor = 0;
   await Promise.all(
     Array.from({ length: Math.min(concurrency, array.length) }, async () => {
@@ -124,7 +124,7 @@ async function asyncFilterMap(arr, asyncMapper, options = {}) {
 
 asyncFilterMap.skip = FILTER_MAP_SKIP;
 
-// Повертає індекс першого елементу, одякового предикату, або -1 якщо не знайдено
+// Повертає індекс першого елементу, що відповідає предикату, або -1 якщо не знайдено
 async function asyncFindIndex(arr, asyncPredicate, options = {}) {
   const array = toArrayOrThrow(arr);
   const predicate = toFunctionOrThrow(asyncPredicate, 'asyncPredicate');
