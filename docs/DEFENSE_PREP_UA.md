@@ -31,18 +31,15 @@ BrowserX я проєктував як інженерну систему, а не
 3. Єдиний реєстр IPC-каналів.
 
 Опорні місця в коді:
-[Preload API](../src/preload.js#L4-L26)
-[Expose у window](../src/preload.js#L43-L44)
-[IPC-константи](../src/shared/ipc-channels.js#L1)
-[TOR-канали](../src/shared/ipc-channels.js#L48-L58)
-[AI-канали](../src/shared/ipc-channels.js#L110-L119)
+[Preload API](../src/preload.js#L3-L20)
+[Expose у window](../src/preload.js#L36-L41)
 
 Рядки коду для показу:
 ~~~js
 const browserStorageAPI = {
-  getHistory: (limit) => ipcRenderer.invoke(IPC.HISTORY.GET, limit),
-  addBookmark: (url, title, favicon) => ipcRenderer.invoke(IPC.BOOKMARKS.ADD, { url, title, favicon }),
-  saveNote: (text, url) => ipcRenderer.send(IPC.NOTES.SAVE, { text, url })
+  getHistory: (limit) => ipcRenderer.invoke('get-history', limit),
+  addBookmark: (url, title, favicon) => ipcRenderer.invoke('add-bookmark', { url, title, favicon }),
+  saveNote: (text, url) => ipcRenderer.send('save-note', { text, url })
 };
 
 contextBridge.exposeInMainWorld('browserStorage', browserStorageAPI);
@@ -144,9 +141,9 @@ callback(true);
 [memoize: eviction logic](../src/utils/memoize.js#L54-L79)
 [memoize: hit/miss](../src/utils/memoize.js#L102-L116)
 [memoize: stats](../src/utils/memoize.js#L131)
-[cachedSummarizeArticle](../src/modules/ai/feed-handlers.js#L66-L69)
-[cachedSummarizeArticle у race](../src/modules/ai/feed-handlers.js#L93-L96)
-[cachedDescribeUrl](../src/modules/ai/describe-url-handler.js#L83-L93)
+[cachedSummarizeArticle](../src/modules/ai-feed-handler.js#L68-L71)
+[cachedSummarizeArticle у race](../src/modules/ai-feed-handler.js#L90-L93)
+[cachedDescribeUrl](../src/modules/ai-xray-handler.js#L63-L68)
 
 Рядки коду для показу:
 ~~~js
@@ -292,5 +289,5 @@ if (!url || url.includes('newtab.html') || url.startsWith('file://') || url.star
    [src/main.js](../src/main.js)
    [src/modules/tor-manager.js](../src/modules/tor-manager.js)
    [src/utils/memoize.js](../src/utils/memoize.js)
-   [src/modules/ai/feed-handlers.js](../src/modules/ai/feed-handlers.js)
+   [src/modules/ai-feed-handler.js](../src/modules/ai-feed-handler.js)
    [src/modules/ai-feed.js](../src/modules/ai-feed.js)
