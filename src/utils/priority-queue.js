@@ -1,6 +1,5 @@
 // Пріоритетна черга BrowserX: підтримує витягування за пріоритетом, порядком вставки, найстарішим/найновішим
 class BrowserXTaskQueue {
-    // Чотири режими витягування
     static MODES = Object.freeze({
         HIGHEST: 'highest',
         LOWEST: 'lowest',
@@ -8,7 +7,6 @@ class BrowserXTaskQueue {
         NEWEST: 'newest'
     });
 
-    // Приймає опціональний масив seed для попереднього заповнення черги
     constructor(seed = []) {
         this.items = [];
         this.insertCounter = 0;
@@ -99,13 +97,11 @@ class BrowserXTaskQueue {
         return selectedIndex;
     }
 
-    // Повертає елемент без видалення з черги
     peek(mode) {
         const index = this._findIndex(mode);
         return index === -1 ? null : this.items[index].item;
     }
 
-    // Витягує і видаляє елемент з черги
     dequeue(mode) {
         const index = this._findIndex(mode);
         if (index === -1) {
@@ -124,7 +120,6 @@ class BrowserXTaskQueue {
         return this.items.length;
     }
 
-    // Очищає чергу і скидає лічильник порядку
     clear() {
         this.items = [];
         this.insertCounter = 0;

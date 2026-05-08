@@ -1,7 +1,6 @@
 // Рівні логування: DEBUG (10) < INFO (20) < ERROR (40)
 const LEVELS = { DEBUG: 10, INFO: 20, ERROR: 40 };
 
-// Безпечна серіалізація: JSON.stringify + фолбек до String для несеріалізованих значень
 function trySerialize(value) {
   try {
     return JSON.parse(JSON.stringify(value));
@@ -10,7 +9,6 @@ function trySerialize(value) {
   }
 }
 
-// Повертає числовий ранг рівня логування для порівняння
 function levelRank(level) {
   return LEVELS[String(level || 'INFO').toUpperCase()] || LEVELS.INFO;
 }
@@ -22,7 +20,6 @@ function createLogDecorator(options = {}) {
   const formatter = options.formatter || ((entry) => JSON.stringify(entry));
   const sink = options.sink || console;
 
-  // Виводить запис логу в синк з автоматичним додаванням timestamp
   function emit(entry) {
     const stamped = { ...entry, timestamp: new Date().toISOString() };
     const formatted = formatter(stamped);
@@ -41,12 +38,10 @@ function createLogDecorator(options = {}) {
     }
   }
 
-  // Перевіряє, чи поточний рівень вищий або рівний глобальному порогу
   function shouldLog(level) {
     return levelRank(level) >= threshold;
   }
 
-  // Повертає функцію-декоратор: обгортовує fn логуванням викликів, повернень та помилок
   return function decorate(fn, config = {}) {
     if (typeof fn !== 'function') {
       throw new Error('createLogDecorator expects a function');
@@ -60,7 +55,6 @@ function createLogDecorator(options = {}) {
       return levelRank(level) >= localThreshold && shouldLog(level);
     }
 
-    // Обгортована функція з логуванням подій call, return та error
     return function loggedFunction(...args) {
       const startedAt = Date.now();
 

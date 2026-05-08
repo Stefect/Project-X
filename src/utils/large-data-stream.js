@@ -4,14 +4,12 @@ import fs from 'fs';
 import readline from 'readline';
 import { createAbortError, throwIfAborted } from './async-array.js';
 
-// Перетворює значення на ціле позитивне число, або повертає fallback
 function toFinitePositiveInt(value, fallback) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return fallback;
   return Math.max(1, Math.floor(numeric));
 }
 
-// Видобуває hostname з URL-рядка; повертає null для невалідних URL
 function toHostname(rawUrl) {
   if (!rawUrl) return null;
 

@@ -28,7 +28,6 @@ function defaultKeyResolver(args) {
     }
 }
 
-// Створює запис кешу з метаданими для подальшого витіснення за LRU/LFU
 function createEntry(value, now) {
     return {
         value,
@@ -38,13 +37,11 @@ function createEntry(value, now) {
     };
 }
 
-// Перевіряє, чи прострочив TTL запису з моменту створення
 function isExpired(entry, now, ttlMs) {
     if (!Number.isFinite(ttlMs)) return false;
     return now - entry.createdAt >= ttlMs;
 }
 
-// Визначає, чи є значення Promise-подібним (для кешування асинхронних функцій)
 function isPromiseLike(value) {
     return Boolean(value && typeof value.then === 'function');
 }

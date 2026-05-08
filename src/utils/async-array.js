@@ -2,21 +2,18 @@
 const ABORT_MESSAGE = 'Операцію скасовано';
 const FILTER_MAP_SKIP = Symbol('asyncFilterMap.skip');
 
-// Створює помилку типу AbortError для зупинки асинхронних операцій
 function createAbortError() {
   const error = new Error(ABORT_MESSAGE);
   error.name = 'AbortError';
   return error;
 }
 
-// Викидає AbortError, якщо сигнал скасування вже активовано
 function throwIfAborted(signal) {
   if (signal && signal.aborted) {
     throw createAbortError();
   }
 }
 
-// Валідація: викидає TypeError, якщо значення не є масивом
 function toArrayOrThrow(arr) {
   if (!Array.isArray(arr)) {
     throw new TypeError('Expected an array');
@@ -24,7 +21,6 @@ function toArrayOrThrow(arr) {
   return arr;
 }
 
-// Валідація: викидає TypeError, якщо значення не є функцією
 function toFunctionOrThrow(fn, name) {
   if (typeof fn !== 'function') {
     throw new TypeError(`${name} must be a function`);
