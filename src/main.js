@@ -1,4 +1,3 @@
-// Завантаження змінних середовища з .env файлу
 import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -44,7 +43,6 @@ if (!gotTheLock) {
   app.quit();
 }
 
-// Точка входу: ініціалізація застосунку після готовності Electron
 app.whenReady().then(async () => {
   // Шлях до статичних файлів інтерфейсу
   const publicDir = path.resolve(path.join(__dirname, '..', 'public'));
@@ -62,7 +60,6 @@ app.whenReady().then(async () => {
   protocol.handle('app', appProtocolHandler);
   session.fromPartition('persist:main').protocol.handle('app', appProtocolHandler);
   registerDownloadHandlers(getMainWindow);
-  // Показуємо splash-екран під час завантаження
   createSplashWindow();
   await new Promise(resolve => setTimeout(resolve, 500));
   // Ініціалізація захисту приватності (блокування трекерів тощо)
@@ -102,7 +99,6 @@ app.whenReady().then(async () => {
     });
   });
 
-  // Створення головного вікна браузера
   await createWindow();
 
   const mainWindow = getMainWindow();

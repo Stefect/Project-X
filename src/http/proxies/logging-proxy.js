@@ -12,7 +12,7 @@ class LoggingProxy {
     this.sink = options.sink || console;
   }
 
-  // Виводить запис у синк з додаванням timestamp; підтримує функцію, об'єкт і console як синк
+
   write(entry) {
     const formatted = this.format(entry);
     const record = { ...entry, timestamp: new Date().toISOString(), message: formatted };

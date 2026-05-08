@@ -23,7 +23,6 @@ class RateLimitProxy {
   async request(request = {}) {
     const execute = async () => {
       const now = Date.now();
-      // Чекаємо, якщо до наступного дозволеного вікна ще залишилось час
       const waitMs = Math.max(0, this.nextAvailableAt - now);
 
       if (waitMs > 0) {

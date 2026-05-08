@@ -20,12 +20,10 @@ let splashWindow = null;
 let groqClient = null;
 let aiHandlersRegistered = false;
 
-// Повертає посилання на основне вікно
 function getMainWindow() {
   return mainWindow;
 }
 
-// Повертає посилання на splash-вікно
 function getSplashWindow() {
   return splashWindow;
 }

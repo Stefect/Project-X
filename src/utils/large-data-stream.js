@@ -48,7 +48,6 @@ async function* readNdjsonFile(filePath, options = {}) {
 
   let lineNumber = 0;
 
-  // Звільняємо ресурси потоку після завершення або помилки
   try {
     for await (const line of rl) {
       throwIfAborted(signal);
@@ -76,7 +75,6 @@ async function* readNdjsonFile(filePath, options = {}) {
   }
 }
 
-// Групує елементи асинхронного ітератора у пакети фіксованого розміру (Task 6)
 async function* batchAsyncIterator(source, batchSize = 1000, options = {}) {
   const size = toFinitePositiveInt(batchSize, 1000);
   const { signal } = options;

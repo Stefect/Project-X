@@ -119,7 +119,6 @@ function memoize(fn, options = {}) {
         ? Math.max(0, Number(options.ttl))
         : (policy === POLICY.TIME ? 60000 : Infinity);
 
-    // Статистика: потрапляння, промахи, витіснення, закінчення терміну діє
     const stats = {
         hits: 0,
         misses: 0,
@@ -127,7 +126,6 @@ function memoize(fn, options = {}) {
         expirations: 0
     };
 
-    // Очищає закінчені записи кешу перед кожним зверненням
     const removeExpiredEntries = (now) => {
         if (!Number.isFinite(ttlMs)) return;
 
@@ -139,7 +137,6 @@ function memoize(fn, options = {}) {
         }
     };
 
-    // Видаляє записи поки розмір кешу не вкладається у maxSize
     const enforceMaxSize = () => {
         if (!Number.isFinite(maxSize)) return;
 
@@ -196,7 +193,6 @@ function memoize(fn, options = {}) {
         return produced;
     };
 
-    // Додаткові методи обгортованої функції: очищення, видалення, перевірка, перегляд, статистика
     memoizedFn._cache = cache;
 
     memoizedFn.clear = () => {
