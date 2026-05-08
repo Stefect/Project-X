@@ -155,7 +155,7 @@ function setupReactiveNetworkEvents(mainWindow) {
 
     emitReactiveEvent({
       type: 'download-start',
-      title: 'Download started',
+      title: 'Завантаження розпочато',
       detail: filename
     }, mainWindow);
 
@@ -163,13 +163,13 @@ function setupReactiveNetworkEvents(mainWindow) {
       if (state === 'completed') {
         emitReactiveEvent({
           type: 'download-complete',
-          title: 'Download completed',
+          title: 'Завантаження завершено',
           detail: filename
         }, mainWindow);
       } else {
         emitReactiveEvent({
           type: 'download-failed',
-          title: 'Download interrupted',
+          title: 'Завантаження перервано',
           detail: filename
         }, mainWindow);
       }

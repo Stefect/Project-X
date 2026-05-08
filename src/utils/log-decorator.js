@@ -53,7 +53,7 @@ function createLogDecorator(options = {}) {
     }
 
     const label = config.label || fn.name || 'anonymous';
-    // Пер-функціональний рівень: дозволяє замовчувати рівень для конкретної функції
+    // Локальний рівень функції: дозволяє задавати рівень для конкретної функції
     const localThreshold = levelRank(String(config.level || globalLevel).toUpperCase());
 
     function canLog(level) {

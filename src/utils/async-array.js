@@ -148,7 +148,7 @@ async function asyncFindIndex(arr, asyncPredicate, options = {}) {
   return -1;
 }
 
-// Повертає перший елемент, одяковий предикату, або undefined
+// Повертає перший елемент, що відповідає предикату, або undefined
 async function asyncFind(arr, asyncPredicate, options = {}) {
   const array = toArrayOrThrow(arr);
   const index = await asyncFindIndex(array, asyncPredicate, options);
