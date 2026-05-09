@@ -13,7 +13,6 @@ function levelRank(level) {
   return LEVELS[String(level || 'INFO').toUpperCase()] || LEVELS.INFO;
 }
 
-// Фабрика декоратора: повертає функцію decorate, яка обгортовує будь-яку fn логуванням
 function createLogDecorator(options = {}) {
   const globalLevel = String(options.level || 'INFO').toUpperCase();
   const threshold = levelRank(globalLevel);
