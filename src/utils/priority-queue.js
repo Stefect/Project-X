@@ -1,5 +1,4 @@
-// Пріоритетна черга BrowserX: підтримує витягування за пріоритетом, порядком вставки, найстарішим/найновішим
-class BrowserXTaskQueue {
+class TaskQueue {
     static MODES = Object.freeze({
         HIGHEST: 'highest',
         LOWEST: 'lowest',
@@ -20,7 +19,6 @@ class BrowserXTaskQueue {
         }
     }
 
-    // Додає елемент до черги; пріоритет має бути кінцевим числом; повертає новий розмір черги
     enqueue(item, priority = 0) {
         const numericPriority = Number(priority);
         if (!Number.isFinite(numericPriority)) {
@@ -36,7 +34,6 @@ class BrowserXTaskQueue {
         return this.items.length;
     }
 
-    // Нормалізує режим: якщо невідомий — повертає HIGHEST за замовчуванням
     _normalizeMode(mode) {
         const raw = String(mode || '').toLowerCase();
         return Object.values(BrowserXTaskQueue.MODES).includes(raw)
@@ -44,7 +41,6 @@ class BrowserXTaskQueue {
             : BrowserXTaskQueue.MODES.HIGHEST;
     }
 
-    // Порівнює два елементи і визначає, чи є кандидат кращим за поточним режимом
     _isCandidateBetter(current, candidate, mode) {
         if (mode === BrowserXTaskQueue.MODES.HIGHEST) {
             if (candidate.priority !== current.priority) {
@@ -71,7 +67,6 @@ class BrowserXTaskQueue {
         return false;
     }
 
-    // Знаходить індекс елемента для витягування/перегляду залежно від режиму
     _findIndex(mode) {
         if (this.items.length === 0) {
             return -1;
@@ -125,7 +120,6 @@ class BrowserXTaskQueue {
         this.insertCounter = 0;
     }
 
-    // Повертає копію всіх елементів у вигляді плоских об'єктів для інспекції
     toArray() {
         return this.items.map((entry) => ({
             item: entry.item,
@@ -135,4 +129,4 @@ class BrowserXTaskQueue {
     }
 }
 
-export default BrowserXTaskQueue;
+export default TaskQueue;
