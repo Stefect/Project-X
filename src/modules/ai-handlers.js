@@ -74,12 +74,10 @@ ${tabsListString}`;
 
       return { success: true, groups: groupsData.groups, tabsData };
     } catch (error) {
-      console.error('[AI] Tab organization error:', error);
+      console.error('Tab organization error:', error);
       return { success: false, message: error.message };
     }
   });
-
-  console.log('[IPC] AI handlers registered');
 }
 
 export { registerAIHandlers };
