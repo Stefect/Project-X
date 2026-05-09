@@ -1,5 +1,4 @@
 
-
 import fs from 'fs';
 import path from 'path';
 import net from 'net';
@@ -11,39 +10,36 @@ import * as privacyGuard from './src/modules/privacy-guard.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-console.log('=== 🔧 TOR MANAGER MODULE DIAGNOSTICS ===\n');
-console.log('📋 Check 1: Module Exports');
+console.log('=== TOR MANAGER MODULE DIAGNOSTICS ===\n');
+
+console.log('Check 1: Module Exports');
 const expectedExports = ['startTor', 'toggleTor', 'getTorStatus', 'isTorEnabled', 'stopTor'];
 const actualExports = Object.keys(torManager);
 
-console.log('Expected exports:', expectedExports);
-console.log('Actual exports:', actualExports);
+console.log('  expected:', expectedExports);
+console.log('  actual:  ', actualExports);
 
 expectedExports.forEach(exp => {
-  if (actualExports.includes(exp)) {
-    console.log(`  ✅ ${exp} - exported`);
-  } else {
-    console.log(`  ❌ ${exp} - MISSING!`);
-  }
+  const ok = actualExports.includes(exp);
+  console.log(`  [${ok ? 'OK' : 'MISSING'}] ${exp}`);
 });
 const extraExports = actualExports.filter(e => !expectedExports.includes(e));
 if (extraExports.length > 0) {
-  console.log('  ℹ️ Extra exports:', extraExports);
+  console.log('  extra exports:', extraExports);
 }
-console.log('\n📋 Check 2: Function Types');
+
+console.log('\nCheck 2: Function Types');
 expectedExports.forEach(exp => {
   if (torManager[exp]) {
     const type = typeof torManager[exp];
-    if (type === 'function') {
-      console.log(`  ✅ ${exp} - is a function`);
-    } else {
-      console.log(`  ❌ ${exp} - is ${type}, not a function!`);
-    }
+    const ok = type === 'function';
+    console.log(`  [${ok ? 'OK' : 'WARN'}] ${exp} — ${type}`);
   }
 });
-console.log('\n📋 Check 3: Privacy Guard Module');
+
+console.log('\nCheck 3: Privacy Guard Module');
 const privacyExports = Object.keys(privacyGuard);
-console.log('Privacy Guard exports:', privacyExports);
+console.log('  exports:', privacyExports);
 
 const expectedPrivacyExports = [
   'initializePrivacyProtection',
@@ -55,131 +51,105 @@ const expectedPrivacyExports = [
 ];
 
 expectedPrivacyExports.forEach(exp => {
-  if (privacyExports.includes(exp)) {
-    console.log(`  ✅ ${exp} - exported`);
-  } else {
-    console.log(`  ⚠️ ${exp} - not found`);
-  }
+  const ok = privacyExports.includes(exp);
+  console.log(`  [${ok ? 'OK' : 'WARN'}] ${exp}`);
 });
-console.log('\n📋 Check 4: Tor Binary');
 
+console.log('\nCheck 4: Tor Binary');
 const isWindows = process.platform === 'win32';
 const torBinary = isWindows ? 'tor.exe' : 'tor';
 const torPath = path.join(__dirname, 'bin', 'tor', torBinary);
 
 if (fs.existsSync(torPath)) {
-  console.log(`  ✅ Tor binary found: ${torPath}`);
-  
   const stats = fs.statSync(torPath);
-  console.log(`  ℹ️ Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`  ℹ️ Modified: ${stats.mtime.toISOString()}`);
+  console.log(`  [OK] binary found: ${torPath}`);
+  console.log(`       size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+  console.log(`       modified: ${stats.mtime.toISOString()}`);
   if (!isWindows) {
-    const mode = stats.mode;
-    const isExecutable = !!(mode & parseInt('111', 8));
-    if (isExecutable) {
-      console.log('  ✅ Binary is executable');
-    } else {
-      console.log('  ⚠️ Binary is NOT executable! Run: chmod +x bin/tor/tor');
+    const isExecutable = !!(stats.mode & parseInt('111', 8));
+    console.log(`  [${isExecutable ? 'OK' : 'WARN'}] executable: ${isExecutable}`);
+    if (!isExecutable) {
+      console.log('       fix: chmod +x bin/tor/tor');
     }
   }
 } else {
-  console.log(`  ❌ Tor binary NOT FOUND: ${torPath}`);
-  console.log('  💡 Download from: https://www.torproject.org/download/tor/');
+  console.log(`  [MISSING] ${torPath}`);
+  console.log('  download from: https://www.torproject.org/download/tor/');
 }
-console.log('\n📋 Check 5: Tor Data Files');
-const dataFiles = ['geoip', 'geoip6', 'torrc-defaults'];
 
+console.log('\nCheck 5: Tor Data Files');
+const dataFiles = ['geoip', 'geoip6', 'torrc-defaults'];
 dataFiles.forEach(file => {
   const filePath = path.join(__dirname, 'bin', 'data', file);
   if (fs.existsSync(filePath)) {
     const stats = fs.statSync(filePath);
-    console.log(`  ✅ ${file} - ${(stats.size / 1024).toFixed(2)} KB`);
+    console.log(`  [OK] ${file} — ${(stats.size / 1024).toFixed(2)} KB`);
   } else {
-    console.log(`  ⚠️ ${file} - NOT FOUND`);
+    console.log(`  [MISSING] ${file}`);
   }
 });
-console.log('\n📋 Check 6: Tor Data Directory');
-const torDataDir = path.join(__dirname, 'bin', 'tor', 'data');
 
+console.log('\nCheck 6: Tor Data Directory');
+const torDataDir = path.join(__dirname, 'bin', 'tor', 'data');
 if (fs.existsSync(torDataDir)) {
-  console.log(`  ✅ Data directory exists: ${torDataDir}`);
-  
   const files = fs.readdirSync(torDataDir);
-  console.log(`  ℹ️ Files: ${files.length}`);
-  
-  if (files.length > 0) {
-    console.log('  ℹ️ Contents:');
-    files.slice(0, 10).forEach(file => {
-      const filePath = path.join(torDataDir, file);
-      const stats = fs.statSync(filePath);
-      const type = stats.isDirectory() ? '[DIR]' : '[FILE]';
-      console.log(`    - ${type} ${file}`);
-    });
-    
-    if (files.length > 10) {
-      console.log(`    ... and ${files.length - 10} more`);
-    }
+  console.log(`  [OK] ${torDataDir} — ${files.length} files`);
+  files.slice(0, 10).forEach(file => {
+    const filePath = path.join(torDataDir, file);
+    const type = fs.statSync(filePath).isDirectory() ? '[DIR]' : '[FILE]';
+    console.log(`    ${type} ${file}`);
+  });
+  if (files.length > 10) {
+    console.log(`    ... and ${files.length - 10} more`);
   }
 } else {
-  console.log('  ℹ️ Data directory will be created on first run');
+  console.log('  data directory will be created on first run');
 }
-console.log('\n📋 Check 7: Pluggable Transports');
-const ptDir = path.join(__dirname, 'bin', 'tor', 'pluggable_transports');
 
+console.log('\nCheck 7: Pluggable Transports');
+const ptDir = path.join(__dirname, 'bin', 'tor', 'pluggable_transports');
 if (fs.existsSync(ptDir)) {
-  console.log(`  ✅ PT directory exists`);
-  
-  const ptBinaries = isWindows 
+  console.log('  [OK] PT directory found');
+  const ptBinaries = isWindows
     ? ['lyrebird.exe', 'conjure-client.exe']
     : ['lyrebird', 'conjure-client'];
-  
+
   ptBinaries.forEach(binary => {
     const binaryPath = path.join(ptDir, binary);
-    if (fs.existsSync(binaryPath)) {
-      console.log(`  ✅ ${binary} - found`);
-    } else {
-      console.log(`  ⚠️ ${binary} - not found`);
-    }
+    console.log(`  [${fs.existsSync(binaryPath) ? 'OK' : 'WARN'}] ${binary}`);
   });
-  
+
   const ptConfig = path.join(ptDir, 'pt_config.json');
   if (fs.existsSync(ptConfig)) {
-    console.log('  ✅ pt_config.json - found');
+    console.log('  [OK] pt_config.json');
     try {
       const config = JSON.parse(fs.readFileSync(ptConfig, 'utf8'));
-      const bridgeTypes = Object.keys(config.bridges || {});
-      console.log(`  ℹ️ Bridge types: ${bridgeTypes.join(', ')}`);
-    } catch (err) {
-      console.log('  ⚠️ pt_config.json - invalid JSON');
+      console.log('  bridge types:', Object.keys(config.bridges || {}).join(', '));
+    } catch {
+      console.log('  [WARN] pt_config.json — invalid JSON');
     }
   } else {
-    console.log('  ⚠️ pt_config.json - not found');
+    console.log('  [WARN] pt_config.json not found');
   }
 } else {
-  console.log('  ⚠️ PT directory not found');
+  console.log('  [WARN] PT directory not found');
 }
-console.log('\n📋 Check 8: Network Ports');
+
+console.log('\nCheck 8: Network Ports');
 
 function checkPort(port, name) {
   return new Promise((resolve) => {
     const server = net.createServer();
-    
     server.once('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        console.log(`  ⚠️ Port ${port} (${name}) - IN USE`);
-        resolve(false);
-      } else {
-        console.log(`  ✅ Port ${port} (${name}) - available`);
-        resolve(true);
-      }
+      const label = err.code === 'EADDRINUSE' ? 'IN USE' : 'available';
+      console.log(`  [${label === 'available' ? 'OK' : 'WARN'}] port ${port} (${name}) — ${label}`);
+      resolve(err.code !== 'EADDRINUSE');
     });
-    
     server.once('listening', () => {
       server.close();
-      console.log(`  ✅ Port ${port} (${name}) - available`);
+      console.log(`  [OK] port ${port} (${name}) — available`);
       resolve(true);
     });
-    
     server.listen(port, '127.0.0.1');
   });
 }
@@ -187,26 +157,24 @@ function checkPort(port, name) {
 (async () => {
   await checkPort(9050, 'SOCKS');
   await checkPort(9051, 'Control');
-  console.log('\n=== 📊 DIAGNOSTIC SUMMARY ===\n');
-  
+
+  console.log('\n=== DIAGNOSTIC SUMMARY ===\n');
+
   const issues = [];
-  
   if (!fs.existsSync(torPath)) {
-    issues.push('❌ Tor binary not found');
+    issues.push('Tor binary not found');
   }
-  
   if (!actualExports.includes('startTor')) {
-    issues.push('❌ startTor function not exported');
+    issues.push('startTor function not exported');
   }
-  
+
   if (issues.length === 0) {
-    console.log('✅ ALL CHECKS PASSED!');
-    console.log('💡 Tor module is ready to use\n');
+    console.log('All checks passed — Tor module is ready.\n');
   } else {
-    console.log('⚠️ ISSUES FOUND:');
-    issues.forEach(issue => console.log(`  ${issue}`));
-    console.log('\n💡 Fix these issues before running Tor\n');
+    console.log('Issues found:');
+    issues.forEach(issue => console.log(`  - ${issue}`));
+    console.log('');
   }
-  
+
   console.log('=== END OF DIAGNOSTICS ===\n');
 })();
