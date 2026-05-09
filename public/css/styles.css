@@ -2,9 +2,9 @@
 
 
 :root {
-  --dark-bg: #1a1b26;
-  --dark-surface: #24283b;
-  --dark-highlight: #414868;
+  --dark-bg: #0d0e18;
+  --dark-surface: #13141f;
+  --dark-highlight: #2a2d45;
   --dark-text: #c0caf5;
   --dark-comment: #565f89;
   --accent-blue: #3b82f6;
@@ -12,11 +12,20 @@
   --accent-red: #f7768e;
   --accent-green: #34a853;
   --accent-orange: #ff9e64;
-  --theme-bg: #1a1b26;
-  --theme-surface: #24283b;
-  --theme-border: #414868;
+  --theme-bg: #0d0e18;
+  --theme-surface: #13141f;
+  --theme-border: #2a2d45;
   --theme-text: #c0caf5;
   --theme-accent: #3b82f6;
+
+  /* Glass system */
+  --glass-bg: rgba(10, 11, 20, 0.60);
+  --glass-bg-light: rgba(18, 20, 35, 0.50);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-accent: rgba(59, 130, 246, 0.25);
+  --glass-blur: blur(24px) saturate(160%);
+  --glass-blur-heavy: blur(32px) saturate(180%);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
   
@@ -32,15 +41,19 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background: #1a1b26;
+      background: #0d0e18;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       display: flex;
-      flex-direction: column; 
-      height: 100vh; 
-      background: #1a1b26;
+      flex-direction: column;
+      height: 100vh;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% -5%, rgba(59, 130, 246, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 85% 105%, rgba(139, 92, 246, 0.14) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 60% at 50% 50%, rgba(20, 22, 40, 0.9) 0%, transparent 100%),
+        #0d0e18;
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -83,20 +96,22 @@
 
     #notes-sidebar {
       width: 320px;
-      background: linear-gradient(to bottom, #24283b 0%, #1a1b26 100%);
-      border-left: 1px solid #414868;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur-heavy);
+      -webkit-backdrop-filter: var(--glass-blur-heavy);
+      border-left: 1px solid var(--glass-border);
       padding: 15px;
       display: flex;
       flex-direction: column;
       overflow-y: auto;
       overflow-x: visible;
       transition: right 0.3s ease;
-      position: fixed; 
+      position: fixed;
       right: 0;
-      top: 100px; 
+      top: 94px;
       bottom: 0;
-      z-index: 2147483647; 
-      box-shadow: -2px 0 8px rgba(59, 130, 246, 0.05);
+      z-index: 2147483647;
+      box-shadow: -4px 0 32px rgba(0, 0, 0, 0.4), inset 1px 0 0 rgba(255,255,255,0.04);
     }
 
     
@@ -167,9 +182,9 @@
       margin-bottom: 12px;
       padding: 10px;
       border-radius: 12px;
-      background: linear-gradient(135deg, #1f2435 0%, #2a3148 100%);
-      border: 1px solid #414868;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--glass-border);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .reactive-header {
@@ -216,8 +231,8 @@
       display: flex;
       gap: 8px;
       padding: 8px;
-      background: #2f3549;
-      border: 1px solid #414868;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--glass-border);
       border-radius: 10px;
       align-items: flex-start;
     }
@@ -325,34 +340,34 @@
       flex-grow: 1;
       overflow-y: auto;
       margin-bottom: 15px;
-      border: 1px solid #414868;
-      background: #2f3549;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.03);
       border-radius: 10px;
       padding: 8px;
       color: #c0caf5;
     }
 
     .note-item {
-      border-bottom: 1px solid #414868;
+      border-bottom: 1px solid var(--glass-border);
       padding: 10px;
       font-size: 13px;
       line-height: 1.5;
       color: #c0caf5;
       position: relative;
       padding-right: 30px;
-      background: #2f3549;
-      border-left: 3px solid #f7768e;
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 3px solid rgba(247, 118, 142, 0.7);
       margin-bottom: 6px;
       border-radius: 10px;
-      box-shadow: 0 1px 3px rgba(247, 118, 142, 0.15);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
       transition: all 0.2s;
     }
-    
+
     .note-item:hover {
-      box-shadow: 0 3px 10px rgba(247, 118, 142, 0.3);
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
       transform: translateX(2px);
-      border-left-color: #ff7a93;
-      background: #343a55;
+      border-left-color: rgba(255, 122, 147, 0.9);
     }
 
     .note-item:last-child {
@@ -553,15 +568,17 @@
     }
 
     .toolbar {
-      height: 60px;
-      flex-shrink: 0; 
-      background: #24283b;
+      height: 54px;
+      flex-shrink: 0;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
       display: flex;
       align-items: center;
-      padding: 0 10px;
-      gap: 10px;
-      border-bottom: 1px solid #414868;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      padding: 0 12px;
+      gap: 8px;
+      border-bottom: 1px solid var(--glass-border);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.04), var(--glass-shadow);
       -webkit-app-region: no-drag;
       position: relative;
       z-index: 9999 !important;
@@ -616,24 +633,25 @@
 
     .address-bar {
       flex: 1;
-      height: 36px;
+      height: 34px;
       padding: 0 14px;
-      border: 1px solid #414868;
-      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 8px;
       font-size: 13px;
       outline: none;
-      background: #24283b;
+      background: rgba(255, 255, 255, 0.05);
       color: #c0caf5;
-      transition: all 0.15s;
+      transition: all 0.18s ease;
     }
 
     .address-bar:focus {
-      border-color: #f7768e;
-      background: #2f3549;
+      border-color: rgba(59, 130, 246, 0.5);
+      background: rgba(59, 130, 246, 0.07);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
     }
 
     .address-bar::placeholder {
-      color: #565f89;
+      color: rgba(86, 95, 137, 0.8);
     }
 
     
@@ -726,19 +744,21 @@
     
     .tabs-bar {
       height: 40px;
-      flex-shrink: 0; 
-      background: #1f2335;
+      flex-shrink: 0;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
       display: flex;
       align-items: flex-end;
       padding: 0;
-      border-bottom: 1px solid #414868;
+      border-bottom: 1px solid var(--glass-border);
       overflow-x: auto;
       overflow-y: hidden;
       -webkit-app-region: drag;
       position: relative;
       z-index: 90;
-      scrollbar-width: none; 
-      -ms-overflow-style: none; 
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
 
     .tabs-bar::-webkit-scrollbar {
@@ -778,10 +798,12 @@
       top: 48px;
       left: 8px;
       width: 320px;
-      background: #1f2335;
-      border: 1px solid #414868;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur-heavy);
+      -webkit-backdrop-filter: var(--glass-blur-heavy);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255,255,255,0.06);
       display: none;
       z-index: 2147483647;
       overflow: hidden;
@@ -895,8 +917,11 @@
       right: -380px;
       width: 350px;
       height: 100vh;
-      background: var(--theme-surface);
-      box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur-heavy);
+      -webkit-backdrop-filter: var(--glass-blur-heavy);
+      border-left: 1px solid var(--glass-border);
+      box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255,255,255,0.04);
       transition: right 0.3s ease-in-out;
       z-index: 2147483647;
       display: flex;
@@ -1323,20 +1348,20 @@
     }
 
     .window-btn:hover {
-      background: rgba(247, 118, 142, 0.2);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .window-btn.close:hover {
-      background: #dc2626;
+      background: rgba(220, 38, 38, 0.8);
       color: white;
     }
 
     .tab {
       min-width: 150px;
       max-width: 240px;
-      height: 34px;
-      background: #2f3549;
-      border-radius: 12px 12px 0 0;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px 10px 0 0;
       margin-right: 2px;
       padding: 0 10px;
       display: flex;
@@ -1345,15 +1370,15 @@
       cursor: pointer;
       user-select: none;
       -webkit-app-region: no-drag;
-      border: 1px solid #414868;
+      border: 1px solid rgba(255, 255, 255, 0.07);
       border-bottom: none;
-      transition: all 0.15s;
+      transition: all 0.18s ease;
       position: relative;
-      -webkit-app-region: no-drag;
     }
 
     .tab:hover {
-      background: #343a55;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.12);
     }
 
     .tab.dragging {
@@ -1362,15 +1387,16 @@
     }
 
     .tab.drag-over {
-      border-left: 3px solid #3b82f6;
+      border-left: 3px solid var(--theme-accent);
     }
 
     .tab.active {
-      background: #f7768e;
-      height: 36px;
-      border-color: #f7768e;
+      background: rgba(59, 130, 246, 0.18);
+      height: 34px;
+      border-color: rgba(59, 130, 246, 0.35);
+      border-bottom: none;
       z-index: 1;
-      box-shadow: 0 -2px 8px rgba(247, 118, 142, 0.3);
+      box-shadow: 0 -2px 12px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255,255,255,0.08);
     }
 
     .tab-favicon {
@@ -1385,12 +1411,12 @@
       overflow: hidden;
       text-overflow: ellipsis;
       font-size: 13px;
-      color: #c0caf5;
+      color: rgba(192, 202, 245, 0.7);
     }
 
     .tab.active .tab-title {
       font-weight: 600;
-      color: white;
+      color: #e0e8ff;
     }
 
     .tab-close {
@@ -1419,23 +1445,26 @@
     }
 
     .new-tab-btn {
-      width: 32px;
-      height: 32px;
-      background: transparent;
-      border: none;
+      width: 30px;
+      height: 30px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
       cursor: pointer;
       font-size: 18px;
-      color: #c0caf5;
+      color: rgba(192,202,245,0.6);
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 6px;
+      border-radius: 8px;
       flex-shrink: 0;
       -webkit-app-region: no-drag;
+      transition: all 0.15s;
     }
 
     .new-tab-btn:hover {
-      background: rgba(247, 118, 142, 0.2);
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.35);
+      color: #c0caf5;
     }
 
 
@@ -2220,17 +2249,19 @@ webview.active {
 
 #news-sidebar {
   width: 340px;
-  background: linear-gradient(to bottom, #1f2335 0%, #1a1b26 100%);
-  border-left: 1px solid #414868;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-heavy);
+  -webkit-backdrop-filter: var(--glass-blur-heavy);
+  border-left: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
   transition: right 0.3s ease;
   position: fixed;
   right: 0;
-  top: 100px;
+  top: 94px;
   bottom: 0;
   z-index: 2147483647;
-  box-shadow: -4px 0 20px rgba(107, 76, 255, 0.12);
+  box-shadow: -4px 0 32px rgba(0, 0, 0, 0.4), inset 1px 0 0 rgba(255,255,255,0.04);
 }
 
 #news-sidebar.collapsed {
@@ -2425,4 +2456,48 @@ webview.active {
 .news-card:hover {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(122, 162, 247, 0.25);
+}
+
+/* ── Inline-style overrides for downloads-panel & find-bar ─────────── */
+#downloads-panel {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur-heavy) !important;
+  -webkit-backdrop-filter: var(--glass-blur-heavy) !important;
+  border-left: 1px solid var(--glass-border) !important;
+  border-top: 1px solid var(--glass-border) !important;
+  box-shadow: -4px -4px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+#find-bar {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border-top: 1px solid var(--glass-border) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* ── Scrollbar glass refinement ───────────────────────────────────── */
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.35);
+}
+
+/* ── Toolbar button glass hover ───────────────────────────────────── */
+.toolbar-btn:hover, .nav-btn:hover, .menu-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--glass-border) !important;
+}
+
+/* ── Splash, newtab, settings webview backdrop ────────────────────── */
+#webview-container webview::part(host) {
+  background: transparent;
 }
