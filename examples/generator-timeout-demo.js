@@ -51,7 +51,7 @@ function toIterator(streamLike) {
 
 // pulls values from the iterator until the time window closes
 // note: not using setInterval/setTimeout because generators can be async and we want
-// to respect backpressure \u2014 the next value is only requested after the previous one resolves
+// to respect backpressure — the next value is only requested after the previous one resolves
 async function collectFromStreamForWindow(streamLike, timeoutMs, onItem) {
   const timeout = Math.max(0, Number(timeoutMs) || 0);
   if (timeout === 0) {
