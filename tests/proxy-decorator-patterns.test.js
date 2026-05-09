@@ -1,4 +1,11 @@
-﻿import test from 'node:test';
+﻿/**
+ * Integration tests for the HTTP proxy chain and log decorator.
+ *
+ * Proxy chain: BaseHttpClient → AuthProxy → LoggingProxy → RateLimitProxy
+ * Strategies tested: oauth (Bearer), apiKey (X-API-Key), jwt (Bearer JWT)
+ * Decorator: createLogDecorator — DEBUG / INFO / ERROR levels, sync & async
+ */
+import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { BaseHttpClient } from '../src/http/base-client.js';
@@ -7,6 +14,8 @@ import { LoggingProxy } from '../src/http/proxies/logging-proxy.js';
 import { RateLimitProxy } from '../src/http/proxies/rate-limit-proxy.js';
 import { GitHubService } from '../src/services/github-service.js';
 import { createLogDecorator } from '../src/utils/log-decorator.js';
+
+// ─── helpers ────────────────────────────────────────────────────────────────
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -35,6 +44,8 @@ function unauthorized() {
     text: async () => JSON.stringify({ error: 'unauthorized' })
   };
 }
+
+// ─── AuthProxy ──────────────────────────────────────────────────────────────
 
 
 test('AuthProxy retries with refreshed token after 401', async () => {
@@ -134,6 +145,8 @@ test('AuthProxy without refreshCredentials returns 401 response as-is', async ()
   assert.equal(response.status, 401);
 });
 
+// ─── RateLimitProxy ─────────────────────────────────────────────────────────
+
 test('RateLimitProxy enforces minimum spacing between requests', async () => {
   const base = new BaseHttpClient({ fetchImpl: async () => okJson({ ok: true }) });
   const limited = new RateLimitProxy(base, { requestsPerInterval: 1, intervalMs: 100 });
@@ -163,6 +176,8 @@ test('LoggingProxy logs failure event on network error', async () => {
   assert.equal(failure.level, 'ERROR');
   assert.ok(failure.error.message.includes('network error'));
 });
+
+// ─── createLogDecorator ──────────────────────────────────────────────────────
 
 
 test('createLogDecorator at ERROR level does not log successful sync call', () => {
