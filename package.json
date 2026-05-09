@@ -4,21 +4,9 @@
   "description": "BrowserX - Privacy-focused browser with AI-powered T9 autocomplete, infinite news feed, and Tor integration",
   "type": "module",
   "main": "src/main.js",
-  "exports": {
-    "./memoize": "./src/utils/memoize.js",
-    "./priority-queue": "./src/utils/priority-queue.js",
-    "./async-array": "./src/utils/async-array.js",
-    "./large-data-stream": "./src/utils/large-data-stream.js",
-    "./log-decorator": "./src/utils/log-decorator.js",
-    "./http/base-client": "./src/http/base-client.js",
-    "./http/auth-proxy": "./src/http/proxies/auth-proxy.js",
-    "./http/logging-proxy": "./src/http/proxies/logging-proxy.js",
-    "./http/rate-limit-proxy": "./src/http/proxies/rate-limit-proxy.js",
-    "./services/github-service": "./src/services/github-service.js"
-  },
   "scripts": {
     "start": "npm run build:css && electron .",
-    "test": "node --test tests/priority-queue.test.js tests/memoize.test.js tests/async-array.test.js tests/large-data-stream.test.js tests/browserx-edge-flows.test.js tests/lab8-9-patterns.test.js",
+    "test": "node --test tests/priority-queue.test.js tests/memoize.test.js tests/async-array.test.js tests/large-data-stream.test.js tests/browserx-edge-flows.test.js tests/proxy-decorator-patterns.test.js",
     "check:encoding": "node scripts/check-encoding.js",
     "build:css": "postcss ./public/css/styles.css -o ./public/css/output.css --verbose",
     "build:css:watch": "postcss ./public/css/styles.css -o ./public/css/output.css --watch --verbose",
@@ -47,7 +35,6 @@
     "tailwindcss": "^4.1.18"
   },
   "dependencies": {
-    "browserx": "file:.",
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.13.4",
     "dotenv": "^17.3.1",

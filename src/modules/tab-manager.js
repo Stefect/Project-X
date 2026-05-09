@@ -8,7 +8,7 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DEFAULT_TAB_TITLE = 'New tab';
+const DEFAULT_TAB_TITLE = 'Нова вкладка';
 const SEARCH_ENGINES = {
   tor: 'https://duckduckgo.com/?q=',
   regular: 'https://www.google.com/search?q='
