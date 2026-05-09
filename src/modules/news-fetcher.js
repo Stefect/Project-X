@@ -112,6 +112,7 @@ async function fetchFromSource(source) {
         time:     item.pubDate ? formatTime(new Date(item.pubDate).getTime()) : 'Нещодавно'
       }));
     }
+
   } catch (e) {
     console.warn(`[NEWS] Source "${source.id}" failed: ${e.message}`);
   }

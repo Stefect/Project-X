@@ -9,6 +9,7 @@ import * as tabManager from '../modules/tab-manager.js';
 import * as themeManager from '../modules/theme-manager.js';
 import { infiniteArticleGenerator } from '../modules/ai-feed.js';
 import { registerAIHandlers } from '../modules/ai-handlers.js';
+import { registerUpdateHandlers } from '../modules/ipc-handlers.js';
 import config from '../config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -69,6 +70,7 @@ async function createWindow() {
   // Реєструємо AI IPC-обробники лише один раз (захист від двойної реєстрації)
   if (!aiHandlersRegistered) {
     registerAIHandlers(groqClient, infiniteArticleGenerator, tabManager);
+    registerUpdateHandlers();
     aiHandlersRegistered = true;
   }
 

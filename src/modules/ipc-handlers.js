@@ -4,6 +4,7 @@
 import { ipcMain, shell, BrowserWindow, app } from 'electron';
 import path from 'path';
 import { analyzeHistoryNdjsonFile } from '../utils/large-data-stream.js';
+import { checkForUpdate } from './update-checker.js';
 
 // Повертає посилання на перше наявне вікно Electron
 function getMainWindow() {
@@ -206,7 +207,18 @@ function registerAISchedulerHandlers(aiScheduler) {
   });
 }
 
+function registerUpdateHandlers() {
+  ipcMain.handle('check-for-updates', async () => {
+    try {
+      return await checkForUpdate();
+    } catch (error) {
+      return { updateAvailable: false, error: error.message };
+    }
+  });
+}
+
 export {
   registerStorageHandlers,
-  registerAISchedulerHandlers
+  registerAISchedulerHandlers,
+  registerUpdateHandlers
 };

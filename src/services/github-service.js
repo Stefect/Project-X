@@ -45,6 +45,10 @@ class GitHubService {
   getRepo(owner, repo) {
     return this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
   }
+
+  getLatestRelease(owner, repo) {
+    return this.request(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases/latest`);
+  }
 }
 
 export { GitHubService };
