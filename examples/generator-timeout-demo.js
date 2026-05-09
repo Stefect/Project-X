@@ -1,6 +1,6 @@
-const BROWSER_WORKWEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const WORKWEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-function* browserSessionCounter(start = 7, step = 3) {
+function* counter(start = 7, step = 3) {
   let value = Number.isFinite(Number(start)) ? Number(start) : 0;
   const strideRaw = Number(step);
   const stride = Number.isFinite(strideRaw) && strideRaw !== 0 ? strideRaw : 1;
@@ -11,18 +11,18 @@ function* browserSessionCounter(start = 7, step = 3) {
   }
 }
 
-function* browserWorkdayTicker(startDay = 'Monday') {
+function* dayTicker(startDay = 'Monday') {
   const normalizedStart = String(startDay || '').toLowerCase();
-  const startIndex = BROWSER_WORKWEEK.findIndex((day) => day.toLowerCase() === normalizedStart);
+  const startIndex = WORKWEEK.findIndex((day) => day.toLowerCase() === normalizedStart);
   let index = startIndex === -1 ? 0 : startIndex;
 
   while (true) {
-    yield BROWSER_WORKWEEK[index];
-    index = (index + 1) % BROWSER_WORKWEEK.length;
+    yield WORKWEEK[index];
+    index = (index + 1) % WORKWEEK.length;
   }
 }
 
-function* browserLatencyPulse(min = 0, max = 1) {
+function* latencyPulse(min = 0, max = 1) {
   const safeMin = Number.isFinite(Number(min)) ? Number(min) : 0;
   const safeMax = Number.isFinite(Number(max)) ? Number(max) : 1;
   const low = Math.min(safeMin, safeMax);
@@ -49,6 +49,9 @@ function toIterator(streamLike) {
   throw new TypeError('Expected generator, iterator, or iterator factory');
 }
 
+// pulls values from the iterator until the time window closes
+// note: not using setInterval/setTimeout because generators can be async and we want
+// to respect backpressure \u2014 the next value is only requested after the previous one resolves
 async function collectFromStreamForWindow(streamLike, timeoutMs, onItem) {
   const timeout = Math.max(0, Number(timeoutMs) || 0);
   if (timeout === 0) {
@@ -91,10 +94,10 @@ async function collectFromStreamForWindow(streamLike, timeoutMs, onItem) {
 }
 
 async function runCounterDemo() {
-  const counter = browserSessionCounter(7, 3);
+  const gen = counter(7, 3);
   const seen = [];
 
-  await collectFromStreamForWindow(counter, 200, (value, iteration) => {
+  await collectFromStreamForWindow(gen, 200, (value, iteration) => {
     seen.push(value);
     if (iteration >= 12) {
       return false;
@@ -107,7 +110,7 @@ async function runCounterDemo() {
 }
 
 async function runDayDemo() {
-  const dayIterator = browserWorkdayTicker('Friday');
+  const dayIterator = dayTicker('Friday');
   const days = [];
 
   await collectFromStreamForWindow(dayIterator, 100, (value, iteration) => {
@@ -122,7 +125,7 @@ async function runDayDemo() {
 }
 
 async function runRandomDemo() {
-  const randomIterator = browserLatencyPulse(10, 20);
+  const randomIterator = latencyPulse(10, 20);
   const values = [];
 
   await collectFromStreamForWindow(randomIterator, 120, (value, iteration) => {
