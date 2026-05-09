@@ -1,4 +1,4 @@
-import memoize from 'browserx/memoize';
+import memoize from '../src/utils/memoize.js';
 
 function expensiveScore(seed) {
     console.log('  -> calculate for', seed);

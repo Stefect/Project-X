@@ -1,8 +1,8 @@
-import { BaseHttpClient } from 'browserx/http/base-client';
-import { AuthProxy } from 'browserx/http/auth-proxy';
-import { LoggingProxy } from 'browserx/http/logging-proxy';
-import { RateLimitProxy } from 'browserx/http/rate-limit-proxy';
-import { GitHubService } from 'browserx/services/github-service';
+import { BaseHttpClient } from '../src/http/base-client.js';
+import { AuthProxy } from '../src/http/proxies/auth-proxy.js';
+import { LoggingProxy } from '../src/http/proxies/logging-proxy.js';
+import { RateLimitProxy } from '../src/http/proxies/rate-limit-proxy.js';
+import { GitHubService } from '../src/services/github-service.js';
 
 function createMockFetch() {
   return async (url, options) => {

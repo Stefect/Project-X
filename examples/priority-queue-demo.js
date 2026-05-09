@@ -1,4 +1,4 @@
-import BrowserXTaskQueue from 'browserx/priority-queue';
+import BrowserXTaskQueue from '../src/utils/priority-queue.js';
 
 function main() {
   const queue = new BrowserXTaskQueue();

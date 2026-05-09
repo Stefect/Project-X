@@ -1,4 +1,4 @@
-import { createLogDecorator } from 'browserx/log-decorator';
+import { createLogDecorator } from '../src/utils/log-decorator.js';
 
 const log = createLogDecorator({
   level: 'INFO',
