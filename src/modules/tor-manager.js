@@ -48,7 +48,6 @@ function parseBootstrapLine(line) {
     bootstrapProgress = parseInt(match[1], 10);
     bootstrapStatus = match[3] || match[2] || 'Connecting...';
     
-    console.log(`[TOR] Bootstrap: ${bootstrapProgress}% - ${bootstrapStatus}`);
     if (mainWindowRef && mainWindowRef.webContents) {
       mainWindowRef.webContents.send('tor-bootstrap-progress', {
         progress: bootstrapProgress,
@@ -74,21 +73,19 @@ function startTor(exitCountry = null, options = {}) {
   const torBinary = isWindows ? 'tor.exe' : 'tor';
   const torPath = path.join(__dirname, '..', '..', 'tor', torBinary);
   if (!fs.existsSync(torPath)) {
-    console.log(`[TOR] Tor not found at path: ${torPath}`);
-    console.log('[TOR] Download Tor Expert Bundle and place binary in tor/ folder');
-    console.log(`   Windows: tor.exe | macOS/Linux: tor`);
+    console.error(`Tor binary not found: ${torPath}`);
+    console.error('Download Tor Expert Bundle and place binary in tor/ folder');
     return;
   }
   if (!isWindows) {
     try {
       fs.chmodSync(torPath, 0o755);
-      console.log('[TOR] Set execution permissions for Tor');
     } catch (err) {
-      console.error('[TOR] Failed to set execution permissions:', err.message);
+      console.error('Failed to set execution permissions:', err.message);
     }
   }
   
-  console.log(`[TOR] Starting Tor (${process.platform}):`, torPath);
+  console.log(`Starting Tor (${process.platform}):`, torPath);
   
   const geoipPath = path.join(__dirname, '..', '..', 'data', 'geoip');
   const geoip6Path = path.join(__dirname, '..', '..', 'data', 'geoip6');
@@ -125,7 +122,7 @@ function startTor(exitCountry = null, options = {}) {
       if (bootstrapProgress === 100 && !isTorReady) {
         isTorReady = true;
         bootstrapStatus = 'Connected';
-        console.log('[TOR] Tor successfully connected and ready!');
+        console.log('Tor connected and ready');
         if (mainWindowRef && mainWindowRef.webContents) {
           mainWindowRef.webContents.send('tor-ready', true);
         }
@@ -146,10 +143,10 @@ function startTor(exitCountry = null, options = {}) {
   });
   
   torProcess.on('close', (code) => {
-    console.log('[TOR] Tor process exited with code:', code);
+    console.log('Tor process exited, code:', code);
     
     if (code === 1) {
-      console.error('[TOR] Exit code 1: Check DataDirectory permissions or configuration');
+      console.error('Tor exit code 1: check DataDirectory permissions or configuration');
     }
     
     torProcess = null;
@@ -170,7 +167,7 @@ async function toggleTor(mainWindow, tabManager = null) {
       webviewSes.setProxy({ mode: 'direct' })
     ]);
     isTorActive = false;
-    console.log('[TOR] Tor disabled - regular connection (both sessions)');
+    console.log('Tor disabled');
     if (privacyGuard) {
       privacyGuard.disablePrivacyMode(mainWindow);
     }
@@ -185,13 +182,11 @@ async function toggleTor(mainWindow, tabManager = null) {
     };
   } else {
     if (!torProcess || torProcess.exitCode !== null) {
-      console.log('[TOR] Tor process not running, starting now...');
-      
       const isWindows = process.platform === 'win32';
       const torBinary = isWindows ? 'tor.exe' : 'tor';
       const torPath = path.join(__dirname, '..', '..', 'tor', torBinary);
       if (!fs.existsSync(torPath)) {
-        console.warn('[TOR] Binary not found:', torPath);
+        console.warn('Tor binary not found:', torPath);
         return {
           status: false,
           message: 'Tor не встановлено. Завантажте Tor Expert Bundle і помістіть у tor/'
@@ -207,8 +202,7 @@ async function toggleTor(mainWindow, tabManager = null) {
       };
     }
     if (!isTorReady) {
-      console.warn('[TOR] Tor is not ready yet. Please wait for connection...');
-      console.warn(`[TOR] Current bootstrap: ${bootstrapProgress}% - ${bootstrapStatus}`);
+      console.warn(`Tor not ready yet: ${bootstrapProgress}% - ${bootstrapStatus}`);
       return {
         status: false,
         message: `Tor підключається... ${bootstrapProgress}%`,
@@ -218,16 +212,14 @@ async function toggleTor(mainWindow, tabManager = null) {
     }
     const portAvailable = await checkPortAvailable(socksPort);
     if (portAvailable) {
-      console.error('[TOR] SOCKS port is not listening! Tor process may have crashed.');
-      console.error('[TOR] Bootstrap was 100% but port is not responding.');
+      console.error('SOCKS port not listening — Tor process may have crashed.');
       return {
         status: false,
         message: 'Помилка: Tor процес не відповідає'
       };
     }
     
-    console.log('[TOR] Port 9050 is listening (Tor ready)');
-    console.log('[TOR] Applying SOCKS5 proxy configuration...');
+    console.log('Tor SOCKS5 proxy active');
     try {
       const storageTypes = [
         'appcache',
@@ -245,9 +237,9 @@ async function toggleTor(mainWindow, tabManager = null) {
         defaultSes.clearStorageData({ storages: storageTypes }),
         webviewSes.clearStorageData({ storages: storageTypes })
       ]);
-      console.log('[PRIVACY] Cleared ALL storage for BOTH sessions (main + webview)');
+      console.log('Cleared storage for Tor session');
     } catch (err) {
-      console.warn('[PRIVACY] Failed to clear storage:', err.message);
+      console.warn('Failed to clear storage:', err.message);
     }
     await Promise.all([
       defaultSes.setProxy({
@@ -260,12 +252,9 @@ async function toggleTor(mainWindow, tabManager = null) {
       })
     ]);
     
-    console.log('[TOR] SOCKS5 proxy applied to BOTH sessions: socks5://127.0.0.1:9050');
-    console.log('[TOR] DNS resolution: Via Tor SOCKS5 (no DNS leak)');
     await new Promise(resolve => setTimeout(resolve, 500));
     
     isTorActive = true;
-    console.log('[TOR] Tor enabled successfully');
     if (privacyGuard) {
       privacyGuard.enablePrivacyMode(mainWindow);
     }
@@ -302,7 +291,6 @@ function isTorEnabled() {
 
 function stopTor() {
   if (torProcess) {
-    console.log('[TOR] Closing Tor...');
     torProcess.kill();
     torProcess = null;
     isTorReady = false;
