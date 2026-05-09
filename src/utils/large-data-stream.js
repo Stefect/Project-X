@@ -1,5 +1,3 @@
-// Модуль потокової обробки даних:
-// зчитує NDJSON файли, групує дані пакетами, аналізує історію перегляду
 import fs from 'fs';
 import readline from 'readline';
 import { createAbortError, throwIfAborted } from './async-array.js';
@@ -21,8 +19,6 @@ function toHostname(rawUrl) {
   }
 }
 
-// Асинхронний генератор, що зчитує файл NDJSON рядок за рядком:
-// бланкові рядки пропускаються, невалідний JSON — за опцією skipInvalidLines
 async function* readNdjsonFile(filePath, options = {}) {
   if (!filePath || typeof filePath !== 'string') {
     throw new TypeError('filePath must be a non-empty string');
@@ -96,7 +92,6 @@ async function* batchAsyncIterator(source, batchSize = 1000, options = {}) {
   }
 }
 
-// Аналізує NDJSON-файл історії: підраховує відвідування за доменами, повертає топ-N доменів
 async function analyzeHistoryNdjsonFile(filePath, options = {}) {
   const {
     topN = 10,

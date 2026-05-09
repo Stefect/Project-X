@@ -1,4 +1,3 @@
-// Політики витіснення кешу: LRU, LFU, за часом створення, або довільна
 const POLICY = Object.freeze({
     LRU: 'lru',
     LFU: 'lfu',
@@ -6,20 +5,17 @@ const POLICY = Object.freeze({
     CUSTOM: 'custom'
 });
 
-// Нормалізує maxSize: null/undefined/некінцеве → Infinity, інакше → ціле невід'ємне число
 function normalizeMaxSize(rawMaxSize) {
     if (rawMaxSize === undefined || rawMaxSize === null) return Infinity;
     if (!Number.isFinite(rawMaxSize)) return Infinity;
     return Math.max(0, Math.floor(rawMaxSize));
 }
 
-// Нормалізує політику: якщо невідома або недійсна → повертає LRU за замовчуванням
 function normalizePolicy(rawPolicy) {
     const policy = String(rawPolicy || POLICY.LRU).toLowerCase();
     return Object.values(POLICY).includes(policy) ? policy : POLICY.LRU;
 }
 
-// Серіалізує аргументи виклику у ключ кешу; JSON.stringify з фолбеком до String
 function defaultKeyResolver(args) {
     try {
         return JSON.stringify(args);
@@ -100,10 +96,9 @@ function pickEvictionKey(cache, policy, customEvict) {
     return selectedKey;
 }
 
-// Основна функція: обгортовує fn мемоізацією — кешує результати викликів (підтримує Promise)
 function memoize(fn, options = {}) {
     if (typeof fn !== 'function') {
-        throw new TypeError('memoize очікує функцію як перший аргумент');
+        throw new TypeError('memoize: first argument must be a function');
     }
 
     const cache = new Map();
@@ -128,7 +123,7 @@ function memoize(fn, options = {}) {
 
     const removeExpiredEntries = (now) => {
         if (!Number.isFinite(ttlMs)) return;
-
+        // TODO: maybe also run this on write, not just on read — could miss long-idle entries
         for (const [key, entry] of cache.entries()) {
             if (isExpired(entry, now, ttlMs)) {
                 cache.delete(key);
@@ -148,7 +143,6 @@ function memoize(fn, options = {}) {
         }
     };
 
-    // Обгортована функція: перевіряє кеш, повертає збережений результат або викликає fn
     const memoizedFn = function (...args) {
         if (maxSize === 0) {
             stats.misses += 1;

@@ -1,4 +1,3 @@
-// Повідомлення про скасування та символ для пропуску елемента в asyncFilterMap
 const ABORT_MESSAGE = 'Операцію скасовано';
 const FILTER_MAP_SKIP = Symbol('asyncFilterMap.skip');
 
@@ -28,14 +27,12 @@ function toFunctionOrThrow(fn, name) {
   return fn;
 }
 
-// Нормалізує ліміт одночасності: Infinity — необмежена, число — мінімум 1
 function normalizeConcurrency(concurrency) {
   if (concurrency === Infinity) return Infinity;
   if (!Number.isFinite(concurrency)) return Infinity;
   return Math.max(1, Math.floor(concurrency));
 }
 
-// Асинхронно перетворює елементи масиву через asyncFn з контролем одночасності та підтримкою AbortSignal
 async function asyncMap(arr, asyncFn, options = {}) {
   const array = toArrayOrThrow(arr);
   const mapper = toFunctionOrThrow(asyncFn, 'asyncFn');
@@ -59,6 +56,7 @@ async function asyncMap(arr, asyncFn, options = {}) {
     return result;
   }
 
+  // worker pool — each "worker" grabs the next unclaimed index
   // Запуск з обмеженою кількістю одночасно активних завдань
   let cursor = 0;
   await Promise.all(
@@ -72,7 +70,6 @@ async function asyncMap(arr, asyncFn, options = {}) {
   return result;
 }
 
-// Варіант asyncMap з callback-стилем (Node.js-сумісність з помилкою у першому аргументі)
 function asyncMapCallback(arr, asyncFn, callback, options = {}) {
   const mapper = toFunctionOrThrow(asyncFn, 'asyncFn');
   const cb = toFunctionOrThrow(callback, 'callback');
@@ -93,7 +90,7 @@ function asyncMapCallback(arr, asyncFn, callback, options = {}) {
   ).then((result) => cb(null, result)).catch((err) => cb(err));
 }
 
-// Перетворює і одночасно фільтрує елементи: пропускає ті, що повернули FILTER_MAP_SKIP або { skip: true }
+
 async function asyncFilterMap(arr, asyncMapper, options = {}) {
   const array = toArrayOrThrow(arr);
   const mapper = toFunctionOrThrow(asyncMapper, 'asyncMapper');
@@ -120,7 +117,6 @@ async function asyncFilterMap(arr, asyncMapper, options = {}) {
 
 asyncFilterMap.skip = FILTER_MAP_SKIP;
 
-// Повертає індекс першого елементу, що відповідає предикату, або -1 якщо не знайдено
 async function asyncFindIndex(arr, asyncPredicate, options = {}) {
   const array = toArrayOrThrow(arr);
   const predicate = toFunctionOrThrow(asyncPredicate, 'asyncPredicate');
@@ -150,8 +146,6 @@ async function asyncFind(arr, asyncPredicate, options = {}) {
   return index === -1 ? undefined : array[index];
 }
 
-// Створює AbortController з опціональним таймаутом:
-// повертає { controller, signal, cancel, clearTimeout, aborted }
 function createAsyncController(timeoutMs = null) {
   const controller = new AbortController();
   let timeoutId = null;
