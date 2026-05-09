@@ -340,11 +340,8 @@
   </div>
 
   <script>
-    console.log('[JS] JavaScript execution starts');
-    
     try {
       const { ipcRenderer } = require('electron');
-      console.log('[OK] IPC Renderer loaded in main window');
       
       // ========== Кнопки керування вікном ==========
       const minimizeBtn = document.getElementById('minimize-btn');
@@ -353,21 +350,18 @@
       
       if (minimizeBtn) {
         minimizeBtn.addEventListener('click', () => {
-          console.log(' Minimizing window');
           ipcRenderer.send('window-minimize');
         });
       }
       
       if (maximizeBtn) {
         maximizeBtn.addEventListener('click', () => {
-          console.log(' Maximizing window');
           ipcRenderer.send('window-maximize');
         });
       }
       
       if (closeBtn) {
         closeBtn.addEventListener('click', () => {
-          console.log('[ERR] Closing window');
           ipcRenderer.send('window-close');
         });
       }
@@ -376,14 +370,8 @@
       const sideToolbar = document.getElementById('side-toolbar');
       const sidebarToggle = document.getElementById('sidebar-toggle');
 
-      console.log('[DEBUG] Sidebar elements:', { 
-        sideToolbar: !!sideToolbar, 
-        sidebarToggle: !!sidebarToggle 
-      });
-
       if (sidebarToggle && sideToolbar) {
         sidebarToggle.addEventListener('click', () => {
-          console.log('[SIDEBAR] Toggle clicked!');
           sideToolbar.classList.toggle('open');
           
           const isCollapsed = !sideToolbar.classList.contains('open');
@@ -399,13 +387,6 @@
           
           // Повідомляємо main process про зміну розміру
           ipcRenderer.send('sidebar-toggled', isCollapsed);
-          console.log('[UI] Sidebar toggled, collapsed:', isCollapsed);
-        });
-        console.log('[OK] Sidebar toggle initialized');
-      } else {
-        console.error('[ERROR] Sidebar elements not found:', { 
-          sideToolbar, 
-          sidebarToggle 
         });
       }
       // ========== END Sidebar Toggle ==========
@@ -532,7 +513,7 @@
               events.slice().reverse().forEach(event => addReactiveEvent(event, { prepend: false }));
             }
           })
-          .catch(error => console.error('[ERR] Error loading events:', error));
+          .catch(error => console.error('Error loading events:', error));
 
         ipcRenderer.on('reactive-event', (_event, payload) => {
           addReactiveEvent(payload, { prepend: true });
@@ -665,12 +646,6 @@
       // Ініціалізуємо drag and drop для існуючих вкладок
       initTabDragAndDrop();
       
-      console.log('[DBG] Initializing tabs:', {
-        tabsBar: !!tabsBar,
-        tabsContainer: !!tabsContainer,
-        newTabBtn: !!newTabBtn
-      });
-      
       let collectedNotes = [];
       let editingNoteId = null; // ID нотатки що редагується
       
@@ -705,10 +680,9 @@
               notesList.appendChild(noteItem);
             });
             
-            console.log('[NOTES] Notes loaded:', savedNotes.length);
           }
         } catch (error) {
-          console.error('[ERROR] Error loading notes:', error);
+          console.error('Error loading notes:', error);
         }
       })();
 
@@ -720,7 +694,7 @@
           const result = await ipcRenderer.invoke('create-tab', url);
           
           if (!result || !result.id) {
-            console.error('[ERR] Tab creation error: no result');
+            console.error('Tab creation error: no result');
             return null;
           }
           
@@ -746,10 +720,9 @@
           // Перемикаємось на нову вкладку
           switchTab(result.id);
           
-          console.log('[OK] Tab created:', result.id);
           return result.id;
         } catch (error) {
-          console.error('[ERR] Tab creation error:', error);
+          console.error('Tab creation error:', error);
           return null;
         }
       }
@@ -794,23 +767,11 @@
       // Закрити вкладку
       function closeTab(tabId) {
         try {
-          console.log('[DEL] Closing tab:', tabId);
-          console.log('[DEL] Total tabs before close:', document.querySelectorAll('.tab').length);
-          
           const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
-          if (tabElement) {
-            tabElement.remove();
-            console.log('[OK] Tab element removed from DOM');
-            console.log('[DEL] Total tabs after close:', document.querySelectorAll('.tab').length);
-          } else {
-            console.warn('[WARN] Tab element not found in DOM');
-          }
-          
-          console.log('[IPC] Sending close-tab to main process...');
+          if (tabElement) tabElement.remove();
           ipcRenderer.send('close-tab', tabId);
-          console.log('[IPC] close-tab message sent');
         } catch (error) {
-          console.error('[ERR] Tab closing error:', error);
+          console.error('Tab closing error:', error);
         }
       }
       
@@ -877,12 +838,9 @@
       
       // Обробка відновлених вкладок з сесії
       ipcRenderer.on('tab-restored', (event, data) => {
-        console.log('[SESSION] Tab restored:', data.tabId, data.title);
-        
         // При відновленні першої вкладки видаляємо початкову newtab
         const initialTab = document.querySelector('.tab[data-tab-id="1"]');
         if (initialTab && initialTab.querySelector('.tab-title')?.textContent === 'Нова вкладка') {
-          console.log('[SESSION] Removing initial newtab');
           initialTab.remove();
         }
         
@@ -925,7 +883,6 @@
       
       // Активація вкладки з main процесу
       ipcRenderer.on('tab-activated', (event, tabId) => {
-        console.log('[SESSION] Activating tab:', tabId);
         const currentBg = localStorage.getItem('themeBg') || '#1a1b26';
         const currentAccent = localStorage.getItem('themeAccent') || '#3b82f6';
         document.querySelectorAll('.tab').forEach(tab => {
@@ -939,13 +896,11 @@
     
     // Обробники подій для вкладок
     if (tabsBar) {
-      console.log('[OK] Attaching event delegation to tabsBar');
       tabsBar.addEventListener('click', (e) => {
         const tab = e.target.closest('.tab');
         if (!tab) return;
         
         const tabId = parseInt(tab.dataset.tabId);
-        console.log('[CLICK] Click on tab:', tabId);
         
         // Якщо клікнули на mute
         if (e.target.classList.contains('tab-mute')) {
@@ -961,30 +916,24 @@
         }
         // Якщо клікнули на кнопку закриття
         if (e.target.classList.contains('tab-close')) {
-          console.log('[CLICK] Click on tab close button (x)');
-          console.log('[CLICK] Target element:', e.target);
           e.stopPropagation();
           closeTab(tabId);
           return;
         } else {
-          // Перемкнутись на вкладку
-          console.log('[CLICK] Switching to tab');
           switchTab(tabId);
         }
       });
     } else {
-      console.error('[ERR] tabsBar not found!');
+      console.error('tabsBar not found');
     }
     
     // Кнопка створення нової вкладки
     if (newTabBtn) {
-      console.log('[OK] Attaching handler to new tab button');
       newTabBtn.addEventListener('click', () => {
-        console.log('Click on new tab button');
         createTab();
       });
     } else {
-      console.error('[ERR] New tab button not found!');
+      console.error('New tab button not found');
     }
     
     // Гаряча клавіша Ctrl+T для нової вкладки
@@ -999,8 +948,6 @@
     
     // Функція для відображення організованих груп (над вкладками)
     function displayOrganizedGroups(groups, tabsData) {
-      console.log(' Показую', groups.length, 'груп');
-      
       // Видаляємо старий блок груп якщо є
       const oldGroups = document.getElementById('tab-groups-display');
       if (oldGroups) oldGroups.remove();
@@ -1102,7 +1049,6 @@
       const tabsBar = document.getElementById('tabs-bar');
       if (tabsBar && tabsBar.parentNode) {
         tabsBar.parentNode.insertBefore(groupsContainer, tabsBar);
-        console.log('[OK] Groups displayed above tabs-bar');
         
         // Оновлюємо висоту топбара (100 + 32px для groups display)
         ipcRenderer.send('topbar-height-changed', 132);
@@ -1128,7 +1074,6 @@
           groupBadges.forEach(badge => {
             badge.onclick = () => {
               const filterGroup = badge.dataset.groupFilter;
-              console.log('[DBG] Filtering by:', filterGroup);
               
               // Скидаємо стилі для всіх badges
               groupBadges.forEach(b => {
@@ -1199,29 +1144,21 @@
       const domainGroups = new Map();
       const tabsData = [];
 
-      console.log('[DBG] Аналізую', allTabs.length, 'вкладок...');
-
       allTabs.forEach((tab, index) => {
         const tabId = tab.dataset.tabId;
         const titleSpan = tab.querySelector('.tab-title');
         const title = titleSpan ? titleSpan.textContent : 'Без назви';
         const url = tab.dataset.url || '';
         
-        console.log(`Tab ${index + 1}: "${title}" -> URL: "${url}"`);
-
         // Витягуємо домен
         let domain = 'Інші';
         if (url) {
           try {
             const urlObj = new URL(url);
             domain = urlObj.hostname.replace('www.', '');
-            console.log(`  → Домен: ${domain}`);
           } catch (e) {
-            console.log('  → Помилка парсингу URL:', e.message);
             domain = 'Локальні файли';
           }
-        } else {
-          console.log('  → URL відсутній, група: Інші');
         }
 
         if (!domainGroups.has(domain)) {
@@ -1236,7 +1173,6 @@
         tabIds: tabIds
       }));
 
-      console.log('[OK] Організовано в', groups.length, 'груп:', groups.map(g => `${g.name} (${g.tabIds.length})`).join(', '));
       return { success: true, groups, tabsData };
     }
 
@@ -1245,9 +1181,7 @@
     
     if (organizeTabsBtn) {
       organizeTabsBtn.addEventListener('click', () => {
-        console.log('[TARGET] Organize clicked!');
-        
-        organizeTabsBtn.innerHTML = '[PROC] Організую...';
+        organizeTabsBtn.innerHTML = 'Організую...';
         organizeTabsBtn.disabled = true;
 
         try {
@@ -1259,13 +1193,13 @@
             organizeTabsBtn.disabled = false;
           } else if (result.success) {
             displayOrganizedGroups(result.groups, result.tabsData);
-            organizeTabsBtn.innerHTML = '[OK] Готово!';
+            organizeTabsBtn.innerHTML = 'Готово!';
             setTimeout(() => {
               organizeTabsBtn.innerHTML = 'Групи';
               organizeTabsBtn.disabled = false;
             }, 1500);
           } else {
-            organizeTabsBtn.innerHTML = '[ERR] Помилка';
+            organizeTabsBtn.innerHTML = 'Помилка';
             setTimeout(() => {
               organizeTabsBtn.innerHTML = 'Групи';
               organizeTabsBtn.disabled = false;
@@ -1273,9 +1207,9 @@
           }
 
         } catch (error) {
-          console.error('[ERR] Error:', error);
+          console.error('Error organizing tabs:', error);
           alert('Помилка: ' + error.message);
-          organizeTabsBtn.innerHTML = ' Навести лад';
+          organizeTabsBtn.innerHTML = 'Навести лад';
           organizeTabsBtn.disabled = false;
         }
       });
@@ -1283,12 +1217,6 @@
 
     // ========== Система тем ==========
     const settingsBtn = document.getElementById('settings-btn');
-    
-    if (!settingsBtn) {
-      console.error('[WARN] Settings button not found!');
-    } else {
-      console.log('[OK] Settings button found');
-    }
     
     // Готові теми
     const themes = {
@@ -1414,11 +1342,8 @@
     // Показати панель налаштувань
     if (settingsBtn) {
       settingsBtn.addEventListener('click', () => {
-        console.log('[THEME] Opening theme settings');
         showSettingsPopup();
       });
-    } else {
-      console.error('[WARN] Cannot add handler - button not found');
     }
 
     function showSettingsPopup() {
@@ -1638,7 +1563,7 @@
           newsCategoriesEl.appendChild(pill);
         });
       } catch (e) {
-        console.warn('[NEWS] Could not load categories:', e.message);
+        console.warn('Could not load categories:', e.message);
       }
     })();
 
@@ -1703,7 +1628,7 @@
             if (feedCount) feedCount.textContent = articles.length;
           }
         } catch (e) {
-          console.error('[NEWS] Fetch error:', e);
+          console.error('News fetch error:', e);
           articlesContainer.innerHTML = '<div class="news-empty-state"><p>Помилка завантаження.<br>Перевірте підключення.</p></div>';
         } finally {
           generateNewsBtn.disabled = false;
@@ -1715,21 +1640,18 @@
     // Навігація
     if (backBtn) {
       backBtn.addEventListener('click', () => {
-        console.log('[BACK] Back button clicked');
         ipcRenderer.send('go-back');
       });
     }
 
     if (forwardBtn) {
       forwardBtn.addEventListener('click', () => {
-        console.log('[FWD] Forward button clicked');
         ipcRenderer.send('go-forward');
       });
     }
 
     if (reloadBtn) {
       reloadBtn.addEventListener('click', () => {
-        console.log('[RELOAD] Reload button clicked');
         ipcRenderer.send('reload');
       });
     }
@@ -1852,7 +1774,7 @@
         
         if (confirm('Очистити всі нотатки?')) {
           collectedNotes = [];
-          notesList.innerHTML = '<div class="empty-state">[NOTE] Натисніть кнопку "+" нижче<br>або використайте <kbd>Ctrl+Shift+N</kbd><br><br>Також можна виділити текст<br>та натиснути праву кнопку миші</div>';
+          notesList.innerHTML = '<div class="empty-state">Натисніть кнопку "+" нижче<br>або використайте <kbd>Ctrl+Shift+N</kbd><br><br>Також можна виділити текст<br>та натиснути праву кнопку миші</div>';
           ipcRenderer.send('clear-notes');
         }
       });
@@ -1860,19 +1782,16 @@
 
     // Додати нотатку вручну через кнопку
     if (addNoteBtn) {
-      console.log('[OK] Add note button found');
       addNoteBtn.addEventListener('click', () => {
-        console.log('[CLICK] Click on add note button');
         openNoteEditor();
       });
     } else {
-      console.error('[ERR] Add note button NOT found!');
+      console.error('Add note button not found');
     }
 
     // Кнопка збереження нотатки
     if (saveNoteBtn) {
       saveNoteBtn.addEventListener('click', () => {
-        console.log('[SAVE] Click on save button');
         saveNewNote();
       });
     }
@@ -1880,7 +1799,6 @@
     // Кнопка скасування
     if (cancelNoteBtn) {
       cancelNoteBtn.addEventListener('click', () => {
-        console.log('x Click on cancel button');
         closeNoteEditor();
       });
     }
@@ -1902,20 +1820,16 @@
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'N') {
         e.preventDefault();
-        console.log('[KEY] Hotkey Ctrl+Shift+N pressed');
         openNoteEditor();
       }
     });
 
     // Відкрити inline редактор
     function openNoteEditor(noteId = null, noteText = '') {
-      console.log('[NOTE] Opening inline editor', noteId ? 'for editing' : 'for new note');
-      
       editingNoteId = noteId;
       
       // Якщо sidebar згорнутий, відкриваємо його
       if (isSidebarCollapsed) {
-        console.log(' Opening sidebar');
         toggleSidebar();
       }
       
@@ -1931,7 +1845,6 @@
 
     // Закрити редактор
     function closeNoteEditor() {
-      console.log('x Closing editor');
       editingNoteId = null;
       noteEditor.style.display = 'none';
       addNoteBtn.style.display = 'block';
@@ -1941,7 +1854,6 @@
     // Зберегти нову нотатку або оновити існуючу
     function saveNewNote() {
       const text = noteInput.value.trim();
-      console.log('[SAVE] Saving note:', text);
       
       if (text) {
         if (editingNoteId) {
@@ -1953,28 +1865,22 @@
         }
         closeNoteEditor();
       } else {
-        console.warn('[WARN] Empty text');
         noteInput.focus();
       }
     }
 
     // Редагувати нотатку
     window.editNote = function(noteId, button) {
-      console.log('[EDIT] Editing note:', noteId);
-      
-      // Знаходимо нотатку в масиві
       const note = collectedNotes.find(n => n.id === noteId);
       if (note) {
         openNoteEditor(noteId, note.text);
       } else {
-        console.error('[ERR] Note not found:', noteId);
+        console.error('Note not found:', noteId);
       }
     };
 
     // Оновити існуючу нотатку
     function updateNote(noteId, newText) {
-      console.log('[RELOAD] Updating note:', noteId, newText);
-      
       // Оновлюємо в масиві
       const noteIndex = collectedNotes.findIndex(n => n.id === noteId);
       if (noteIndex !== -1) {
@@ -1991,7 +1897,6 @@
         
         // Оновлюємо в storage
         ipcRenderer.send('update-note', { id: noteId, text: newText });
-        console.log('[OK] Note updated');
       }
     }
 
@@ -1999,7 +1904,6 @@
 
     // Застосування теми
     ipcRenderer.on('theme-changed', (event, theme) => {
-      console.log('[THEME] New theme received:', theme.name);
       applyTheme(theme);
     });
 
@@ -2049,7 +1953,6 @@
       const organizeBtn = document.getElementById('organize-tabs-btn');
       // no special color — inherits sidebar-btn style
 
-      console.log('[OK] Theme applied successfully');
     }
 
     // Завантаження збереженої теми при старті
@@ -2134,11 +2037,9 @@
           notesList.appendChild(noteItem);
         });
       } catch (e) {
-        console.error('[ERR] Error loading notes:', e);
+        console.error('Error loading notes:', e);
       }
     }
-    
-    console.log('[OK] All index.html handlers configured');
 
     // ===================== НОВА ПАНЕЛЬ НАЛАШТУВАНЬ =====================
     const themePanel = document.getElementById('theme-panel');
@@ -2185,8 +2086,6 @@
 
     // 3. Застосування теми (CSS змінні - магія!)
     function applyBrowserTheme(bg, accent) {
-      console.log('[THEME] Applying theme:', { bg, accent });
-      
       // CSS змінні
       document.documentElement.style.setProperty('--theme-bg', bg);
       document.documentElement.style.setProperty('--theme-accent', accent);
@@ -2252,8 +2151,6 @@
       localStorage.setItem('themeAccent', accent);
       currentThemeBg = bg;
       currentThemeAccent = accent;
-      
-      console.log('[OK] Theme applied successfully');
     }
     
     // Конвертація HEX в RGB
@@ -2299,8 +2196,6 @@
         const newBg = btn.dataset.bg;
         const newAccent = btn.dataset.accent;
         
-        console.log('[THEME] Click on color:', { newBg, newAccent });
-
         if (newBg === 'custom' || newAccent === 'custom') {
           // Кастомний колір
           const colorInput = document.createElement('input');
@@ -2481,8 +2376,6 @@
       
       // Надсилаємо налаштування в main process для newtab
       sendThemeSettings();
-      
-      console.log('[IMG] Wallpaper changed:', wallpaperData);
     }
 
     // Оновлення активної картки
@@ -2554,8 +2447,6 @@
     // Надсилаємо початкові налаштування теми в main process
     sendThemeSettings();
     
-    console.log('[OK] Settings panel ready');
-
     // ===================== END ПАНЕЛЬ НАЛАШТУВАНЬ =====================
 
     // ===================== TOR INTEGRATION =====================
@@ -2563,8 +2454,6 @@
     
     // Функція для показу повідомлень
     function showTorNotification(message, isError = false) {
-      console.log('[TOR]', message);
-      
       // Створюємо toast повідомлення
       const toast = document.createElement('div');
       toast.style.cssText = `
@@ -2594,8 +2483,6 @@
     let bootstrapToast = null;
     
     ipcRenderer.on('tor-bootstrap-progress', (event, data) => {
-      console.log(`[TOR] Bootstrap: ${data.progress}% - ${data.status}`);
-      
       if (torBtn && data.progress < 100) {
         torBtn.textContent = `Tor: ${data.progress}%`;
         torBtn.style.color = '#f59e0b'; // Orange під час завантаження
@@ -2649,7 +2536,6 @@
     
     // Слухаємо подію коли Tor готовий
     ipcRenderer.on('tor-ready', (event, ready) => {
-      console.log('[TOR] Tor is ready:', ready);
       if (ready && torBtn) {
         torBtn.disabled = false;
       }
@@ -2657,7 +2543,6 @@
     
     // Слухаємо подію коли Tor активний (після toggle)
     ipcRenderer.on('tor-active', (event, active) => {
-      console.log('[TOR] Tor active state changed:', active);
       // Тема інтерфейсу не змінюється - тільки індикатор "Tor: ON/OFF"
     });
     
@@ -2680,7 +2565,7 @@
           }
         }
       }).catch(err => {
-        console.error('[ERR] Error getting Tor status:', err);
+        console.error('Error getting Tor status:', err);
         torBtn.textContent = 'Tor: OFF';
         torBtn.style.color = '#9ca3af';
       });
@@ -2711,7 +2596,7 @@
             }
           }
         } catch (error) {
-          console.error('[ERR] Error toggling Tor:', error);
+          console.error('Error toggling Tor:', error);
           torBtn.textContent = originalText;
           torBtn.style.color = '#dc2626';
           showTorNotification('Помилка: Tor не запущений або не готовий', true);
@@ -2727,18 +2612,14 @@
     
     // ===================== IP CHECK BUTTON =====================
     const checkIpBtn = document.getElementById('check-ip-btn');
-    console.log('[DEBUG] IP button found:', !!checkIpBtn);
     
     if (checkIpBtn) {
-      console.log('[IP] Attaching event listener to IP button');
       checkIpBtn.addEventListener('click', async () => {
-        console.log('[IP] Check IP button clicked!');
         const originalText = checkIpBtn.textContent;
         checkIpBtn.textContent = '...';
         checkIpBtn.disabled = true;
         
         try {
-          console.log('[IP] Creating result window...');
           // Створюємо інформаційне вікно для результатів
           const resultWindow = document.createElement('div');
           resultWindow.id = 'ip-result-window';
@@ -2766,14 +2647,10 @@
             </div>
           `;
           
-          console.log('[IP] Appending result window to body');
           document.body.appendChild(resultWindow);
-          console.log('[IP] Result window appended, element:', resultWindow);
           
           // Виконуємо перевірку через IPC
-          console.log('[IP] Invoking check-ip...');
           const ipInfo = await ipcRenderer.invoke('check-ip');
-          console.log('[IP] Received IP info:', ipInfo);
           
           const { ip, responseTime, country, city, region, org, asn } = ipInfo;
           
@@ -2787,7 +2664,7 @@
           // Оновлюємо вікно результатів
           resultWindow.innerHTML = `
             <div style="text-align: center;">
-              <div style="font-size: 32px; margin-bottom: 15px;">${isTorExit ? '[TOR]' : '[IP]'}</div>
+              <div style="font-size: 32px; margin-bottom: 15px;">${isTorExit ? '🔒' : '🌐'}</div>
               <div style="font-weight: 600; font-size: 18px; margin-bottom: 20px; color: ${isTorExit ? '#8b5cf6' : '#3b82f6'};">
                 ${isTorExit ? 'Tor активний!' : torStatus.active ? 'Увага: Не Tor вузол!' : 'Звичайне підключення'}
               </div>
@@ -2830,7 +2707,6 @@
           `;
           
           // Додаємо overlay для темного фону
-          console.log('[IP] Creating overlay...');
           const overlay = document.createElement('div');
           overlay.id = 'ip-overlay';
           overlay.style.cssText = `
@@ -2843,12 +2719,10 @@
             z-index: 999998 !important;
           `;
           document.body.appendChild(overlay);
-          console.log('[IP] Overlay appended');
           
           // Обробник закриття
           const closeBtn = resultWindow.querySelector('#close-ip-result');
           const closeWindow = () => {
-            console.log('[IP] Closing result window');
             resultWindow.remove();
             overlay.remove();
           };
@@ -2866,7 +2740,7 @@
           document.addEventListener('keydown', escapeHandler);
           
         } catch (error) {
-          console.error('[IP CHECK] Error:', error);
+          console.error('IP check error:', error);
           showTorNotification('Помилка перевірки IP: ' + error.message, true);
         } finally {
           checkIpBtn.textContent = originalText;
@@ -2879,7 +2753,7 @@
     // Слухаємо готовність Tor
     ipcRenderer.on('tor-ready', (event, ready) => {
       if (ready && torBtn) {
-        console.log('[OK] Tor ready to use');
+        // Tor готовий
       }
     });
     
@@ -2888,7 +2762,6 @@
       const urlInput = document.getElementById('url');
       if (urlInput) {
         urlInput.placeholder = `${searchEngine} пошук або введіть адресу`;
-        console.log('[SEARCH] Search engine changed to:', searchEngine);
       }
     });
     
@@ -2898,8 +2771,6 @@
     
     // IPC: Створення webview елемента
     ipcRenderer.on('create-webview', (event, { tabId, html, url }) => {
-      console.log(`[WEBVIEW] Creating webview for tab ${tabId}, url: ${url}`);
-      
       // Додаємо webview прямо в body (перед sidebar)
       const sidebar = document.getElementById('side-toolbar');
       if (sidebar) {
@@ -2911,20 +2782,16 @@
       // Отримуємо створений елемент
       const webview = document.getElementById(`webview-${tabId}`);
       if (!webview) {
-        console.error(`[WEBVIEW] Failed to create webview-${tabId}`);
+        console.error(`webview-${tabId} not found`);
         return;
       }
       
       // Налаштовуємо обробники подій webview
       setupWebviewHandlers(webview, tabId);
-      
-      console.log(`[WEBVIEW] Created and configured webview-${tabId}`);
     });
     
     // IPC: Перемикання webview
     ipcRenderer.on('switch-webview', (event, { tabId }) => {
-      console.log(`[WEBVIEW] Switching to webview-${tabId}`);
-      
       // Ховаємо всі webview
       const allWebviews = document.querySelectorAll('webview');
       allWebviews.forEach(wv => {
@@ -2956,17 +2823,12 @@
     
     // IPC: Видалення webview
     ipcRenderer.on('remove-webview', (event, { tabId }) => {
-      console.log(`[WEBVIEW] Removing webview-${tabId}`);
       const webview = document.getElementById(`webview-${tabId}`);
-      if (webview) {
-        webview.remove();
-      }
+      if (webview) webview.remove();
     });
 
     // IPC: Навігація webview
     ipcRenderer.on('webview-navigate', (event, { tabId, url }) => {
-      console.log(`[WEBVIEW] Navigate webview-${tabId} to: ${url}`);
-
       const webview = document.getElementById(`webview-${tabId}`);
       
       if (webview) {
@@ -2985,7 +2847,7 @@
           nativeNewTab.style.display = 'none';
         }
       } else {
-        console.error(`[WEBVIEW] Webview not found: webview-${tabId}`);
+        console.error(`webview-${tabId} not found`);
       }
     });
     
@@ -3057,16 +2919,13 @@
      * Налаштовує обробники подій для webview елемента
      */
     function setupWebviewHandlers(webview, tabId) {
-      // Завантаження почалося
       webview.addEventListener('did-start-loading', () => {
-        console.log(`[WEBVIEW-${tabId}] Loading started`);
       });
       
       // Завантаження завершено
       webview.addEventListener('did-finish-load', () => {
         const url = webview.getURL();
         const title = webview.getTitle();
-        console.log(`[WEBVIEW-${tabId}] Loaded: ${url}`);
 
         // Зберігаємо в історію
         if (url && !url.startsWith('file://') && url !== 'about:blank' && url !== '') {
@@ -3106,13 +2965,11 @@
       // Навігація
       webview.addEventListener('did-navigate', (e) => {
         const url = e.url;
-        console.log(`[WEBVIEW-${tabId}] Navigate to: ${url}`);
 
         // Перевіряємо чи повернулись на about:blank (закриття feed)
         const nativeNewTab = document.getElementById('native-new-tab');
 
         if (url === 'about:blank' || url === '') {
-          console.log(`[WEBVIEW-${tabId}] Returning to about:blank, showing native new tab`);
           // Оновлюємо src атрибут
           webview.setAttribute('src', 'data:text/html,');
           // Ховаємо webview та показуємо native new tab
@@ -3213,14 +3070,13 @@
       // Помилка завантаження
       webview.addEventListener('did-fail-load', (e) => {
         if (e.errorCode !== -3) { // -3 = ERR_ABORTED
-          console.error(`[WEBVIEW-${tabId}] Load failed:`, e.errorDescription);
+          console.error(`webview-${tabId} load failed:`, e.errorDescription);
         }
       });
       
       // Нове вікно (контролюємо відкриття нових вкладок)
       webview.addEventListener('new-window', (e) => {
         e.preventDefault();
-        console.log(`[WEBVIEW-${tabId}] New window requested:`, e.url);
         // Відкриваємо в новій вкладці
         createTab(e.url);
       });
@@ -3238,8 +3094,8 @@
 
       // Console messages з webview
       webview.addEventListener('console-message', (e) => {
-        if (e.level >= 1) { // Warnings and errors
-          console.log(`[WEBVIEW-${tabId}] [${e.level === 1 ? 'WARN' : 'ERROR'}] ${e.message}`);
+        if (e.level >= 2) { // Only errors
+          console.error(`webview-${tabId}:`, e.message);
         }
       });
 
@@ -3291,8 +3147,6 @@
     
     // IPC: Оновлення тем для всіх newtab webview
     ipcRenderer.on('update-newtab-themes', (event, settings) => {
-      console.log('[WEBVIEW] Updating themes for all newtab pages');
-      
       const allWebviews = document.querySelectorAll('webview');
       allWebviews.forEach(webview => {
         try {
@@ -3306,7 +3160,7 @@
             `);
           }
         } catch (err) {
-          console.error('[WEBVIEW] Error updating theme:', err);
+          console.error('Error updating newtab theme:', err);
         }
       });
     });
@@ -3359,9 +3213,6 @@
     const openBookmarksBtn = document.getElementById('open-bookmarks-btn');
     if (openBookmarksBtn) {
       openBookmarksBtn.addEventListener('click', () => {
-        console.log('[NATIVE NEW TAB] Opening bookmarks page');
-        // Use the app:// protocol so webviews can load internal pages
-        // regardless of the installation path (avoids ERR_ABORTED on file:// URLs)
         const newtabPath = 'app://localhost/newtab.html';
         
         // Отримуємо активний webview або шукаємо будь-який
@@ -3373,7 +3224,7 @@
         if (activeWebview) {
           activeWebview.src = newtabPath;
         } else {
-          console.error('[NATIVE NEW TAB] No webview found');
+          console.error('No active webview found');
         }
       });
     }

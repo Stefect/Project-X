@@ -56,8 +56,6 @@ async function asyncMap(arr, asyncFn, options = {}) {
     return result;
   }
 
-  // worker pool — each "worker" grabs the next unclaimed index
-  // Запуск з обмеженою кількістю одночасно активних завдань
   let cursor = 0;
   await Promise.all(
     Array.from({ length: Math.min(concurrency, array.length) }, async () => {
@@ -100,11 +98,9 @@ async function asyncFilterMap(arr, asyncMapper, options = {}) {
 
   const compact = [];
   for (const value of mapped) {
-    // Пропуск через Symbol-маркер (asyncFilterMap.skip)
     if (value === FILTER_MAP_SKIP) {
       continue;
     }
-    // Пропуск через об'єкт-маркер { skip: true }
     if (value && typeof value === 'object' && value.skip === true) {
       continue;
     }

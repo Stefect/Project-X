@@ -1,4 +1,3 @@
-// Рівні логування: DEBUG (10) < INFO (20) < ERROR (40)
 const LEVELS = { DEBUG: 10, INFO: 20, ERROR: 40 };
 
 function trySerialize(value) {
@@ -47,7 +46,6 @@ function createLogDecorator(options = {}) {
     }
 
     const label = config.label || fn.name || 'anonymous';
-    // Локальний рівень функції: дозволяє задавати рівень для конкретної функції
     const localThreshold = levelRank(String(config.level || globalLevel).toUpperCase());
 
     function canLog(level) {

@@ -109,7 +109,6 @@ async function analyzeHistoryNdjsonFile(filePath, options = {}) {
   let validUrlRows = 0;
   let invalidUrlRows = 0;
 
-  // Переходимо по всіх рядках, накопичуємо кількість візитів за кожним доменом
   for await (const row of readNdjsonFile(filePath, { signal, skipInvalidLines })) {
     throwIfAborted(signal);
     totalRows += 1;
@@ -131,7 +130,6 @@ async function analyzeHistoryNdjsonFile(filePath, options = {}) {
     }
   }
 
-  // Сортуємо домени за спаданням відвідувань і беремо топ-N
   const topDomains = Array.from(visitsByDomain.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, topLimit)

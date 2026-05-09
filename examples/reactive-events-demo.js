@@ -1,8 +1,5 @@
 import EventEmitter from 'events';
 
-// minimal reactive bus — same pattern as src/modules/reactive-events.js
-// but without Electron dependency, runnable with plain Node.js
-
 const ERROR_CHANNEL = 'reactive-error';
 
 class ReactiveEventBus {
@@ -11,7 +8,6 @@ class ReactiveEventBus {
     this._buffer = [];
     this._limit = 50;
 
-    // swallow unhandled error-channel events
     this._emitter.on(ERROR_CHANNEL, () => {});
   }
 
@@ -59,11 +55,8 @@ class ReactiveEventBus {
   }
 }
 
-// ---- demo ----------------------------------------------------------------
-
 const bus = new ReactiveEventBus();
 
-// multiple independent listeners reacting to the same events
 function loggerListener(event) {
   console.log(`[logger]   ${event.type.padEnd(18)} id=${event.id}`);
 }
@@ -82,7 +75,6 @@ function faultyListener() {
   throw new Error('listener intentionally broken');
 }
 
-// wire up error channel so we can see fault isolation
 const unsubErrors = bus.subscribeErrors((info) => {
   console.log(`[error-ch]  listener "${info.listener}" threw: ${info.error}`);
 });
@@ -94,7 +86,6 @@ const unsubFaulty    = bus.subscribe(faultyListener);
 
 console.log('Task 7 demo: reactive communication with EventEmitter\n');
 
-// emit several events — all subscribers react independently
 bus.emit({ type: 'tracker-blocked',   detail: 'google-analytics.com' });
 bus.emit({ type: 'download-start',    detail: 'report.pdf' });
 bus.emit({ type: 'tracker-blocked',   detail: 'facebook.net' });
@@ -105,7 +96,6 @@ console.log('\n-- unsubscribing ui + analytics listeners --\n');
 unsubUi();
 unsubAnalytics();
 
-// only logger + faulty remain
 bus.emit({ type: 'tracker-blocked', detail: 'doubleclick.net' });
 
 // unsubscribe the faulty one too
@@ -114,7 +104,6 @@ unsubFaulty();
 
 bus.emit({ type: 'network-offline', detail: null });
 
-// unsubscribe everything
 unsubLogger();
 unsubErrors();
 

@@ -10,7 +10,6 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// --- Promise-based map with concurrency limit ---
 async function demoPromiseMap() {
   const jobs = ['feed', 'search', 'translate', 'summary', 'bookmarks'];
   const startedAt = Date.now();
@@ -29,7 +28,6 @@ async function demoPromiseMap() {
   console.table(results);
 }
 
-// --- filterMap: skip low-quality items ---
 async function demoFilterMap() {
   const items = [
     { title: 'AI Safety', quality: 9 },
@@ -47,7 +45,6 @@ async function demoFilterMap() {
   console.log(results);
 }
 
-// --- async/await: find with AbortController timeout ---
 async function demoFindWithAbort() {
   const words = ['alpha', 'beta', 'gamma', 'delta', 'epsilon'];
   const control = createAsyncController(140);
@@ -75,7 +72,6 @@ async function demoFindWithAbort() {
 }
 
 
-// --- Callback-based version ---
 function demoCallback() {
   return new Promise((resolve, reject) => {
     const numbers = [1, 2, 3, 4, 5, 6];
@@ -97,7 +93,6 @@ function demoCallback() {
   });
 }
 
-// --- Abortable map: cancel mid-flight ---
 async function demoAbortMidFlight() {
   const items = [10, 20, 30, 40, 50];
   const control = createAsyncController(80);

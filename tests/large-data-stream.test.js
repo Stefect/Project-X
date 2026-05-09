@@ -70,7 +70,7 @@ test('readNdjsonFile throws SyntaxError when skipInvalidLines=false', async () =
   const file = writeTempNdjson(['INVALID JSON']);
 
   await assert.rejects(async () => {
-    for await (const _ of readNdjsonFile(file, { skipInvalidLines: false })) { /* drain */ }
+    for await (const _ of readNdjsonFile(file, { skipInvalidLines: false })) {}
   }, SyntaxError);
 
   fs.unlinkSync(file);
@@ -78,13 +78,13 @@ test('readNdjsonFile throws SyntaxError when skipInvalidLines=false', async () =
 
 test('readNdjsonFile throws TypeError for empty filePath', async () => {
   await assert.rejects(async () => {
-    for await (const _ of readNdjsonFile('')) { /* drain */ }
+    for await (const _ of readNdjsonFile('')) {}
   }, TypeError);
 });
 
 test('readNdjsonFile throws TypeError for non-string filePath', async () => {
   await assert.rejects(async () => {
-    for await (const _ of readNdjsonFile(null)) { /* drain */ }
+    for await (const _ of readNdjsonFile(null)) {}
   }, TypeError);
 });
 

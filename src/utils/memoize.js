@@ -42,8 +42,6 @@ function isPromiseLike(value) {
     return Boolean(value && typeof value.then === 'function');
 }
 
-// Обирає ключ для витіснення залежно від політики:
-// LRU = найрідше використовуваний, LFU = найменш часто використовуваний, TIME = найстаріший
 function pickEvictionKey(cache, policy, customEvict) {
     if (cache.size === 0) return undefined;
 
@@ -105,11 +103,9 @@ function memoize(fn, options = {}) {
     const maxSize = normalizeMaxSize(options.maxSize);
     const policy = normalizePolicy(options.policy);
     const customEvict = options.customEvict;
-    // Resolver перетворює args виклику на строковий ключ кешу
     const keyResolver = typeof options.keyResolver === 'function'
         ? options.keyResolver
         : defaultKeyResolver;
-    // TTL: час життя запису кешу (для TIME-політики — 60 секунд за замовчуванням)
     const ttlMs = Number.isFinite(options.ttl)
         ? Math.max(0, Number(options.ttl))
         : (policy === POLICY.TIME ? 60000 : Infinity);
@@ -123,7 +119,6 @@ function memoize(fn, options = {}) {
 
     const removeExpiredEntries = (now) => {
         if (!Number.isFinite(ttlMs)) return;
-        // TODO: maybe also run this on write, not just on read — could miss long-idle entries
         for (const [key, entry] of cache.entries()) {
             if (isExpired(entry, now, ttlMs)) {
                 cache.delete(key);
@@ -156,7 +151,6 @@ function memoize(fn, options = {}) {
 
         const cached = cache.get(key);
         if (cached) {
-            // LRU: переміщуємо запис в кінець Map, щоб він вважався новішим
             if (policy === POLICY.LRU) {
                 cache.delete(key);
                 cache.set(key, cached);
@@ -170,7 +164,6 @@ function memoize(fn, options = {}) {
         stats.misses += 1;
         const produced = fn.apply(this, args);
 
-        // Для Promise — кешуємо Promise, але видаляємо запис при режекції
         if (isPromiseLike(produced)) {
             const guardedPromise = Promise.resolve(produced).catch((error) => {
                 cache.delete(key);

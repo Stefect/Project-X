@@ -18,7 +18,6 @@ class RateLimitProxy {
   }
 
   async request(request = {}) {
-    // chain requests so they always run one-at-a-time with spacing in between
     const execute = async () => {
       const now = Date.now();
       const waitMs = Math.max(0, this.nextAvailableAt - now);
