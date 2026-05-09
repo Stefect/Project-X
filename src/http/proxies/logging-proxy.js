@@ -1,4 +1,3 @@
-// Проксі-клас: логує кожен HTTP-запит (відправлення, відповідь, помилку)
 class LoggingProxy {
   constructor(client, options = {}) {
     if (!client || typeof client.request !== 'function') {
@@ -31,7 +30,6 @@ class LoggingProxy {
     }
   }
 
-  // Виконує HTTP-запит: логує відправлення, відповідь і помилку (ERROR-рівень)
   async request(request = {}) {
     const startedAt = Date.now();
 
