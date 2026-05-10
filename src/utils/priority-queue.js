@@ -1,4 +1,4 @@
-class TaskQueue {
+﻿class TaskQueue {
     static MODES = Object.freeze({
         HIGHEST: 'highest',
         LOWEST: 'lowest',
@@ -36,31 +36,31 @@ class TaskQueue {
 
     _normalizeMode(mode) {
         const raw = String(mode || '').toLowerCase();
-        return Object.values(BrowserXTaskQueue.MODES).includes(raw)
+        return Object.values(TaskQueue.MODES).includes(raw)
             ? raw
-            : BrowserXTaskQueue.MODES.HIGHEST;
+            : TaskQueue.MODES.HIGHEST;
     }
 
     _isCandidateBetter(current, candidate, mode) {
-        if (mode === BrowserXTaskQueue.MODES.HIGHEST) {
+        if (mode === TaskQueue.MODES.HIGHEST) {
             if (candidate.priority !== current.priority) {
                 return candidate.priority > current.priority;
             }
             return candidate.order < current.order;
         }
 
-        if (mode === BrowserXTaskQueue.MODES.LOWEST) {
+        if (mode === TaskQueue.MODES.LOWEST) {
             if (candidate.priority !== current.priority) {
                 return candidate.priority < current.priority;
             }
             return candidate.order < current.order;
         }
 
-        if (mode === BrowserXTaskQueue.MODES.OLDEST) {
+        if (mode === TaskQueue.MODES.OLDEST) {
             return candidate.order < current.order;
         }
 
-        if (mode === BrowserXTaskQueue.MODES.NEWEST) {
+        if (mode === TaskQueue.MODES.NEWEST) {
             return candidate.order > current.order;
         }
 
@@ -74,10 +74,10 @@ class TaskQueue {
 
         const normalized = this._normalizeMode(mode);
 
-        if (normalized === BrowserXTaskQueue.MODES.OLDEST) {
+        if (normalized === TaskQueue.MODES.OLDEST) {
             return 0;
         }
-        if (normalized === BrowserXTaskQueue.MODES.NEWEST) {
+        if (normalized === TaskQueue.MODES.NEWEST) {
             return this.items.length - 1;
         }
 
